@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Claude Certified Architect — Simulador de Certificacion
 
-## Getting Started
+Simulador interactivo para prepararte para el examen **Claude Certified Architect – Foundations** de Anthropic.
 
-First, run the development server:
+**[Usar el simulador →](https://gonzalezulises.github.io/claude-cert-simulator/)**
+
+## Caracteristicas
+
+### Modo Estudio
+- 60 preguntas basadas en escenarios reales del examen
+- Filtrado por dominio individual o todos los dominios
+- Explicacion detallada despues de cada respuesta
+- Concepto clave identificado por pregunta
+
+### Modo Examen
+- 30 preguntas aleatorias ponderadas por peso de dominio
+- Temporizador de 90 minutos
+- Navegador visual de preguntas
+- Score escalado 100–1000 (minimo 720 para aprobar)
+- Sin explicaciones hasta finalizar
+
+### Seguimiento de Progreso
+- Progreso por dominio persistente (localStorage)
+- Historial de examenes realizados
+- Identificacion de areas debiles a reforzar
+- Modo revision post-examen
+
+## Dominios del Examen
+
+| # | Dominio | Peso | Preguntas |
+|---|---------|------|-----------|
+| 1 | Agentic Architecture & Orchestration | 27% | 12 |
+| 2 | Tool Design & MCP Integration | 18% | 12 |
+| 3 | Claude Code Configuration & Workflows | 20% | 12 |
+| 4 | Prompt Engineering & Structured Output | 20% | 12 |
+| 5 | Context Management & Reliability | 15% | 12 |
+
+## Escenarios
+
+- Customer Support Resolution Agent
+- Code Generation with Claude Code
+- Multi-Agent Research System
+- Developer Productivity with Claude
+- Claude Code for Continuous Integration
+- Structured Data Extraction
+
+## Tecnologias
+
+- Next.js 15 (App Router, TypeScript)
+- Tailwind CSS v4
+- shadcn/ui
+- GitHub Pages (deploy automatico via GitHub Actions)
+
+## Desarrollo local
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Abrir http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Disclaimer
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Simulador no oficial — solo para estudio personal. Basado en la guia publica del examen Claude Certified Architect – Foundations de Anthropic.
