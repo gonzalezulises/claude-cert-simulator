@@ -1427,3 +1427,18 @@ export function getExamSample(totalQuestions: number = 60): Question[] {
 
   return sample.sort(() => Math.random() - 0.5);
 }
+
+export function getExamSampleFromPool(pool: Question[], totalQuestions: number = 30): Question[] {
+  const sample: Question[] = [];
+  const domainList: Domain[] = [1, 2, 3, 4, 5];
+
+  for (const domain of domainList) {
+    const weight = domainWeights[domain] / 100;
+    const count = Math.round(totalQuestions * weight);
+    const domainQs = pool.filter((q) => q.domain === domain);
+    const shuffled = [...domainQs].sort(() => Math.random() - 0.5);
+    sample.push(...shuffled.slice(0, count));
+  }
+
+  return sample.sort(() => Math.random() - 0.5);
+}

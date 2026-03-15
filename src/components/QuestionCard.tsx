@@ -2,6 +2,7 @@
 
 import { Question } from "@/data/questions";
 import { questionsEs } from "@/data/questions-es";
+import { examQuestionsEs } from "@/data/questions-exam-es";
 import { Locale, t } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -47,7 +48,7 @@ export default function QuestionCard({
   const answered = selectedAnswer !== null;
   const isCorrect = selectedAnswer === question.correctAnswer;
 
-  const tr = locale === "es" ? questionsEs[question.id] : null;
+  const tr = locale === "es" ? (questionsEs[question.id] ?? examQuestionsEs[question.id]) : null;
   const questionText = tr?.question ?? question.question;
   const explanationText = tr?.explanation ?? question.explanation;
   const keyConceptText = tr?.keyConcept ?? question.keyConcept;

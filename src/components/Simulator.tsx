@@ -4,10 +4,11 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import {
   questions,
   getQuestionsByDomain,
-  getExamSample,
+  getExamSampleFromPool,
   domainNames,
   Question,
 } from "@/data/questions";
+import { examQuestions } from "@/data/questions-exam";
 import {
   Mode,
   UserAnswer,
@@ -90,7 +91,7 @@ export default function Simulator() {
   }, []);
 
   const startExamMode = useCallback(() => {
-    const qs = getExamSample(EXAM_QUESTION_COUNT);
+    const qs = getExamSampleFromPool(examQuestions, EXAM_QUESTION_COUNT);
     setActiveQuestions(qs);
     setCurrentIndex(0);
     setAnswers(new Array(qs.length).fill(null).map(() => ({
