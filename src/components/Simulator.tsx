@@ -25,6 +25,7 @@ import ExamResultsView from "./ExamResults";
 import Timer from "./Timer";
 import ProgressDashboard from "./ProgressDashboard";
 import LanguageToggle from "./LanguageToggle";
+import StudyGuide from "./StudyGuide";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -341,6 +342,25 @@ export default function Simulator() {
           </div>
         </div>
 
+        {/* Study Guide */}
+        <Card className="border-2 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => setMode("guide")}>
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-base">
+                  📚 {locale === "es" ? "Guia de estudio" : "Study Guide"}
+                </p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {locale === "es"
+                    ? "Conceptos clave, anti-patrones, trampas del examen y ejercicios practicos por dominio."
+                    : "Key concepts, anti-patterns, exam traps, and build exercises by domain."}
+                </p>
+              </div>
+              <span className="text-muted-foreground text-lg">→</span>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Info */}
         <Card>
           <CardContent className="pt-5">
@@ -483,6 +503,15 @@ export default function Simulator() {
           onPrev={handlePrev}
           onReveal={mode === "study" ? handleRevealExplanation : undefined}
         />
+      </div>
+    );
+  }
+
+  // =================== STUDY GUIDE ===================
+  if (mode === "guide") {
+    return (
+      <div ref={topRef}>
+        <StudyGuide locale={locale} onBack={backToMenu} />
       </div>
     );
   }

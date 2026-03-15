@@ -1,6 +1,6 @@
 import { Question } from "@/data/questions";
 
-export type Mode = "menu" | "study" | "exam" | "review" | "results";
+export type Mode = "menu" | "study" | "exam" | "review" | "results" | "guide";
 
 export interface UserAnswer {
   questionId: string;
