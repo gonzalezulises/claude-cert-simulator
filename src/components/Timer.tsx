@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Locale, t } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface TimerProps {
   startTime: number;
-  timeLimit?: number; // seconds
+  locale: Locale;
+  timeLimit?: number;
   onTimeUp?: () => void;
 }
 
-export default function Timer({ startTime, timeLimit, onTimeUp }: TimerProps) {
+export default function Timer({ startTime, locale, timeLimit, onTimeUp }: TimerProps) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function Timer({ startTime, timeLimit, onTimeUp }: TimerProps) {
   const remaining = timeLimit ? Math.max(0, timeLimit - elapsed) : elapsed;
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
-  const isLow = timeLimit ? remaining < 300 : false; // < 5 min
+  const isLow = timeLimit ? remaining < 300 : false;
   const isCritical = timeLimit ? remaining < 60 : false;
 
   return (
@@ -39,8 +41,8 @@ export default function Timer({ startTime, timeLimit, onTimeUp }: TimerProps) {
         isCritical && "border-destructive text-destructive bg-destructive/10 animate-pulse"
       )}
     >
-      {timeLimit ? "⏱" : "⏱"} {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
-      {timeLimit && <span className="text-xs ml-1 opacity-60">restante</span>}
+      ⏱ {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+      {timeLimit && <span className="text-xs ml-1 opacity-60">{t("topbar.remaining", locale)}</span>}
     </Badge>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { Question } from "@/data/questions";
+import { questionsEs } from "@/data/questions-es";
+import { Locale, t } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +12,7 @@ import { useState } from "react";
 
 interface QuestionCardProps {
   question: Question;
+  locale: Locale;
   index: number;
   total: number;
   selectedAnswer: "A" | "B" | "C" | "D" | null;
@@ -27,14 +30,9 @@ const difficultyColors = {
   advanced: "bg-destructive/15 text-destructive border-destructive/30",
 };
 
-const difficultyLabels = {
-  basic: "Basico",
-  intermediate: "Intermedio",
-  advanced: "Avanzado",
-};
-
 export default function QuestionCard({
   question,
+  locale,
   index,
   total,
   selectedAnswer,
@@ -49,6 +47,14 @@ export default function QuestionCard({
   const answered = selectedAnswer !== null;
   const isCorrect = selectedAnswer === question.correctAnswer;
 
+  const tr = locale === "es" ? questionsEs[question.id] : null;
+  const questionText = tr?.question ?? question.question;
+  const explanationText = tr?.explanation ?? question.explanation;
+  const keyConceptText = tr?.keyConcept ?? question.keyConcept;
+  const getOptionText = (id: "A" | "B" | "C" | "D", original: string) => {
+    return tr?.options[id] ?? original;
+  };
+
   return (
     <div className="space-y-4">
       {/* Header info */}
@@ -57,20 +63,20 @@ export default function QuestionCard({
           {index + 1} / {total}
         </Badge>
         <Badge variant="secondary" className="text-xs">
-          Dominio {question.domain}: {question.domainName}
+          {t("question.domain", locale)} {question.domain}: {question.domainName}
         </Badge>
         <Badge variant="outline" className="text-xs">
           Task {question.taskStatement}
         </Badge>
         <Badge className={cn("text-xs", difficultyColors[question.difficulty])}>
-          {difficultyLabels[question.difficulty]}
+          {t(`difficulty.${question.difficulty}` as const, locale)}
         </Badge>
       </div>
 
       {/* Scenario badge */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-          Escenario:
+          {t("question.scenario", locale)}
         </span>
         <Badge variant="outline" className="text-xs font-normal">
           {question.scenario}
@@ -81,7 +87,7 @@ export default function QuestionCard({
       <Card>
         <CardHeader className="pb-3">
           <p className="text-base leading-relaxed font-medium">
-            {question.question}
+            {questionText}
           </p>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -131,7 +137,9 @@ export default function QuestionCard({
                 >
                   {option.id}
                 </span>
-                <span className="text-sm leading-relaxed pt-0.5">{option.text}</span>
+                <span className="text-sm leading-relaxed pt-0.5">
+                  {getOptionText(option.id, option.text)}
+                </span>
               </button>
             );
           })}
@@ -142,7 +150,7 @@ export default function QuestionCard({
       {isStudyMode && answered && !showExplanation && onReveal && (
         <div className="flex justify-center">
           <Button onClick={onReveal} variant="default" size="lg">
-            Ver explicacion
+            {t("question.reveal", locale)}
           </Button>
         </div>
       )}
@@ -162,17 +170,21 @@ export default function QuestionCard({
                 "font-semibold text-sm",
                 isCorrect ? "text-success" : "text-destructive"
               )}>
-                {isCorrect ? "Correcto" : `Incorrecto — La respuesta correcta es ${question.correctAnswer}`}
+                {isCorrect
+                  ? t("question.correct", locale)
+                  : `${t("question.incorrect", locale)} ${question.correctAnswer}`}
               </span>
             </div>
             <Separator className="mb-3" />
             <p className="text-sm leading-relaxed text-muted-foreground">
-              {question.explanation}
+              {explanationText}
             </p>
             <div className="mt-3 flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">Concepto clave:</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                {t("question.keyConcept", locale)}
+              </span>
               <Badge variant="secondary" className="text-xs">
-                {question.keyConcept}
+                {keyConceptText}
               </Badge>
             </div>
           </CardContent>
@@ -186,13 +198,13 @@ export default function QuestionCard({
           onClick={onPrev}
           disabled={index === 0}
         >
-          ← Anterior
+          {t("question.prev", locale)}
         </Button>
         <Button
           onClick={onNext}
           disabled={!isStudyMode && !answered}
         >
-          {index === total - 1 ? "Finalizar" : "Siguiente →"}
+          {index === total - 1 ? t("question.finish", locale) : t("question.next", locale)}
         </Button>
       </div>
     </div>

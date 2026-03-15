@@ -2,6 +2,7 @@
 
 import { ExamResults as ExamResultsType } from "@/lib/store";
 import { Question } from "@/data/questions";
+import { Locale, t } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils";
 interface ExamResultsProps {
   results: ExamResultsType;
   questions: Question[];
+  locale: Locale;
   onBackToMenu: () => void;
   onReviewAnswers: () => void;
 }
@@ -25,6 +27,7 @@ function formatTime(seconds: number): string {
 export default function ExamResultsView({
   results,
   questions,
+  locale,
   onBackToMenu,
   onReviewAnswers,
 }: ExamResultsProps) {
@@ -42,25 +45,25 @@ export default function ExamResultsView({
             {results.passed ? "🎉" : "📚"}
           </div>
           <CardTitle className="text-2xl">
-            {results.passed ? "Aprobado" : "No aprobado"}
+            {results.passed ? t("results.passed", locale) : t("results.failed", locale)}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex justify-center gap-8">
             <div>
               <p className="text-4xl font-bold text-primary">{results.scaledScore}</p>
-              <p className="text-xs text-muted-foreground mt-1">Puntaje escalado</p>
-              <p className="text-xs text-muted-foreground">(min. 720 para aprobar)</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("results.scaledScore", locale)}</p>
+              <p className="text-xs text-muted-foreground">{t("results.minToPass", locale)}</p>
             </div>
             <Separator orientation="vertical" className="h-20" />
             <div>
               <p className="text-4xl font-bold">{results.totalCorrect}/{results.totalQuestions}</p>
-              <p className="text-xs text-muted-foreground mt-1">Respuestas correctas</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("results.correctAnswers", locale)}</p>
               <p className="text-xs text-muted-foreground">({Math.round(results.percentage)}%)</p>
             </div>
           </div>
           <div className="text-sm text-muted-foreground">
-            Tiempo total: {formatTime(results.totalTime)}
+            {t("results.totalTime", locale)} {formatTime(results.totalTime)}
           </div>
         </CardContent>
       </Card>
@@ -68,7 +71,7 @@ export default function ExamResultsView({
       {/* Domain Breakdown */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Desglose por dominio</CardTitle>
+          <CardTitle className="text-lg">{t("results.domainBreakdown", locale)}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {results.domainScores.map((ds) => (
@@ -99,7 +102,7 @@ export default function ExamResultsView({
       {results.domainScores.some(d => d.percentage < 72) && (
         <Card className="border-warning/30 bg-warning/5">
           <CardHeader>
-            <CardTitle className="text-lg">Areas a reforzar</CardTitle>
+            <CardTitle className="text-lg">{t("results.weakAreas", locale)}</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
@@ -121,10 +124,10 @@ export default function ExamResultsView({
       {/* Actions */}
       <div className="flex gap-3 justify-center">
         <Button variant="outline" onClick={onReviewAnswers} size="lg">
-          Revisar respuestas
+          {t("results.reviewAnswers", locale)}
         </Button>
         <Button onClick={onBackToMenu} size="lg">
-          Volver al menu
+          {t("results.backToMenu", locale)}
         </Button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { StudyProgress } from "@/lib/store";
+import { Locale, t } from "@/lib/i18n";
 import { domainNames } from "@/data/questions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -8,9 +9,10 @@ import { cn } from "@/lib/utils";
 
 interface ProgressDashboardProps {
   progress: StudyProgress;
+  locale: Locale;
 }
 
-export default function ProgressDashboard({ progress }: ProgressDashboardProps) {
+export default function ProgressDashboard({ progress, locale }: ProgressDashboardProps) {
   const overallPct = progress.questionsAnswered > 0
     ? Math.round((progress.correctAnswers / progress.questionsAnswered) * 100)
     : 0;
@@ -18,13 +20,12 @@ export default function ProgressDashboard({ progress }: ProgressDashboardProps) 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Tu progreso</CardTitle>
+        <CardTitle className="text-base">{t("progress.title", locale)}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Overall */}
         <div className="space-y-1.5">
           <div className="flex justify-between text-sm">
-            <span>General</span>
+            <span>{t("progress.general", locale)}</span>
             <span className="text-muted-foreground">
               {progress.correctAnswers}/{progress.questionsAnswered} ({overallPct}%)
             </span>
@@ -40,7 +41,6 @@ export default function ProgressDashboard({ progress }: ProgressDashboardProps) 
           />
         </div>
 
-        {/* Per domain */}
         {Object.entries(domainNames).map(([key, name]) => {
           const d = Number(key);
           const dp = progress.domainProgress[d];
@@ -66,15 +66,16 @@ export default function ProgressDashboard({ progress }: ProgressDashboardProps) 
           );
         })}
 
-        {/* Exam history */}
         {progress.examHistory.length > 0 && (
           <div className="pt-2">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Examenes recientes</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">
+              {t("progress.recentExams", locale)}
+            </p>
             <div className="space-y-1">
               {progress.examHistory.slice(-3).reverse().map((e, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">
-                    {new Date(e.date).toLocaleDateString("es-MX")}
+                    {new Date(e.date).toLocaleDateString(locale === "es" ? "es-MX" : "en-US")}
                   </span>
                   <span className={cn(
                     "font-mono font-medium",

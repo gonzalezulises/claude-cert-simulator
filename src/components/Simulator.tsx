@@ -18,10 +18,12 @@ import {
   resetProgress,
   StudyProgress,
 } from "@/lib/store";
+import { Locale, t, loadLocale, saveLocale } from "@/lib/i18n";
 import QuestionCard from "./QuestionCard";
 import ExamResultsView from "./ExamResults";
 import Timer from "./Timer";
 import ProgressDashboard from "./ProgressDashboard";
+import LanguageToggle from "./LanguageToggle";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +31,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-const EXAM_TIME_LIMIT = 90 * 60; // 90 minutes
+const EXAM_TIME_LIMIT = 90 * 60;
 const EXAM_QUESTION_COUNT = 30;
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -43,6 +45,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export default function Simulator() {
   const [mode, setMode] = useState<Mode>("menu");
+  const [locale, setLocale] = useState<Locale>("es");
   const [activeQuestions, setActiveQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
@@ -54,9 +57,14 @@ export default function Simulator() {
   const [studyDomain, setStudyDomain] = useState<number | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
-  // Load progress on mount
   useEffect(() => {
     setProgress(loadProgress());
+    setLocale(loadLocale());
+  }, []);
+
+  const handleLocaleChange = useCallback((newLocale: Locale) => {
+    setLocale(newLocale);
+    saveLocale(newLocale);
   }, []);
 
   const scrollToTop = () => {
@@ -113,12 +121,6 @@ export default function Simulator() {
       };
       setAnswers(newAnswers);
 
-      // In study mode, show explanation after selecting
-      if (mode === "study") {
-        // Don't auto-show; let user click "Ver explicacion"
-      }
-
-      // Update progress
       const newProgress = { ...progress };
       if (!newProgress.answeredIds.includes(q.id)) {
         newProgress.questionsAnswered++;
@@ -134,7 +136,7 @@ export default function Simulator() {
         setProgress(newProgress);
       }
     },
-    [activeQuestions, currentIndex, questionStartTime, answers, mode, progress]
+    [activeQuestions, currentIndex, questionStartTime, answers, progress]
   );
 
   const handleRevealExplanation = useCallback(() => {
@@ -143,11 +145,9 @@ export default function Simulator() {
 
   const handleNext = useCallback(() => {
     if (currentIndex === activeQuestions.length - 1) {
-      // Finish
       if (mode === "exam") {
         const r = calculateResults(activeQuestions, answers, startTime);
         setResults(r);
-        // Save exam to history
         const newProgress = { ...progress };
         newProgress.examHistory.push({
           date: new Date().toISOString(),
@@ -159,7 +159,6 @@ export default function Simulator() {
         setProgress(newProgress);
         setMode("results");
       } else {
-        // Study mode: go to results summary
         const r = calculateResults(activeQuestions, answers, startTime);
         setResults(r);
         setMode("results");
@@ -216,25 +215,28 @@ export default function Simulator() {
     setProgress(loadProgress());
   }, []);
 
-  // =================== RENDER ===================
-
+  // =================== MENU ===================
   if (mode === "menu") {
     return (
       <div ref={topRef} className="space-y-8">
+        {/* Language toggle */}
+        <div className="flex justify-end">
+          <LanguageToggle locale={locale} onChange={handleLocaleChange} />
+        </div>
+
         {/* Hero */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-medium">
-            <span>ANTHROPIC</span>
+            <span>{t("menu.badge", locale)}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            Claude Certified Architect
+            {t("menu.title", locale)}
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Simulador de certificacion — Foundations
+            {t("menu.subtitle", locale)}
           </p>
           <p className="text-sm text-muted-foreground max-w-lg mx-auto">
-            60 preguntas basadas en escenarios reales. 5 dominios. Practica en modo estudio
-            o evalua tu preparacion con un examen simulado.
+            {t("menu.description", locale)}
           </p>
         </div>
 
@@ -243,10 +245,10 @@ export default function Simulator() {
           <Card className="border-2 hover:border-primary/30 transition-colors">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                📖 Modo Estudio
+                📖 {t("study.title", locale)}
               </CardTitle>
               <CardDescription>
-                Practica pregunta por pregunta con explicaciones detalladas despues de cada respuesta.
+                {t("study.description", locale)}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -255,10 +257,10 @@ export default function Simulator() {
                 variant="outline"
                 onClick={() => startStudyMode(null)}
               >
-                Todos los dominios ({questions.length} preguntas)
+                {t("study.allDomains", locale)} ({questions.length} {t("study.questions", locale)})
               </Button>
               <Separator />
-              <p className="text-xs text-muted-foreground font-medium">Por dominio:</p>
+              <p className="text-xs text-muted-foreground font-medium">{t("study.byDomain", locale)}</p>
               <div className="grid gap-2">
                 {Object.entries(domainNames).map(([key, name]) => {
                   const d = Number(key);
@@ -296,36 +298,34 @@ export default function Simulator() {
             <Card className="border-2 hover:border-primary/30 transition-colors">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  📝 Modo Examen
+                  📝 {t("exam.title", locale)}
                 </CardTitle>
                 <CardDescription>
-                  Simula el examen real: {EXAM_QUESTION_COUNT} preguntas, 90 minutos, sin explicaciones
-                  hasta terminar.
+                  {t("exam.description", locale)}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-3 gap-3 text-center text-sm">
                   <div className="bg-muted rounded-lg p-2.5">
                     <p className="font-bold text-lg">{EXAM_QUESTION_COUNT}</p>
-                    <p className="text-xs text-muted-foreground">Preguntas</p>
+                    <p className="text-xs text-muted-foreground">{t("exam.questions", locale)}</p>
                   </div>
                   <div className="bg-muted rounded-lg p-2.5">
                     <p className="font-bold text-lg">90</p>
-                    <p className="text-xs text-muted-foreground">Minutos</p>
+                    <p className="text-xs text-muted-foreground">{t("exam.minutes", locale)}</p>
                   </div>
                   <div className="bg-muted rounded-lg p-2.5">
                     <p className="font-bold text-lg">720</p>
-                    <p className="text-xs text-muted-foreground">Min. aprobar</p>
+                    <p className="text-xs text-muted-foreground">{t("exam.minPass", locale)}</p>
                   </div>
                 </div>
                 <Button className="w-full" size="lg" onClick={startExamMode}>
-                  Iniciar examen
+                  {t("exam.start", locale)}
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Progress */}
-            <ProgressDashboard progress={progress} />
+            <ProgressDashboard progress={progress} locale={locale} />
 
             {progress.questionsAnswered > 0 && (
               <Button
@@ -334,7 +334,7 @@ export default function Simulator() {
                 className="w-full text-xs text-muted-foreground"
                 onClick={handleResetProgress}
               >
-                Reiniciar progreso
+                {t("progress.reset", locale)}
               </Button>
             )}
           </div>
@@ -345,10 +345,10 @@ export default function Simulator() {
           <CardContent className="pt-5">
             <div className="grid sm:grid-cols-3 gap-4 text-sm">
               <div>
-                <p className="font-semibold mb-1">Escenarios del examen</p>
+                <p className="font-semibold mb-1">{t("info.scenarios", locale)}</p>
                 <ul className="text-xs text-muted-foreground space-y-0.5">
                   <li>• Customer Support Agent</li>
-                  <li>• Code Generation con Claude Code</li>
+                  <li>• Code Generation with Claude Code</li>
                   <li>• Multi-Agent Research System</li>
                   <li>• Developer Productivity</li>
                   <li>• CI/CD Integration</li>
@@ -356,17 +356,17 @@ export default function Simulator() {
                 </ul>
               </div>
               <div>
-                <p className="font-semibold mb-1">Formato</p>
+                <p className="font-semibold mb-1">{t("info.format", locale)}</p>
                 <ul className="text-xs text-muted-foreground space-y-0.5">
-                  <li>• Opcion multiple (A/B/C/D)</li>
-                  <li>• Una respuesta correcta</li>
-                  <li>• Sin penalidad por adivinar</li>
-                  <li>• Score escalado 100-1000</li>
-                  <li>• Minimo 720 para aprobar</li>
+                  <li>• {t("info.multipleChoice", locale)}</li>
+                  <li>• {t("info.oneCorrect", locale)}</li>
+                  <li>• {t("info.noPenalty", locale)}</li>
+                  <li>• {t("info.scaledScore", locale)}</li>
+                  <li>• {t("info.min720", locale)}</li>
                 </ul>
               </div>
               <div>
-                <p className="font-semibold mb-1">Tecnologias evaluadas</p>
+                <p className="font-semibold mb-1">{t("info.tech", locale)}</p>
                 <ul className="text-xs text-muted-foreground space-y-0.5">
                   <li>• Claude Agent SDK</li>
                   <li>• Model Context Protocol (MCP)</li>
@@ -394,23 +394,28 @@ export default function Simulator() {
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={backToMenu}>
-              ← Menu
+              {t("topbar.menu", locale)}
             </Button>
             <Badge variant={mode === "exam" ? "default" : "secondary"}>
-              {mode === "exam" ? "Examen" : mode === "review" ? "Revision" : "Estudio"}
+              {mode === "exam"
+                ? t("topbar.exam", locale)
+                : mode === "review"
+                ? t("topbar.review", locale)
+                : t("topbar.study", locale)}
               {studyDomain && mode === "study" && ` — D${studyDomain}`}
             </Badge>
           </div>
           <div className="flex items-center gap-3">
-            {mode === "exam" && (
+            <LanguageToggle locale={locale} onChange={handleLocaleChange} />
+            {mode === "exam" ? (
               <Timer
                 startTime={startTime}
+                locale={locale}
                 timeLimit={EXAM_TIME_LIMIT}
                 onTimeUp={handleTimeUp}
               />
-            )}
-            {mode !== "exam" && (
-              <Timer startTime={startTime} />
+            ) : (
+              <Timer startTime={startTime} locale={locale} />
             )}
           </div>
         </div>
@@ -419,9 +424,11 @@ export default function Simulator() {
         <div className="space-y-1">
           <Progress value={progressPct} className="h-1.5" />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{answeredCount} de {activeQuestions.length} respondidas</span>
+            <span>
+              {answeredCount} {t("topbar.of", locale)} {activeQuestions.length} {t("topbar.answered", locale)}
+            </span>
             {mode === "exam" && (
-              <span>{activeQuestions.length - answeredCount} pendientes</span>
+              <span>{activeQuestions.length - answeredCount} {t("topbar.pending", locale)}</span>
             )}
           </div>
         </div>
@@ -459,6 +466,7 @@ export default function Simulator() {
         {/* Question card */}
         <QuestionCard
           question={q}
+          locale={locale}
           index={currentIndex}
           total={activeQuestions.length}
           selectedAnswer={answers[currentIndex]?.selectedAnswer ?? null}
@@ -485,6 +493,7 @@ export default function Simulator() {
         <ExamResultsView
           results={results}
           questions={activeQuestions}
+          locale={locale}
           onBackToMenu={backToMenu}
           onReviewAnswers={handleReviewAnswers}
         />
