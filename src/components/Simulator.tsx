@@ -242,261 +242,204 @@ export default function Simulator() {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Study Mode + Resources */}
-          <div className="space-y-6">
-            <Card className="border-2 hover:border-primary/30 transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  📖 {t("study.title", locale)}
-                </CardTitle>
-                <CardDescription>
-                  {t("study.description", locale)}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => startStudyMode(null)}
-                >
-                  {t("study.allDomains", locale)} ({questions.length} {t("study.questions", locale)})
-                </Button>
-                <Separator />
-                <p className="text-xs text-muted-foreground font-medium">{t("study.byDomain", locale)}</p>
-                <div className="grid gap-2">
-                  {Object.entries(domainNames).map(([key, name]) => {
-                    const d = Number(key);
-                    const count = getQuestionsByDomain(d as 1 | 2 | 3 | 4 | 5).length;
-                    const weights: Record<number, number> = {
-                      1: 27, 2: 18, 3: 20, 4: 20, 5: 15,
-                    };
-                    return (
-                      <Button
-                        key={d}
-                        variant="ghost"
-                        className="justify-between h-auto py-2 px-3 text-left"
-                        onClick={() => startStudyMode(d)}
-                      >
-                        <span className="text-sm">
-                          D{d}: {name}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {weights[d]}%
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {count}
-                          </Badge>
-                        </div>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Official Resources — Learning Flow */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  🔗 {locale === "es" ? "Recursos oficiales de Anthropic" : "Official Anthropic Resources"}
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {locale === "es"
-                    ? "Ordenados por flujo de aprendizaje: fundamentos → herramientas → orquestacion → produccion"
-                    : "Ordered by learning flow: fundamentals → tools → orchestration → production"}
+        {/* 3 Main Cards */}
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* Card 1: Resources */}
+          <Card className="border-2 hover:border-primary/30 transition-colors">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                🔗 {locale === "es" ? "Recursos" : "Resources"}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {locale === "es"
+                  ? "Documentacion oficial ordenada por flujo de aprendizaje"
+                  : "Official docs ordered by learning flow"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
+                  <span className="text-primary mr-1">1.</span>
+                  {locale === "es" ? "Fundamentos" : "Fundamentals"}
                 </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {/* 1. Fundamentals */}
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
-                    <span className="text-primary mr-1">1.</span>
-                    {locale === "es" ? "Fundamentos — API y Prompts" : "Fundamentals — API & Prompts"}
-                  </p>
-                  <div className="space-y-1">
-                    <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Prompting Best Practices
-                    </a>
-                    <a href="https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Handling Stop Reasons (stop_reason)
-                    </a>
-                    <a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Structured Outputs & tool_use
-                    </a>
-                    <a href="https://platform.claude.com/docs/en/build-with-claude/context-windows" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Context Windows & Token Budgets
-                    </a>
-                  </div>
+                <div className="space-y-0.5">
+                  <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Prompting Best Practices</a>
+                  <a href="https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Handling Stop Reasons</a>
+                  <a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Structured Outputs & tool_use</a>
+                  <a href="https://platform.claude.com/docs/en/build-with-claude/context-windows" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Context Windows</a>
                 </div>
-                <Separator />
-                {/* 2. Tool Design & MCP */}
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
-                    <span className="text-primary mr-1">2.</span>
-                    {locale === "es" ? "Diseno de herramientas — MCP" : "Tool Design — MCP"}
-                  </p>
-                  <div className="space-y-1">
-                    <a href="https://modelcontextprotocol.io/specification/2025-11-25/server/tools" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      MCP Tools Specification
-                    </a>
-                    <a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      MCP Integration in Claude Code
-                    </a>
-                    <a href="https://github.com/modelcontextprotocol" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      MCP GitHub — Community Servers
-                    </a>
-                  </div>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
+                  <span className="text-primary mr-1">2.</span>
+                  {locale === "es" ? "Herramientas — MCP" : "Tools — MCP"}
+                </p>
+                <div className="space-y-0.5">
+                  <a href="https://modelcontextprotocol.io/specification/2025-11-25/server/tools" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">MCP Tools Specification</a>
+                  <a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">MCP in Claude Code</a>
+                  <a href="https://github.com/modelcontextprotocol" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">MCP Community Servers</a>
                 </div>
-                <Separator />
-                {/* 3. Claude Code Configuration */}
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
-                    <span className="text-primary mr-1">3.</span>
-                    {locale === "es" ? "Configuracion — Claude Code" : "Configuration — Claude Code"}
-                  </p>
-                  <div className="space-y-1">
-                    <a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      CLAUDE.md {locale === "es" ? "y jerarquia de memoria" : "& Memory Hierarchy"}
-                    </a>
-                    <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Skills, Commands & .claude/rules/
-                    </a>
-                    <a href="https://code.claude.com/docs/en/hooks-guide" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Hooks Guide (PreToolUse, PostToolUse)
-                    </a>
-                  </div>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
+                  <span className="text-primary mr-1">3.</span>
+                  {locale === "es" ? "Configuracion" : "Configuration"}
+                </p>
+                <div className="space-y-0.5">
+                  <a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">CLAUDE.md & Memory</a>
+                  <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Skills & Commands</a>
+                  <a href="https://code.claude.com/docs/en/hooks-guide" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Hooks Guide</a>
                 </div>
-                <Separator />
-                {/* 4. Agentic Architecture */}
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
-                    <span className="text-primary mr-1">4.</span>
-                    {locale === "es" ? "Arquitectura agentica — SDK" : "Agentic Architecture — SDK"}
-                  </p>
-                  <div className="space-y-1">
-                    <a href="https://platform.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Agent SDK Overview
-                    </a>
-                    <a href="https://platform.claude.com/docs/en/agent-sdk/agent-loop" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Agent Loop Lifecycle
-                    </a>
-                    <a href="https://platform.claude.com/docs/en/agent-sdk/subagents" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Subagents & Coordinator Patterns
-                    </a>
-                    <a href="https://platform.claude.com/docs/en/agent-sdk/hooks" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      SDK Hooks (PostToolUse, PreToolUse)
-                    </a>
-                  </div>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
+                  <span className="text-primary mr-1">4.</span>
+                  {locale === "es" ? "Arquitectura agentica" : "Agentic Architecture"}
+                </p>
+                <div className="space-y-0.5">
+                  <a href="https://platform.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Agent SDK Overview</a>
+                  <a href="https://platform.claude.com/docs/en/agent-sdk/agent-loop" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Agent Loop Lifecycle</a>
+                  <a href="https://platform.claude.com/docs/en/agent-sdk/subagents" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Subagents & Coordinators</a>
+                  <a href="https://platform.claude.com/docs/en/agent-sdk/hooks" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">SDK Hooks</a>
                 </div>
-                <Separator />
-                {/* 5. Production */}
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
-                    <span className="text-primary mr-1">5.</span>
-                    {locale === "es" ? "Produccion — CI/CD y Batch" : "Production — CI/CD & Batch"}
-                  </p>
-                  <div className="space-y-1">
-                    <a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Headless Mode (-p, --output-format json)
-                    </a>
-                    <a href="https://platform.claude.com/docs/en/build-with-claude/batch-processing" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Message Batches API (50% savings)
-                    </a>
-                    <a href="https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Building Agents — Best Practices (Blog)
-                    </a>
-                    <a href="https://github.com/anthropics/claude-agent-sdk-python" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Agent SDK Python — Examples (GitHub)
-                    </a>
-                  </div>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
+                  <span className="text-primary mr-1">5.</span>
+                  {locale === "es" ? "Produccion" : "Production"}
+                </p>
+                <div className="space-y-0.5">
+                  <a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Headless Mode (CI/CD)</a>
+                  <a href="https://platform.claude.com/docs/en/build-with-claude/batch-processing" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Message Batches API</a>
+                  <a href="https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Building Agents (Blog)</a>
+                  <a href="https://github.com/anthropics/claude-agent-sdk-python" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Agent SDK Python (GitHub)</a>
                 </div>
-                <Separator />
-                {/* 6. Certification */}
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
-                    <span className="text-primary mr-1">6.</span>
-                    {locale === "es" ? "Certificacion" : "Certification"}
-                  </p>
-                  <div className="space-y-1">
-                    <a href="https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      {locale === "es" ? "Solicitar acceso al examen (Skilljar)" : "Request Exam Access (Skilljar)"}
-                    </a>
-                    <a href="https://www.anthropic.com/news/claude-partner-network" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">
-                      Claude Partner Network ($100M)
-                    </a>
-                  </div>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
+                  <span className="text-primary mr-1">6.</span>
+                  {locale === "es" ? "Certificacion" : "Certification"}
+                </p>
+                <div className="space-y-0.5">
+                  <a href="https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">{locale === "es" ? "Acceso al examen (Skilljar)" : "Exam Access (Skilljar)"}</a>
+                  <a href="https://www.anthropic.com/news/claude-partner-network" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Claude Partner Network</a>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Exam Mode */}
-          <div className="space-y-6">
-            <Card className="border-2 hover:border-primary/30 transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  📝 {t("exam.title", locale)}
-                </CardTitle>
-                <CardDescription>
-                  {t("exam.description", locale)}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-3 gap-3 text-center text-sm">
-                  <div className="bg-muted rounded-lg p-2.5">
-                    <p className="font-bold text-lg">{EXAM_QUESTION_COUNT}</p>
-                    <p className="text-xs text-muted-foreground">{t("exam.questions", locale)}</p>
-                  </div>
-                  <div className="bg-muted rounded-lg p-2.5">
-                    <p className="font-bold text-lg">90</p>
-                    <p className="text-xs text-muted-foreground">{t("exam.minutes", locale)}</p>
-                  </div>
-                  <div className="bg-muted rounded-lg p-2.5">
-                    <p className="font-bold text-lg">720</p>
-                    <p className="text-xs text-muted-foreground">{t("exam.minPass", locale)}</p>
-                  </div>
-                </div>
-                <Button className="w-full" size="lg" onClick={startExamMode}>
-                  {t("exam.start", locale)}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <ProgressDashboard progress={progress} locale={locale} />
-
-            {progress.questionsAnswered > 0 && (
+          {/* Card 2: Study Mode */}
+          <Card className="border-2 hover:border-primary/30 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                📖 {t("study.title", locale)}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {t("study.description", locale)}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => startStudyMode(null)}
+              >
+                {t("study.allDomains", locale)} ({questions.length} {t("study.questions", locale)})
+              </Button>
+              <Separator />
+              <p className="text-xs text-muted-foreground font-medium">{t("study.byDomain", locale)}</p>
+              <div className="grid gap-1.5">
+                {Object.entries(domainNames).map(([key, name]) => {
+                  const d = Number(key);
+                  const count = getQuestionsByDomain(d as 1 | 2 | 3 | 4 | 5).length;
+                  const weights: Record<number, number> = {
+                    1: 27, 2: 18, 3: 20, 4: 20, 5: 15,
+                  };
+                  return (
+                    <Button
+                      key={d}
+                      variant="ghost"
+                      className="justify-between h-auto py-1.5 px-3 text-left"
+                      onClick={() => startStudyMode(d)}
+                    >
+                      <span className="text-xs">
+                        D{d}: {name}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="secondary" className="text-[10px] px-1.5">
+                          {weights[d]}%
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px] px-1.5">
+                          {count}
+                        </Badge>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+              <Separator />
+              {/* Study Guide link */}
               <Button
                 variant="ghost"
-                size="sm"
-                className="w-full text-xs text-muted-foreground"
-                onClick={handleResetProgress}
+                className="w-full justify-between h-auto py-2 px-3 text-left"
+                onClick={() => setMode("guide")}
               >
-                {t("progress.reset", locale)}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Study Guide */}
-        <Card className="border-2 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => setMode("guide")}>
-          <CardContent className="pt-5 pb-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-base">
+                <span className="text-xs font-medium">
                   📚 {locale === "es" ? "Guia de estudio" : "Study Guide"}
-                </p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {locale === "es"
-                    ? "Conceptos clave, anti-patrones, trampas del examen y ejercicios practicos por dominio."
-                    : "Key concepts, anti-patterns, exam traps, and build exercises by domain."}
-                </p>
+                </span>
+                <span className="text-muted-foreground text-xs">→</span>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Card 3: Exam Mode */}
+          <Card className="border-2 hover:border-primary/30 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                📝 {t("exam.title", locale)}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {t("exam.description", locale)}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                <div className="bg-muted rounded-lg p-2">
+                  <p className="font-bold text-lg">{EXAM_QUESTION_COUNT}</p>
+                  <p className="text-[10px] text-muted-foreground">{t("exam.questions", locale)}</p>
+                </div>
+                <div className="bg-muted rounded-lg p-2">
+                  <p className="font-bold text-lg">90</p>
+                  <p className="text-[10px] text-muted-foreground">{t("exam.minutes", locale)}</p>
+                </div>
+                <div className="bg-muted rounded-lg p-2">
+                  <p className="font-bold text-lg">720</p>
+                  <p className="text-[10px] text-muted-foreground">{t("exam.minPass", locale)}</p>
+                </div>
               </div>
-              <span className="text-muted-foreground text-lg">→</span>
-            </div>
-          </CardContent>
-        </Card>
+              <Button className="w-full" size="lg" onClick={startExamMode}>
+                {t("exam.start", locale)}
+              </Button>
+              <Separator />
+              <ProgressDashboard progress={progress} locale={locale} embedded />
+              {progress.questionsAnswered > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs text-muted-foreground"
+                  onClick={handleResetProgress}
+                >
+                  {t("progress.reset", locale)}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Info */}
         <Card>
