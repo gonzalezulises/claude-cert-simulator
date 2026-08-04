@@ -25,8 +25,10 @@ jobs:
       - run: npm ci
       # Sin red: la comprobación de enlaces depende de terceros y haría
       # que CI fallara por motivos ajenos al cambio. Se corre a mano.
-      - run: npm run verificar -- --sin-red
+      # Después del build: la comprobación más fuerte se hace sobre el HTML
+      # ya compilado, así que necesita out/ generado.
       - run: npm run build
+      - run: npm run verificar -- --sin-red
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
