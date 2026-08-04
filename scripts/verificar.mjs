@@ -149,6 +149,15 @@ seccion('Plano de contenido (dominios y pesos)');
         `${GUIA.preguntas} (los que anuncia la ficha)`,
         `${entregables} — ${cortos.join('; ')}`,
       );
+
+  // La portada anuncia un total de preguntas. Si el banco crece y la cifra se
+  // queda quieta, la página miente sobre sí misma.
+  const nEstudio = (leer('src/data/questions.ts').match(/^\s{4}id: "D\d-\d+",$/gm) || []).length;
+  const total = nEstudio + nExamen;
+  const anunciado = Number(leer('src/lib/i18n.ts').match(/es:\s*"(\d+) preguntas basadas/)?.[1]);
+  total === anunciado
+    ? ok('el total anunciado coincide con el banco', `${total} preguntas`)
+    : mal('total de preguntas anunciado', `${total} (${nEstudio} estudio + ${nExamen} examen)`, `${anunciado}`);
 }
 
 /* ─────────────────────────────────────────────────────────────

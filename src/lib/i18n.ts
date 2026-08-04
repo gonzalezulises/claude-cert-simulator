@@ -6,8 +6,8 @@ const translations = {
   "menu.title": { es: "Claude Certified Architect", en: "Claude Certified Architect" },
   "menu.subtitle": { es: "Simulador de certificación — Foundations", en: "Certification Simulator — Foundations" },
   "menu.description": {
-    es: "120 preguntas basadas en escenarios reales. 5 dominios. Modo estudio (60 preguntas) y modo examen (60 preguntas distintas) para evaluar tu preparación.",
-    en: "120 scenario-based questions. 5 domains. Study mode (60 questions) and exam mode (60 different questions) to test your readiness.",
+    es: "124 preguntas basadas en escenarios reales. 5 dominios. Modo estudio (60 preguntas) y modo examen (60 ítems distintos, sorteados según el peso oficial de cada dominio) para evaluar tu preparación.",
+    en: "124 scenario-based questions. 5 domains. Study mode (60 questions) and exam mode (60 different items, drawn by official domain weight) to test your readiness.",
   },
 
   // Study mode
