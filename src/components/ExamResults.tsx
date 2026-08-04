@@ -88,9 +88,9 @@ export default function ExamResultsView({
                 value={ds.percentage}
                 className={cn(
                   "h-2.5",
-                  ds.percentage >= 72 ? "[&>div]:bg-success" :
-                  ds.percentage >= 50 ? "[&>div]:bg-warning" :
-                  "[&>div]:bg-destructive"
+                  ds.percentage >= 72 ? "[&_[data-slot=progress-indicator]]:bg-success" :
+                  ds.percentage >= 50 ? "[&_[data-slot=progress-indicator]]:bg-warning" :
+                  "[&_[data-slot=progress-indicator]]:bg-destructive"
                 )}
               />
             </div>

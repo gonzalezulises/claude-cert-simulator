@@ -25,6 +25,7 @@ import ExamResultsView from "./ExamResults";
 import Timer from "./Timer";
 import ProgressDashboard from "./ProgressDashboard";
 import LanguageToggle from "./LanguageToggle";
+import ThemeToggle from "./ThemeToggle";
 import StudyGuide from "./StudyGuide";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,8 +34,8 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-const EXAM_TIME_LIMIT = 90 * 60;
-const EXAM_QUESTION_COUNT = 30;
+const EXAM_TIME_LIMIT = 120 * 60;
+const EXAM_QUESTION_COUNT = 60;
 
 function shuffleArray<T>(arr: T[]): T[] {
   const shuffled = [...arr];
@@ -221,9 +222,10 @@ export default function Simulator() {
   if (mode === "menu") {
     return (
       <div ref={topRef} className="space-y-8">
-        {/* Language toggle */}
-        <div className="flex justify-end">
+        {/* Idioma y tema */}
+        <div className="flex justify-end items-center gap-2">
           <LanguageToggle locale={locale} onChange={handleLocaleChange} />
+          <ThemeToggle locale={locale} />
         </div>
 
         {/* Hero */}
@@ -252,7 +254,7 @@ export default function Simulator() {
               </CardTitle>
               <CardDescription className="text-xs">
                 {locale === "es"
-                  ? "Documentacion oficial ordenada por flujo de aprendizaje"
+                  ? "Documentación oficial ordenada por flujo de aprendizaje"
                   : "Official docs ordered by learning flow"}
               </CardDescription>
             </CardHeader>
@@ -285,7 +287,7 @@ export default function Simulator() {
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
                   <span className="text-primary mr-1">3.</span>
-                  {locale === "es" ? "Configuracion" : "Configuration"}
+                  {locale === "es" ? "Configuración" : "Configuration"}
                 </p>
                 <div className="space-y-0.5">
                   <a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">CLAUDE.md & Memory</a>
@@ -297,25 +299,25 @@ export default function Simulator() {
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
                   <span className="text-primary mr-1">4.</span>
-                  {locale === "es" ? "Arquitectura agentica" : "Agentic Architecture"}
+                  {locale === "es" ? "Arquitectura agéntica" : "Agentic Architecture"}
                 </p>
                 <div className="space-y-0.5">
-                  <a href="https://platform.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Agent SDK Overview</a>
-                  <a href="https://platform.claude.com/docs/en/agent-sdk/agent-loop" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Agent Loop Lifecycle</a>
-                  <a href="https://platform.claude.com/docs/en/agent-sdk/subagents" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Subagents & Coordinators</a>
-                  <a href="https://platform.claude.com/docs/en/agent-sdk/hooks" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">SDK Hooks</a>
+                  <a href="https://code.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Agent SDK Overview</a>
+                  <a href="https://code.claude.com/docs/en/agent-sdk/agent-loop" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Agent Loop Lifecycle</a>
+                  <a href="https://code.claude.com/docs/en/agent-sdk/subagents" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Subagents & Coordinators</a>
+                  <a href="https://code.claude.com/docs/en/agent-sdk/hooks" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">SDK Hooks</a>
                 </div>
               </div>
               <Separator />
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
                   <span className="text-primary mr-1">5.</span>
-                  {locale === "es" ? "Produccion" : "Production"}
+                  {locale === "es" ? "Producción" : "Production"}
                 </p>
                 <div className="space-y-0.5">
                   <a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Headless Mode (CI/CD)</a>
                   <a href="https://platform.claude.com/docs/en/build-with-claude/batch-processing" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Message Batches API</a>
-                  <a href="https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Building Agents (Blog)</a>
+                  <a href="https://claude.com/blog/building-agents-with-the-claude-agent-sdk" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Building Agents (Blog)</a>
                   <a href="https://github.com/anthropics/claude-agent-sdk-python" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Agent SDK Python (GitHub)</a>
                 </div>
               </div>
@@ -323,10 +325,10 @@ export default function Simulator() {
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
                   <span className="text-primary mr-1">6.</span>
-                  {locale === "es" ? "Certificacion" : "Certification"}
+                  {locale === "es" ? "Certificación" : "Certification"}
                 </p>
                 <div className="space-y-0.5">
-                  <a href="https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">{locale === "es" ? "Acceso al examen (Skilljar)" : "Exam Access (Skilljar)"}</a>
+                  <a href="https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">{locale === "es" ? "Inscripción al examen (Skilljar)" : "Exam Access (Skilljar)"}</a>
                   <a href="https://www.anthropic.com/news/claude-partner-network" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Claude Partner Network</a>
                 </div>
               </div>
@@ -390,7 +392,7 @@ export default function Simulator() {
                 onClick={() => setMode("guide")}
               >
                 <span className="text-xs font-medium">
-                  📚 {locale === "es" ? "Guia de estudio" : "Study Guide"}
+                  📚 {locale === "es" ? "Guía de estudio" : "Study Guide"}
                 </span>
                 <span className="text-muted-foreground text-xs">→</span>
               </Button>
@@ -414,7 +416,7 @@ export default function Simulator() {
                   <p className="text-[10px] text-muted-foreground">{t("exam.questions", locale)}</p>
                 </div>
                 <div className="bg-muted rounded-lg p-2">
-                  <p className="font-bold text-lg">90</p>
+                  <p className="font-bold text-lg">120</p>
                   <p className="text-[10px] text-muted-foreground">{t("exam.minutes", locale)}</p>
                 </div>
                 <div className="bg-muted rounded-lg p-2">
@@ -508,6 +510,7 @@ export default function Simulator() {
           </div>
           <div className="flex items-center gap-3">
             <LanguageToggle locale={locale} onChange={handleLocaleChange} />
+            <ThemeToggle locale={locale} />
             {mode === "exam" ? (
               <Timer
                 startTime={startTime}

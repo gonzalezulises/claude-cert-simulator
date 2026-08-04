@@ -85,8 +85,8 @@ export const studyGuide: DomainGuide[] = [
     buildExercise: "Build a coordinator agent with two subagents (web search and document analysis), proper context passing with structured metadata, a programmatic prerequisite gate blocking refunds before customer verification, and a PostToolUse normalization hook converting timestamps to ISO 8601. Test with a multi-concern request.",
     buildExerciseEs: "Construir un agente coordinador con dos subagentes (busqueda web y analisis de documentos), paso de contexto con metadata estructurada, un prerequisite gate programatico que bloquee reembolsos antes de verificacion de cliente, y un hook PostToolUse que normalice timestamps a ISO 8601. Probar con un request multi-concern.",
     resources: [
-      { title: "Agent SDK Overview", url: "https://platform.claude.com/docs/en/agent-sdk/overview" },
-      { title: "Building Agents with Claude Agent SDK", url: "https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk" },
+      { title: "Agent SDK Overview", url: "https://code.claude.com/docs/en/agent-sdk/overview" },
+      { title: "Building Agents with Claude Agent SDK", url: "https://claude.com/blog/building-agents-with-the-claude-agent-sdk" },
       { title: "Agent SDK Python Examples", url: "https://github.com/anthropics/claude-agent-sdk-python" },
     ],
   },
@@ -283,7 +283,7 @@ export const studyGuide: DomainGuide[] = [
     buildExercise: "Create an extraction tool with JSON schema (required, optional, nullable fields, enums with 'other' + detail). Implement validation-retry loop. Process 10 documents with few-shot examples for varied formats. Run a batch through the Batches API. Handle failures by custom_id.",
     buildExerciseEs: "Crear un tool de extraccion con JSON schema (campos required, optional, nullable, enums con 'other' + detalle). Implementar loop de validation-retry. Procesar 10 documentos con few-shot examples para formatos variados. Ejecutar un batch a traves del Batches API. Manejar fallos por custom_id.",
     resources: [
-      { title: "Prompt Engineering Best Practices", url: "https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/overview" },
+      { title: "Prompt Engineering Best Practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview" },
       { title: "Tool Use Documentation", url: "https://platform.claude.com/docs/en/release-notes/overview" },
     ],
   },
@@ -352,9 +352,9 @@ export const studyGuide: DomainGuide[] = [
     buildExercise: "Build a coordinator with two subagents. Implement persistent case facts block. Simulate a timeout with structured error propagation (failure type, attempted query, partial results). Test with conflicting sources and verify synthesis preserves both values with attribution.",
     buildExerciseEs: "Construir un coordinador con dos subagentes. Implementar bloque persistente de case facts. Simular un timeout con propagacion de error estructurado (tipo de fallo, query intentado, resultados parciales). Probar con fuentes conflictivas y verificar que la sintesis preserva ambos valores con atribucion.",
     resources: [
-      { title: "Building Agents with Claude Agent SDK", url: "https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk" },
-      { title: "Agent SDK Session Docs", url: "https://platform.claude.com/docs/en/agent-sdk/overview" },
-      { title: "Everything Claude Code Repo", url: "https://github.com/affaan-m/everything-claude-code" },
+      { title: "Building Agents with Claude Agent SDK", url: "https://claude.com/blog/building-agents-with-the-claude-agent-sdk" },
+      { title: "Agent SDK Session Docs", url: "https://code.claude.com/docs/en/agent-sdk/overview" },
+      { title: "Everything Claude Code Repo", url: "https://github.com/affaan-m/ECC" },
     ],
   },
 ];

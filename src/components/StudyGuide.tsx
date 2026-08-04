@@ -153,13 +153,13 @@ export default function StudyGuide({ locale, onBack }: StudyGuideProps) {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={onBack}>
-          ← Menu
+          {isEs ? "← Menú" : "← Menu"}
         </Button>
       </div>
 
       <div>
         <h2 className="text-2xl font-bold">
-          {isEs ? "Guia de estudio" : "Study Guide"}
+          {isEs ? "Guía de estudio" : "Study Guide"}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
           {isEs

@@ -20,9 +20,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
+      # Sin red: la comprobación de enlaces depende de terceros y haría
+      # que CI fallara por motivos ajenos al cambio. Se corre a mano.
+      - run: npm run verificar -- --sin-red
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

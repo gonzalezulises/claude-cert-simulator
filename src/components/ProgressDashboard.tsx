@@ -34,9 +34,9 @@ export default function ProgressDashboard({ progress, locale, embedded }: Progre
           value={overallPct}
           className={cn(
             "h-1.5",
-            overallPct >= 72 ? "[&>div]:bg-success" :
-            overallPct >= 50 ? "[&>div]:bg-warning" :
-            "[&>div]:bg-destructive"
+            overallPct >= 72 ? "[&_[data-slot=progress-indicator]]:bg-success" :
+            overallPct >= 50 ? "[&_[data-slot=progress-indicator]]:bg-warning" :
+            "[&_[data-slot=progress-indicator]]:bg-destructive"
           )}
         />
       </div>
@@ -57,9 +57,9 @@ export default function ProgressDashboard({ progress, locale, embedded }: Progre
               value={pct}
               className={cn(
                 "h-1",
-                pct >= 72 ? "[&>div]:bg-success" :
-                pct >= 50 ? "[&>div]:bg-warning" :
-                "[&>div]:bg-destructive"
+                pct >= 72 ? "[&_[data-slot=progress-indicator]]:bg-success" :
+                pct >= 50 ? "[&_[data-slot=progress-indicator]]:bg-warning" :
+                "[&_[data-slot=progress-indicator]]:bg-destructive"
               )}
             />
           </div>

@@ -6,7 +6,7 @@
 import { Question } from "./questions";
 
 // ============================================================
-// DOMAIN 1 – Agentic Architecture & Orchestration (12 questions)
+// DOMAIN 1 – Agentic Architecture & Orchestration (16 questions: pesa 27 %)
 // ============================================================
 
 const examDomain1Questions: Question[] = [
@@ -39,7 +39,7 @@ const examDomain1Questions: Question[] = [
     ],
     correctAnswer: "B",
     explanation:
-      "`error_max_turns` is a ResultMessage subtype indicating the agentic run hit the configured maximum turn count (not a token limit or network failure). The task did not complete. The correct response is to inspect what was accomplished, potentially raise the turn limit, or redesign the workflow to complete in fewer steps. It is distinct from `error_max_budget_usd` (cost limit) and `error_during_execution` (runtime exception).\n\nHow to implement:\n```typescript\n// Handling error_max_turns in a Node.js orchestration loop\nimport Anthropic from \"@anthropic-ai/sdk\";\n\nconst client = new Anthropic();\n\nasync function runWithRetry(prompt: string, maxTurns = 20) {\n  const result = await client.beta.messages.create({\n    model: \"claude-opus-4-6\",\n    max_tokens: 4096,\n    // @ts-ignore – SDK typings may vary\n    max_turns: maxTurns,\n    messages: [{ role: \"user\", content: prompt }],\n  });\n\n  if (result.stop_reason === \"error_max_turns\") {\n    console.warn(`Agent hit turn limit (${maxTurns}). Inspecting transcript…`);\n    // Inspect last assistant message to find partial progress\n    const lastMsg = result.messages?.at(-1);\n    console.log(\"Last message:\", lastMsg?.content);\n    // Retry with a higher limit or redesigned workflow\n    return runWithRetry(prompt, maxTurns * 2);\n  }\n\n  return result;\n}\n```\n\nTo raise the turn limit via the CLI:\n```bash\nclaude --max-turns 50 \"Analyze all 200 documents and produce a summary\"\n```",
+      "`error_max_turns` is a ResultMessage subtype indicating the agentic run hit the configured maximum turn count (not a token limit or network failure). The task did not complete. The correct response is to inspect what was accomplished, potentially raise the turn limit, or redesign the workflow to complete in fewer steps. It is distinct from `error_max_budget_usd` (cost limit) and `error_during_execution` (runtime exception).\n\nHow to implement:\n```typescript\n// Handling error_max_turns in a Node.js orchestration loop\nimport Anthropic from \"@anthropic-ai/sdk\";\n\nconst client = new Anthropic();\n\nasync function runWithRetry(prompt: string, maxTurns = 20) {\n  const result = await client.beta.messages.create({\n    model: \"claude-opus-5\",\n    max_tokens: 4096,\n    // @ts-ignore – SDK typings may vary\n    max_turns: maxTurns,\n    messages: [{ role: \"user\", content: prompt }],\n  });\n\n  if (result.stop_reason === \"error_max_turns\") {\n    console.warn(`Agent hit turn limit (${maxTurns}). Inspecting transcript…`);\n    // Inspect last assistant message to find partial progress\n    const lastMsg = result.messages?.at(-1);\n    console.log(\"Last message:\", lastMsg?.content);\n    // Retry with a higher limit or redesigned workflow\n    return runWithRetry(prompt, maxTurns * 2);\n  }\n\n  return result;\n}\n```\n\nTo raise the turn limit via the CLI:\n```bash\nclaude --max-turns 50 \"Analyze all 200 documents and produce a summary\"\n```",
     keyConcept: "ResultMessage subtypes: error_max_turns vs other error subtypes",
   },
   {
@@ -379,8 +379,136 @@ const examDomain1Questions: Question[] = [
     ],
     correctAnswer: "C",
     explanation:
-      "The `effort` parameter controls how much internal reasoning and exploration the model performs. `low` is appropriate for straightforward tasks like summarizing short documents where the overhead of extended reasoning would waste tokens and money. `max` is for highly complex tasks requiring deep analysis. `high` is for production tasks needing thorough reasoning. `medium` is a sensible default but not optimal for explicitly simple, cost-sensitive work.\n\nHow to implement:\n```bash\n# CLI: set effort level for a non-interactive run\nclaude --effort low --output-format stream-json \\\n  \"Summarize each of these 10 documents in 2 sentences\"\n\n# For complex architectural analysis, use max\nclaude --effort max \\\n  \"Analyze this codebase for security vulnerabilities and suggest fixes\"\n```\n\n```typescript\n// SDK: effort parameter in API call\nconst result = await client.messages.create({\n  model: \"claude-opus-4-6\",\n  max_tokens: 1024,\n  thinking: { type: \"enabled\", budget_tokens: 500 }, // low effort = low budget\n  messages: [{ role: \"user\", content: \"Summarize this document: ...\" }],\n});\n\n// effort: \"max\" maps to higher thinking budget\nconst complexResult = await client.messages.create({\n  model: \"claude-opus-4-6\",\n  max_tokens: 4096,\n  thinking: { type: \"enabled\", budget_tokens: 10000 }, // max effort\n  messages: [{ role: \"user\", content: \"Deeply analyze this architecture...\" }],\n});\n```",
+      "The `effort` parameter controls how much internal reasoning and exploration the model performs. `low` is appropriate for straightforward tasks like summarizing short documents where the overhead of extended reasoning would waste tokens and money. `max` is for highly complex tasks requiring deep analysis. `high` is for production tasks needing thorough reasoning. `medium` is a sensible default but not optimal for explicitly simple, cost-sensitive work.\n\nHow to implement:\n```bash\n# CLI: set effort level for a non-interactive run\nclaude --effort low --output-format stream-json \\\n  \"Summarize each of these 10 documents in 2 sentences\"\n\n# For complex architectural analysis, use max\nclaude --effort max \\\n  \"Analyze this codebase for security vulnerabilities and suggest fixes\"\n```\n\n```typescript\n// SDK: effort parameter in API call\nconst result = await client.messages.create({\n  model: \"claude-opus-5\",\n  max_tokens: 1024,\n  thinking: { type: \"adaptive\" },\n  output_config: { effort: \"low\" }, // simple, cost-sensitive work\n  messages: [{ role: \"user\", content: \"Summarize this document: ...\" }],\n});\n\n// The same call at the other end of the scale\nconst complexResult = await client.messages.create({\n  model: \"claude-opus-5\",\n  max_tokens: 4096,\n  thinking: { type: \"adaptive\" },\n  output_config: { effort: \"max\" }, // correctness matters more than cost\n  messages: [{ role: \"user\", content: \"Deeply analyze this architecture...\" }],\n});\n\n// Note: a fixed thinking budget (thinking: { type: \"enabled\", budget_tokens: N })\n// is rejected with a 400 on current models. Effort replaced it.\n```",
     keyConcept: "Effort levels: low for simple cost-sensitive tasks, max for complex deep reasoning",
+  },
+  {
+    id: "E1-013",
+    scenario: "Claude Code for Continuous Integration",
+    domain: 1,
+    domainName: "Agentic Architecture & Orchestration",
+    taskStatement: "1.4",
+    difficulty: "intermediate",
+    question:
+      "A CI pipeline runs Claude Code to review pull requests. The system prompt says the agent must run the test suite before posting any review comment, but roughly one run in twenty posts the comment first. The team needs the ordering to hold every time. What should they implement?",
+    options: [
+      {
+        id: "A",
+        text: "Rewrite the system prompt with stronger language — \"CRITICAL: you MUST run tests before commenting\" — and add the rule to CLAUDE.md as well",
+      },
+      {
+        id: "B",
+        text: "A PreToolUse hook that blocks the comment-posting tool until the test-run tool has completed successfully in this session",
+      },
+      {
+        id: "C",
+        text: "Lower the effort level so the model follows the instruction more literally and stops improvising",
+      },
+      {
+        id: "D",
+        text: "Give the agent a single combined tool that runs the tests and posts the comment in one call",
+      },
+    ],
+    correctAnswer: "B",
+    explanation:
+      "When compliance has to be deterministic, prompt instructions are the wrong layer. A prompt is a probabilistic instruction to the model: it has a non-zero failure rate, which is exactly the one-in-twenty being observed. A PreToolUse hook is application code — it inspects the pending tool call and refuses it unless the prerequisite is satisfied, so the failure rate is zero by construction.\n\nOption A escalates the wording but not the mechanism, and stronger language tends to overtrigger elsewhere without closing this gap. Option C confuses effort with obedience: effort tunes reasoning depth, not rule-following, and lowering it makes the agent scope work more narrowly, not follow ordering rules more faithfully. Option D would work but throws away the ability to run tests without commenting, and hides the failure — if the tests fail, the combined tool still has to decide what to post.\n\nThe rule of thumb: prompt-based guidance for preferences, programmatic gates for guarantees.\n\nHow to implement:\n```typescript\nconst estado = { pruebasVerdes: false };\n\nconst hooks = {\n  PreToolUse: async ({ toolName }) => {\n    if (toolName === \"post_review_comment\" && !estado.pruebasVerdes) {\n      return {\n        decision: \"deny\",\n        reason: \"Run the test suite first — post_review_comment is gated on a green run.\",\n      };\n    }\n  },\n  PostToolUse: async ({ toolName, result }) => {\n    if (toolName === \"run_tests\") estado.pruebasVerdes = result.exitCode === 0;\n  },\n};\n```",
+    keyConcept: "Prompt for preferences, hooks for guarantees: a prerequisite gate belongs in code",
+  },
+  {
+    id: "E1-014",
+    scenario: "Structured Data Extraction",
+    domain: 1,
+    domainName: "Agentic Architecture & Orchestration",
+    taskStatement: "1.5",
+    difficulty: "intermediate",
+    question:
+      "An extraction agent pulls records from three MCP servers. One returns dates as Unix timestamps, another as ISO 8601 strings, and the third as DD/MM/YYYY. The agent keeps ordering records wrongly because it compares the three formats as if they were the same. What is the most reliable fix?",
+    options: [
+      {
+        id: "A",
+        text: "A PostToolUse hook that normalizes every date field to ISO 8601 before the tool result reaches the model",
+      },
+      {
+        id: "B",
+        text: "Describe all three formats in the system prompt and instruct the model to convert them before comparing",
+      },
+      {
+        id: "C",
+        text: "Raise the effort level so the model reasons more carefully about each date",
+      },
+      {
+        id: "D",
+        text: "Ask the owners of the three MCP servers to agree on a single date format",
+      },
+    ],
+    correctAnswer: "A",
+    explanation:
+      "PostToolUse hooks intercept a tool result on its way back and can transform it before the model ever sees it. Normalizing the three formats there means the model receives one consistent shape and the comparison stops being a reasoning problem at all — it becomes a data problem, solved once, in code.\n\nOption B moves a mechanical conversion into the model's reasoning, where it costs tokens on every record and still fails sometimes. Option C is the same bet with a bigger budget: more reasoning does not make an unreliable step reliable. Option D is the cleanest solution in principle and the least available in practice — you rarely control three third-party servers, and even when you do, the change lands on their release schedule, not yours. Normalize at your boundary.\n\nHow to implement:\n```typescript\nconst aISO = (v: unknown): string | unknown => {\n  if (typeof v === \"number\") return new Date(v * 1000).toISOString();\n  if (typeof v === \"string\") {\n    const m = v.match(/^(\\d{2})\\/(\\d{2})\\/(\\d{4})$/);   // DD/MM/YYYY\n    if (m) return new Date(`${m[3]}-${m[2]}-${m[1]}`).toISOString();\n  }\n  return v;                                              // ya venía en ISO\n};\n\nconst hooks = {\n  PostToolUse: async ({ result }) => ({\n    ...result,\n    records: result.records.map((r) => ({ ...r, date: aISO(r.date) })),\n  }),\n};\n```",
+    keyConcept: "PostToolUse normaliza formatos heterogéneos antes de que el modelo los vea",
+  },
+  {
+    id: "E1-015",
+    scenario: "Code Generation with Claude Code",
+    domain: 1,
+    domainName: "Agentic Architecture & Orchestration",
+    taskStatement: "1.7",
+    difficulty: "intermediate",
+    question:
+      "Yesterday an engineer used a named session to analyze the payments module and agreed on a refactoring plan with the agent. Overnight a colleague rewrote most of that module. The engineer wants to continue the work today. What is the more reliable way to pick it up?",
+    options: [
+      {
+        id: "A",
+        text: "Resume the named session with --resume; the agent will notice the files changed and re-read them",
+      },
+      {
+        id: "B",
+        text: "Start a fresh session seeded with a structured summary of yesterday's conclusions, because the old session's tool results describe code that no longer exists",
+      },
+      {
+        id: "C",
+        text: "Use fork_session to branch from yesterday's session and work on the branch",
+      },
+      {
+        id: "D",
+        text: "Resume the session and raise the effort level so the agent double-checks every file before acting",
+      },
+    ],
+    correctAnswer: "B",
+    explanation:
+      "A resumed session carries its old tool results with it, and those results are file reads of code that has since been rewritten. The agent will reason over that stale content unless something forces it to re-read — and nothing does automatically. Starting fresh with a structured summary keeps the part that is still true (the conclusions and the plan) and drops the part that is not (the file contents).\n\nThe decision rule: resume when the prior context is mostly still valid; start fresh with an injected summary when the prior tool results have gone stale. Here the code changed underneath, so the tool results are exactly what you want to discard.\n\nOption A assumes a re-read that does not happen on its own. Option C is the right tool for a different job — fork_session branches from a shared baseline to explore divergent approaches, but a fork of a stale session is still stale. Option D pays for more reasoning over wrong inputs.\n\nHow to implement:\n```bash\n# Prior context still valid → resume\nclaude --resume analisis-pagos\n\n# Prior tool results stale → fresh session, conclusions carried over by hand\nclaude \"Retomamos el refactor de pagos. Contexto de la sesión anterior:\n- Conclusión: PaymentProcessor mezcla cobro y notificación.\n- Plan acordado: extraer NotificationService y dejar el cobro sin efectos.\n- Aviso: el módulo se reescribió anoche; léelo de nuevo antes de proponer nada.\"\n```",
+    keyConcept: "Reanudar arrastra resultados de herramienta viejos; con código cambiado, empezar de cero con un resumen",
+  },
+  {
+    id: "E1-016",
+    scenario: "Structured Data Extraction",
+    domain: 1,
+    domainName: "Agentic Architecture & Orchestration",
+    taskStatement: "1.2",
+    difficulty: "advanced",
+    question:
+      "An extraction pipeline uses a coordinator with two subagents: one parses documents, one validates the parsed output against a schema. The team proposes letting the validator read the parser's results directly, arguing that routing everything through the coordinator is a pointless hop. What is the strongest argument for keeping the coordinator in the middle?",
+    options: [
+      {
+        id: "A",
+        text: "Subagents cannot exchange information under any circumstances, so there is no alternative design",
+      },
+      {
+        id: "B",
+        text: "Subagents do not inherit each other's context, so the coordinator has to pass the parser's output explicitly anyway — and routing through it puts observability, error handling, and information flow in one place",
+      },
+      {
+        id: "C",
+        text: "The coordinator caches subagent results, so a direct hop would re-run the parser on every validation",
+      },
+      {
+        id: "D",
+        text: "The two subagents share one context window, so a direct exchange would double-count tokens",
+      },
+    ],
+    correctAnswer: "B",
+    explanation:
+      "Hub-and-spoke is not ceremony. Each subagent runs with isolated context — it does not automatically inherit the coordinator's conversation history or any sibling's output — so whatever the validator needs has to be placed in its prompt by whoever invokes it. That is already the coordinator's job. Once it is doing that, routing the rest through it too is free, and it buys a single place to see what was passed, to catch and classify failures, and to decide what information is allowed to flow where.\n\nOption A overstates the constraint: you can design direct handoffs, they are just harder to observe and to recover from. Options C and D invent mechanics — the coordinator is not a cache, and subagents do not share a context window; the isolation is the whole point of the pattern.\n\nHow to implement:\n```typescript\n// El coordinador pasa explícitamente lo que el validador necesita:\n// el subagente no ve nada de la conversación anterior.\nconst analizado = await Task({\n  subagent_type: \"parser\",\n  prompt: `Extrae los campos de este documento y devuélvelos como JSON.\\n\\n${documento}`,\n});\n\nconst validado = await Task({\n  subagent_type: \"validator\",\n  prompt: `Valida este JSON contra el esquema.\\n\\nJSON:\\n${analizado}\\n\\nEsquema:\\n${esquema}`,\n});\n```",
+    keyConcept: "Los subagentes no heredan contexto: el coordinador ya tiene que pasarlo, y de paso centraliza observabilidad y errores",
   },
 ];
 
@@ -642,7 +770,7 @@ const examDomain2Questions: Question[] = [
     ],
     correctAnswer: "B",
     explanation:
-      "`strict: true` on a tool definition enables constrained decoding: the model's token generation is constrained to only produce outputs that are valid against the JSON schema. This is a strong runtime guarantee of schema compliance. However, it comes with schema limitations: all object properties must be listed in `required`, `additionalProperties` must be `false`, and combiners like `allOf`, `anyOf`, `oneOf` are not supported. Features like `minimum`/`maximum`, `minLength`, `maxLength`, `pattern`, and `const` are also unavailable in strict mode.\n\nHow to implement:\n```python\nimport anthropic\n\nclient = anthropic.Anthropic()\n\n# Tool with strict: True — constrained decoding guarantees schema compliance\nresponse = client.messages.create(\n    model=\"claude-opus-4-6\",\n    max_tokens=1024,\n    tools=[{\n        \"name\": \"extract_order\",\n        \"description\": \"Extract order details from text\",\n        \"strict\": True,  # Enable constrained decoding\n        \"input_schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"order_id\": {\"type\": \"string\"},\n                \"total\": {\"type\": \"number\"},\n                \"status\": {\"type\": \"string\", \"enum\": [\"pending\", \"shipped\", \"delivered\"]}\n            },\n            \"required\": [\"order_id\", \"total\", \"status\"],  # ALL properties must be required\n            \"additionalProperties\": False  # REQUIRED in strict mode\n        }\n    }],\n    messages=[{\"role\": \"user\", \"content\": \"Extract: Order #1234, $59.99, shipped\"}]\n)\n```\n\n```typescript\n// TypeScript equivalent\nconst response = await client.messages.create({\n  model: \"claude-opus-4-6\",\n  max_tokens: 1024,\n  tools: [{\n    name: \"extract_order\",\n    strict: true,\n    input_schema: {\n      type: \"object\" as const,\n      properties: {\n        order_id: { type: \"string\" },\n        total: { type: \"number\" },\n        status: { type: \"string\", enum: [\"pending\", \"shipped\", \"delivered\"] },\n      },\n      required: [\"order_id\", \"total\", \"status\"],\n      additionalProperties: false,\n    },\n  }],\n  messages: [{ role: \"user\", content: \"Extract order details...\" }],\n});\n```",
+      "`strict: true` on a tool definition enables constrained decoding: the model's token generation is constrained to only produce outputs that are valid against the JSON schema. This is a strong runtime guarantee of schema compliance. However, it comes with schema limitations: all object properties must be listed in `required`, `additionalProperties` must be `false`, and combiners like `allOf`, `anyOf`, `oneOf` are not supported. Features like `minimum`/`maximum`, `minLength`, `maxLength`, `pattern`, and `const` are also unavailable in strict mode.\n\nHow to implement:\n```python\nimport anthropic\n\nclient = anthropic.Anthropic()\n\n# Tool with strict: True — constrained decoding guarantees schema compliance\nresponse = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    tools=[{\n        \"name\": \"extract_order\",\n        \"description\": \"Extract order details from text\",\n        \"strict\": True,  # Enable constrained decoding\n        \"input_schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"order_id\": {\"type\": \"string\"},\n                \"total\": {\"type\": \"number\"},\n                \"status\": {\"type\": \"string\", \"enum\": [\"pending\", \"shipped\", \"delivered\"]}\n            },\n            \"required\": [\"order_id\", \"total\", \"status\"],  # ALL properties must be required\n            \"additionalProperties\": False  # REQUIRED in strict mode\n        }\n    }],\n    messages=[{\"role\": \"user\", \"content\": \"Extract: Order #1234, $59.99, shipped\"}]\n)\n```\n\n```typescript\n// TypeScript equivalent\nconst response = await client.messages.create({\n  model: \"claude-opus-5\",\n  max_tokens: 1024,\n  tools: [{\n    name: \"extract_order\",\n    strict: true,\n    input_schema: {\n      type: \"object\" as const,\n      properties: {\n        order_id: { type: \"string\" },\n        total: { type: \"number\" },\n        status: { type: \"string\", enum: [\"pending\", \"shipped\", \"delivered\"] },\n      },\n      required: [\"order_id\", \"total\", \"status\"],\n      additionalProperties: false,\n    },\n  }],\n  messages: [{ role: \"user\", content: \"Extract order details...\" }],\n});\n```",
     keyConcept: "strict: true enables constrained decoding with specific schema limitations",
   },
   {
@@ -738,7 +866,7 @@ const examDomain2Questions: Question[] = [
     ],
     correctAnswer: "B",
     explanation:
-      "ToolSearch is a retrieval mechanism that selects the most contextually relevant tools from the full registry and includes only those schemas in a given request. This reduces (but does not eliminate) schema context consumption. A baseline set of tool descriptions is still needed to enable the search itself. ToolSearch works independently of transport type (stdio vs HTTP). There is no universal JSON input tool that replaces all schemas.\n\nHow to implement:\n```bash\n# Enable ToolSearch to reduce per-request tool schema overhead\nexport ENABLE_TOOL_SEARCH=1\n\n# With 8 servers × 12 tools = 96 tool schemas\n# Without ToolSearch: all 96 schemas in every request\n# With ToolSearch: only ~10 most relevant schemas per request\n\nclaude \"Query the user database for active accounts created this month\"\n# ToolSearch selects: query_database, list_tables, get_schema\n# Excludes: file_ops, git_tools, email_sender, etc.\n```\n\n```typescript\n// Monitor token usage with and without ToolSearch\nconst withoutToolSearch = await client.messages.create({\n  model: \"claude-opus-4-6\",\n  tools: allTools, // All 96 tools\n  messages: [{ role: \"user\", content: \"Query the database\" }],\n  max_tokens: 1024,\n});\nconsole.log(\"Input tokens without ToolSearch:\", withoutToolSearch.usage.input_tokens);\n\n// With ToolSearch (ENABLE_TOOL_SEARCH=1), Claude Code automatically\n// reduces the active tool set. The baseline overhead remains for the\n// search index itself, but full schemas are only sent for relevant tools.\n```",
+      "ToolSearch is a retrieval mechanism that selects the most contextually relevant tools from the full registry and includes only those schemas in a given request. This reduces (but does not eliminate) schema context consumption. A baseline set of tool descriptions is still needed to enable the search itself. ToolSearch works independently of transport type (stdio vs HTTP). There is no universal JSON input tool that replaces all schemas.\n\nHow to implement:\n```bash\n# Enable ToolSearch to reduce per-request tool schema overhead\nexport ENABLE_TOOL_SEARCH=1\n\n# With 8 servers × 12 tools = 96 tool schemas\n# Without ToolSearch: all 96 schemas in every request\n# With ToolSearch: only ~10 most relevant schemas per request\n\nclaude \"Query the user database for active accounts created this month\"\n# ToolSearch selects: query_database, list_tables, get_schema\n# Excludes: file_ops, git_tools, email_sender, etc.\n```\n\n```typescript\n// Monitor token usage with and without ToolSearch\nconst withoutToolSearch = await client.messages.create({\n  model: \"claude-opus-5\",\n  tools: allTools, // All 96 tools\n  messages: [{ role: \"user\", content: \"Query the database\" }],\n  max_tokens: 1024,\n});\nconsole.log(\"Input tokens without ToolSearch:\", withoutToolSearch.usage.input_tokens);\n\n// With ToolSearch (ENABLE_TOOL_SEARCH=1), Claude Code automatically\n// reduces the active tool set. The baseline overhead remains for the\n// search index itself, but full schemas are only sent for relevant tools.\n```",
     keyConcept: "ToolSearch reduces but does not eliminate tool schema context consumption",
   },
   {
@@ -992,7 +1120,7 @@ const examDomain3Questions: Question[] = [
     ],
     correctAnswer: "B",
     explanation:
-      "`--allowedTools` creates an explicit whitelist of permitted tools for a Claude Code session. Any tool not listed — including built-in tools like Bash, Edit, and Write — is blocked. Claude will receive an error when attempting to use a denied tool and must reason about alternatives within the allowed set. There is no automatic substitution or bypass for built-in tools. This mechanism is used in CI to enforce the principle of least privilege.\n\nHow to implement:\n```bash\n# Read-only analysis — only allow read tools\nclaude --allowedTools Read,Grep,Glob \\\n  --output-format stream-json \\\n  \"Analyze code quality and report issues (no changes)\"\n\n# Allow specific operations needed for linting\nclaude --allowedTools Read,Grep,Glob,Edit,Bash \\\n  \"Run eslint --fix on all TypeScript files\"\n\n# Explicitly deny all tools except MCP server tools\nclaude --allowedTools \"mcp__my-server__query_db,mcp__my-server__list_tables\" \\\n  \"What tables exist and how many rows in each?\"\n```\n\n```typescript\n// SDK: specify allowed tools in the tools array directly\nconst result = await client.messages.create({\n  model: \"claude-opus-4-6\",\n  max_tokens: 2048,\n  // Only include tool definitions for tools you want to allow\n  tools: [\n    { name: \"Read\", description: \"Read file contents\", input_schema: {...} },\n    { name: \"Grep\", description: \"Search file contents\", input_schema: {...} },\n    // Bash, Edit, Write intentionally excluded\n  ],\n  messages: [{ role: \"user\", content: \"Analyze the codebase\" }],\n});\n```",
+      "`--allowedTools` creates an explicit whitelist of permitted tools for a Claude Code session. Any tool not listed — including built-in tools like Bash, Edit, and Write — is blocked. Claude will receive an error when attempting to use a denied tool and must reason about alternatives within the allowed set. There is no automatic substitution or bypass for built-in tools. This mechanism is used in CI to enforce the principle of least privilege.\n\nHow to implement:\n```bash\n# Read-only analysis — only allow read tools\nclaude --allowedTools Read,Grep,Glob \\\n  --output-format stream-json \\\n  \"Analyze code quality and report issues (no changes)\"\n\n# Allow specific operations needed for linting\nclaude --allowedTools Read,Grep,Glob,Edit,Bash \\\n  \"Run eslint --fix on all TypeScript files\"\n\n# Explicitly deny all tools except MCP server tools\nclaude --allowedTools \"mcp__my-server__query_db,mcp__my-server__list_tables\" \\\n  \"What tables exist and how many rows in each?\"\n```\n\n```typescript\n// SDK: specify allowed tools in the tools array directly\nconst result = await client.messages.create({\n  model: \"claude-opus-5\",\n  max_tokens: 2048,\n  // Only include tool definitions for tools you want to allow\n  tools: [\n    { name: \"Read\", description: \"Read file contents\", input_schema: {...} },\n    { name: \"Grep\", description: \"Search file contents\", input_schema: {...} },\n    // Bash, Edit, Write intentionally excluded\n  ],\n  messages: [{ role: \"user\", content: \"Analyze the codebase\" }],\n});\n```",
     keyConcept: "--allowedTools whitelist blocks any tool not explicitly permitted, including built-ins",
   },
   {
@@ -1103,7 +1231,7 @@ const examDomain3Questions: Question[] = [
     options: [
       {
         id: "A",
-        text: "`model: claude-sonnet-4-5` — specifying a model causes the skill to run in a separate API call",
+        text: "`model: claude-sonnet-5` — specifying a model causes the skill to run in a separate API call",
       },
       {
         id: "B",
@@ -1120,7 +1248,7 @@ const examDomain3Questions: Question[] = [
     ],
     correctAnswer: "B",
     explanation:
-      "`context: fork` in a skill's frontmatter causes the skill to execute in a new, isolated context window forked from the current session state. This is distinct from the default behavior of continuing in the same conversation context. It is useful for skills that need to do exploratory work without polluting the main conversation, or for skills that need a clean context for accurate reasoning. `model:` specifies which model to use, not whether to fork. `agent: true` marks the skill as an agent but does not imply context forking.\n\nHow to implement:\n```markdown\n---\ncontext: fork\nuser-invocable: true\nmodel: claude-sonnet-4-5\ndescription: \"Explore refactoring options without affecting main session\"\n---\n\n# explore-refactor\n\nYou are exploring (not implementing) a refactoring strategy for $ARGUMENTS.\n\n1. Read the target files\n2. Draft 3 different refactoring approaches with trade-offs\n3. Return your recommendation summary to the parent context\n\nDo NOT make any file edits — this is exploratory only.\n```\n\n```markdown\n---\ncontext: fork\nuser-invocable: true\ndescription: \"Run security audit in isolated context\"\nallowed-tools: [Read, Grep, Glob]\n---\n\n# security-audit\n\nAudit the codebase for security vulnerabilities.\nThis runs in a forked context so findings don't pollute the main conversation.\n\nScan for:\n- SQL injection patterns\n- Hardcoded secrets\n- Unsafe eval/exec usage\n- Missing input validation\n\nReturn a structured JSON report.\n```",
+      "`context: fork` in a skill's frontmatter causes the skill to execute in a new, isolated context window forked from the current session state. This is distinct from the default behavior of continuing in the same conversation context. It is useful for skills that need to do exploratory work without polluting the main conversation, or for skills that need a clean context for accurate reasoning. `model:` specifies which model to use, not whether to fork. `agent: true` marks the skill as an agent but does not imply context forking.\n\nHow to implement:\n```markdown\n---\ncontext: fork\nuser-invocable: true\nmodel: claude-sonnet-5\ndescription: \"Explore refactoring options without affecting main session\"\n---\n\n# explore-refactor\n\nYou are exploring (not implementing) a refactoring strategy for $ARGUMENTS.\n\n1. Read the target files\n2. Draft 3 different refactoring approaches with trade-offs\n3. Return your recommendation summary to the parent context\n\nDo NOT make any file edits — this is exploratory only.\n```\n\n```markdown\n---\ncontext: fork\nuser-invocable: true\ndescription: \"Run security audit in isolated context\"\nallowed-tools: [Read, Grep, Glob]\n---\n\n# security-audit\n\nAudit the codebase for security vulnerabilities.\nThis runs in a forked context so findings don't pollute the main conversation.\n\nScan for:\n- SQL injection patterns\n- Hardcoded secrets\n- Unsafe eval/exec usage\n- Missing input validation\n\nReturn a structured JSON report.\n```",
     keyConcept: "Skill frontmatter: context: fork creates an isolated execution context",
   },
   {
@@ -1158,7 +1286,7 @@ const examDomain3Questions: Question[] = [
 ];
 
 // ============================================================
-// DOMAIN 4 – Prompt Engineering & Structured Outputs (18%)
+// DOMAIN 4 – Prompt Engineering & Structured Output (18%)
 // ============================================================
 
 const examDomain4Questions: Question[] = [
@@ -1166,19 +1294,19 @@ const examDomain4Questions: Question[] = [
     id: "E4-001",
     scenario: "Structured Data Extraction",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.1",
     difficulty: "intermediate",
     question:
-      "Your application was built on Claude 3.5 and relied on prefilled assistant responses (starting the assistant turn with partial JSON) to force structured output. You upgrade to Claude 4.6. What should you change in your integration?",
+      "Your application was built on Claude 3.5 and relied on prefilled assistant responses (starting the assistant turn with partial JSON) to force structured output. You upgrade to Claude 5. What should you change in your integration?",
     options: [
       {
         id: "A",
-        text: "Nothing — prefilled responses are fully supported in Claude 4.6 and remain the recommended approach",
+        text: "Nothing — prefilled responses are fully supported in Claude 5 and remain the recommended approach",
       },
       {
         id: "B",
-        text: "Prefilled responses are deprecated in Claude 4.6 — replace them with the `output_config.format` structured output feature or explicit instructions in the prompt",
+        text: "Prefilled responses are deprecated in Claude 5 — replace them with the `output_config.format` structured output feature or explicit instructions in the prompt",
       },
       {
         id: "C",
@@ -1191,14 +1319,14 @@ const examDomain4Questions: Question[] = [
     ],
     correctAnswer: "B",
     explanation:
-      "Prefilled assistant responses (injecting partial text at the start of the assistant turn to guide output format) are deprecated in Claude 4.6 and later. The replacement approaches are: (1) use `output_config.format` with `type: \"json_schema\"` for guaranteed structured JSON output via constrained decoding, or (2) rely on Claude 4.6's improved instruction following with explicit format instructions in the prompt. The deprecation applies to all response sizes.\n\nHow to implement:\n```python\n# OLD — prefilled response (deprecated in Claude 4.6)\nresponse_old = client.messages.create(\n    model=\"claude-opus-4-6\",\n    max_tokens=1024,\n    messages=[\n        {\"role\": \"user\", \"content\": \"Extract the name and age\"},\n        {\"role\": \"assistant\", \"content\": '{\"name\":'}, # ← DEPRECATED prefill\n    ]\n)\n\n# NEW — Option 1: structured output with json_schema\nresponse_new = client.messages.create(\n    model=\"claude-opus-4-6\",\n    max_tokens=1024,\n    output_config={\n        \"format\": {\n            \"type\": \"json_schema\",\n            \"json_schema\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"name\": {\"type\": \"string\"},\n                    \"age\": {\"type\": \"integer\"}\n                },\n                \"required\": [\"name\", \"age\"],\n                \"additionalProperties\": False\n            }\n        }\n    },\n    messages=[{\"role\": \"user\", \"content\": \"Extract the name and age from: John, 34 years old\"}]\n)\n\n# NEW — Option 2: instruction following (Claude 4.6 handles well)\nresponse_instruct = client.messages.create(\n    model=\"claude-opus-4-6\",\n    max_tokens=1024,\n    system=\"Always respond with valid JSON only. No explanation.\",\n    messages=[{\"role\": \"user\", \"content\": \"Extract {name, age} from: John, 34 years old\"}]\n)\n```",
-    keyConcept: "Prefilled responses deprecated in Claude 4.6 — use structured outputs or instructions",
+      "Prefilled assistant responses (injecting partial text at the start of the assistant turn to guide output format) are deprecated in Claude 5 and later. The replacement approaches are: (1) use `output_config.format` with `type: \"json_schema\"` for guaranteed structured JSON output via constrained decoding, or (2) rely on Claude 5's improved instruction following with explicit format instructions in the prompt. The deprecation applies to all response sizes.\n\nHow to implement:\n```python\n# OLD — prefilled response (deprecated in Claude 5)\nresponse_old = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    messages=[\n        {\"role\": \"user\", \"content\": \"Extract the name and age\"},\n        {\"role\": \"assistant\", \"content\": '{\"name\":'}, # ← DEPRECATED prefill\n    ]\n)\n\n# NEW — Option 1: structured output with json_schema\nresponse_new = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    output_config={\n        \"format\": {\n            \"type\": \"json_schema\",\n            \"json_schema\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"name\": {\"type\": \"string\"},\n                    \"age\": {\"type\": \"integer\"}\n                },\n                \"required\": [\"name\", \"age\"],\n                \"additionalProperties\": False\n            }\n        }\n    },\n    messages=[{\"role\": \"user\", \"content\": \"Extract the name and age from: John, 34 years old\"}]\n)\n\n# NEW — Option 2: instruction following (Claude 5 handles well)\nresponse_instruct = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    system=\"Always respond with valid JSON only. No explanation.\",\n    messages=[{\"role\": \"user\", \"content\": \"Extract {name, age} from: John, 34 years old\"}]\n)\n```",
+    keyConcept: "Prefilled responses deprecated in Claude 5 — use structured outputs or instructions",
   },
   {
     id: "E4-002",
     scenario: "Structured Data Extraction",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.2",
     difficulty: "intermediate",
     question:
@@ -1223,14 +1351,14 @@ const examDomain4Questions: Question[] = [
     ],
     correctAnswer: "B",
     explanation:
-      "`output_config.format.type = \"json_schema\"` with a provided schema enables constrained decoding — the model's token generation is constrained at the sampling layer to only produce tokens that are valid against the schema. This provides a hard, runtime guarantee of schema compliance, unlike prompt instructions (which rely on model behavior and can fail) or `json_object` mode (which guarantees valid JSON but not a specific schema shape). Tool calling with schema parameters is a valid alternative but adds roundtrip overhead.\n\nHow to implement:\n```python\nimport anthropic\nimport json\n\nclient = anthropic.Anthropic()\n\nORDER_SCHEMA = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"order_id\": {\"type\": \"string\"},\n        \"items\": {\n            \"type\": \"array\",\n            \"items\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"name\": {\"type\": \"string\"},\n                    \"qty\": {\"type\": \"integer\"}\n                },\n                \"required\": [\"name\", \"qty\"],\n                \"additionalProperties\": False\n            }\n        },\n        \"total\": {\"type\": \"number\"},\n        \"shipping_address\": {\"type\": \"string\"}\n    },\n    \"required\": [\"order_id\", \"items\", \"total\", \"shipping_address\"],\n    \"additionalProperties\": False\n}\n\nresponse = client.messages.create(\n    model=\"claude-opus-4-6\",\n    max_tokens=1024,\n    output_config={\n        \"format\": {\n            \"type\": \"json_schema\",\n            \"json_schema\": ORDER_SCHEMA\n        }\n    },\n    messages=[{\n        \"role\": \"user\",\n        \"content\": f\"Extract order from email: {email_text}\"\n    }]\n)\n\norder = json.loads(response.content[0].text)\nprint(order[\"order_id\"])  # Guaranteed to exist per schema\n```",
+      "`output_config.format.type = \"json_schema\"` with a provided schema enables constrained decoding — the model's token generation is constrained at the sampling layer to only produce tokens that are valid against the schema. This provides a hard, runtime guarantee of schema compliance, unlike prompt instructions (which rely on model behavior and can fail) or `json_object` mode (which guarantees valid JSON but not a specific schema shape). Tool calling with schema parameters is a valid alternative but adds roundtrip overhead.\n\nHow to implement:\n```python\nimport anthropic\nimport json\n\nclient = anthropic.Anthropic()\n\nORDER_SCHEMA = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"order_id\": {\"type\": \"string\"},\n        \"items\": {\n            \"type\": \"array\",\n            \"items\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"name\": {\"type\": \"string\"},\n                    \"qty\": {\"type\": \"integer\"}\n                },\n                \"required\": [\"name\", \"qty\"],\n                \"additionalProperties\": False\n            }\n        },\n        \"total\": {\"type\": \"number\"},\n        \"shipping_address\": {\"type\": \"string\"}\n    },\n    \"required\": [\"order_id\", \"items\", \"total\", \"shipping_address\"],\n    \"additionalProperties\": False\n}\n\nresponse = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    output_config={\n        \"format\": {\n            \"type\": \"json_schema\",\n            \"json_schema\": ORDER_SCHEMA\n        }\n    },\n    messages=[{\n        \"role\": \"user\",\n        \"content\": f\"Extract order from email: {email_text}\"\n    }]\n)\n\norder = json.loads(response.content[0].text)\nprint(order[\"order_id\"])  # Guaranteed to exist per schema\n```",
     keyConcept: "output_config.format.type = json_schema enables constrained decoding for schema compliance",
   },
   {
     id: "E4-003",
     scenario: "Structured Data Extraction",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.2",
     difficulty: "advanced",
     question:
@@ -1255,14 +1383,14 @@ const examDomain4Questions: Question[] = [
     ],
     correctAnswer: "B",
     explanation:
-      "Strict mode JSON schemas have specific limitations: `minimum`, `maximum`, `minLength`, `maxLength`, `pattern`, `const`, and schema combiners are not supported. Additionally, `additionalProperties: false` is required on all object types in strict mode. The schema fails for two reasons: (1) `count` uses `minimum` and `maximum` which are unsupported, and (2) the object is missing `additionalProperties: false`. `enum` is valid in strict mode. `integer` type is supported. All defined properties must be in `required`, which they are.\n\nHow to implement:\n```python\n# BROKEN schema — fails in strict mode\nbroken_schema = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"status\": {\"type\": \"string\", \"enum\": [\"active\", \"inactive\"]},\n        \"count\": {\"type\": \"integer\", \"minimum\": 0, \"maximum\": 100}  # ← not allowed\n    },\n    \"required\": [\"status\", \"count\"]\n    # Missing: \"additionalProperties\": False  ← required\n}\n\n# FIXED schema — works in strict mode\nfixed_schema = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"status\": {\"type\": \"string\", \"enum\": [\"active\", \"inactive\"]},  # enum ✅\n        \"count\": {\"type\": \"integer\"}  # removed min/max constraints\n    },\n    \"required\": [\"status\", \"count\"],\n    \"additionalProperties\": False  # ← required in strict mode\n}\n\n# For server-side validation of min/max:\ndef validate_output(data: dict):\n    if not 0 <= data[\"count\"] <= 100:\n        raise ValueError(f\"count {data['count']} out of range [0, 100]\")\n    return data\n\nresponse = client.messages.create(\n    model=\"claude-opus-4-6\",\n    max_tokens=512,\n    output_config={\"format\": {\"type\": \"json_schema\", \"json_schema\": fixed_schema}},\n    messages=[{\"role\": \"user\", \"content\": \"How many active users are there?\"}]\n)\nimport json\ndata = validate_output(json.loads(response.content[0].text))\n```",
+      "Strict mode JSON schemas have specific limitations: `minimum`, `maximum`, `minLength`, `maxLength`, `pattern`, `const`, and schema combiners are not supported. Additionally, `additionalProperties: false` is required on all object types in strict mode. The schema fails for two reasons: (1) `count` uses `minimum` and `maximum` which are unsupported, and (2) the object is missing `additionalProperties: false`. `enum` is valid in strict mode. `integer` type is supported. All defined properties must be in `required`, which they are.\n\nHow to implement:\n```python\n# BROKEN schema — fails in strict mode\nbroken_schema = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"status\": {\"type\": \"string\", \"enum\": [\"active\", \"inactive\"]},\n        \"count\": {\"type\": \"integer\", \"minimum\": 0, \"maximum\": 100}  # ← not allowed\n    },\n    \"required\": [\"status\", \"count\"]\n    # Missing: \"additionalProperties\": False  ← required\n}\n\n# FIXED schema — works in strict mode\nfixed_schema = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"status\": {\"type\": \"string\", \"enum\": [\"active\", \"inactive\"]},  # enum ✅\n        \"count\": {\"type\": \"integer\"}  # removed min/max constraints\n    },\n    \"required\": [\"status\", \"count\"],\n    \"additionalProperties\": False  # ← required in strict mode\n}\n\n# For server-side validation of min/max:\ndef validate_output(data: dict):\n    if not 0 <= data[\"count\"] <= 100:\n        raise ValueError(f\"count {data['count']} out of range [0, 100]\")\n    return data\n\nresponse = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=512,\n    output_config={\"format\": {\"type\": \"json_schema\", \"json_schema\": fixed_schema}},\n    messages=[{\"role\": \"user\", \"content\": \"How many active users are there?\"}]\n)\nimport json\ndata = validate_output(json.loads(response.content[0].text))\n```",
     keyConcept: "Strict mode limitations: no minimum/maximum, additionalProperties must be false",
   },
   {
     id: "E4-004",
     scenario: "Structured Data Extraction",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.2",
     difficulty: "advanced",
     question:
@@ -1294,7 +1422,7 @@ const examDomain4Questions: Question[] = [
     id: "E4-005",
     scenario: "Customer Support Resolution Agent",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.3",
     difficulty: "intermediate",
     question:
@@ -1326,7 +1454,7 @@ const examDomain4Questions: Question[] = [
     id: "E4-006",
     scenario: "Customer Support Resolution Agent",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.3",
     difficulty: "intermediate",
     question:
@@ -1358,7 +1486,7 @@ const examDomain4Questions: Question[] = [
     id: "E4-007",
     scenario: "Multi-Agent Research System",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.4",
     difficulty: "intermediate",
     question:
@@ -1383,14 +1511,14 @@ const examDomain4Questions: Question[] = [
     ],
     correctAnswer: "C",
     explanation:
-      "Research on Claude's context handling shows that placing long documents at the top of the prompt, followed by task instructions, with the specific query at the very bottom can improve accuracy by up to 30% compared to other orderings. This structure mirrors how a human expert would work: absorb the full document context first, understand the task structure, then apply it to the specific question. Placing queries before the document means the model processes the question without the context it needs.\n\nHow to implement:\n```python\ndef build_document_qa_prompt(document: str, instructions: str, query: str) -> str:\n    # Optimal ordering: document → instructions → query\n    return f\"\"\"<document>\n{document}\n</document>\n\n<instructions>\n{instructions}\n</instructions>\n\n<query>\n{query}\n</query>\"\"\"\n\n# Usage\nprompt = build_document_qa_prompt(\n    document=fifty_page_technical_doc,  # Long document FIRST\n    instructions=\"\"\"\n        Answer based only on the document above.\n        Cite specific sections when possible.\n        If the answer is not in the document, say so.\n    \"\"\",\n    query=\"What are the performance benchmarks for the caching layer?\"  # Query LAST\n)\n\nresponse = client.messages.create(\n    model=\"claude-opus-4-6\",\n    max_tokens=2048,\n    messages=[{\"role\": \"user\", \"content\": prompt}]\n)\n```\n\n```python\n# BAD ordering — query before document (up to 30% worse accuracy)\nbad_prompt = f\"\"\"\nQuery: What are the performance benchmarks?\n\nInstructions: Answer from the document below.\n\n{fifty_page_document}  ← document at the end\n\"\"\"\n\n# GOOD ordering — document first, query last\ngood_prompt = f\"\"\"\n{fifty_page_document}  ← document at the top\n\nInstructions: Answer from the document above.\n\nQuery: What are the performance benchmarks?\n\"\"\"\n```",
+      "Research on Claude's context handling shows that placing long documents at the top of the prompt, followed by task instructions, with the specific query at the very bottom can improve accuracy by up to 30% compared to other orderings. This structure mirrors how a human expert would work: absorb the full document context first, understand the task structure, then apply it to the specific question. Placing queries before the document means the model processes the question without the context it needs.\n\nHow to implement:\n```python\ndef build_document_qa_prompt(document: str, instructions: str, query: str) -> str:\n    # Optimal ordering: document → instructions → query\n    return f\"\"\"<document>\n{document}\n</document>\n\n<instructions>\n{instructions}\n</instructions>\n\n<query>\n{query}\n</query>\"\"\"\n\n# Usage\nprompt = build_document_qa_prompt(\n    document=fifty_page_technical_doc,  # Long document FIRST\n    instructions=\"\"\"\n        Answer based only on the document above.\n        Cite specific sections when possible.\n        If the answer is not in the document, say so.\n    \"\"\",\n    query=\"What are the performance benchmarks for the caching layer?\"  # Query LAST\n)\n\nresponse = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=2048,\n    messages=[{\"role\": \"user\", \"content\": prompt}]\n)\n```\n\n```python\n# BAD ordering — query before document (up to 30% worse accuracy)\nbad_prompt = f\"\"\"\nQuery: What are the performance benchmarks?\n\nInstructions: Answer from the document below.\n\n{fifty_page_document}  ← document at the end\n\"\"\"\n\n# GOOD ordering — document first, query last\ngood_prompt = f\"\"\"\n{fifty_page_document}  ← document at the top\n\nInstructions: Answer from the document above.\n\nQuery: What are the performance benchmarks?\n\"\"\"\n```",
     keyConcept: "Long documents at top, query at bottom — up to 30% accuracy improvement",
   },
   {
     id: "E4-008",
     scenario: "Customer Support Resolution Agent",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.4",
     difficulty: "intermediate",
     question:
@@ -1422,7 +1550,7 @@ const examDomain4Questions: Question[] = [
     id: "E4-009",
     scenario: "Code Generation with Claude Code",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.4",
     difficulty: "advanced",
     question:
@@ -1447,26 +1575,26 @@ const examDomain4Questions: Question[] = [
     ],
     correctAnswer: "B",
     explanation:
-      "The self-check pattern is a prompt engineering technique where, after generating an initial answer, the model is instructed (in the same prompt or as a follow-up turn) to re-read its output and check it against explicit criteria (e.g., 'Does this code handle the null case? Does it match the function signature?'). This leverages the model's reasoning ability to catch errors it might have made in initial generation. It is done in a single API call (as part of the prompt) or as a second turn, not through a separate API call, and does not require any special flags.\n\nHow to implement:\n```python\n# Self-check via single-prompt instruction\nself_check_prompt = \"\"\"\nGenerate a TypeScript function that parses a date string in ISO 8601 format.\n\nAfter writing the function, review your own code by checking:\n1. Does it handle null/undefined input?\n2. Does it return the correct TypeScript type?\n3. Does it handle invalid date strings without throwing?\n4. Are edge cases (empty string, partial dates) covered?\n\nIf you find issues during your review, fix them before finalizing.\n\"\"\"\n\n# Self-check as second turn (multi-turn approach)\nresponse1 = client.messages.create(\n    model=\"claude-opus-4-6\",\n    max_tokens=1024,\n    messages=[{\"role\": \"user\", \"content\": \"Write a TypeScript date parser function.\"}]\n)\n\ncode = response1.content[0].text\n\nresponse2 = client.messages.create(\n    model=\"claude-opus-4-6\",\n    max_tokens=512,\n    messages=[\n        {\"role\": \"user\", \"content\": \"Write a TypeScript date parser function.\"},\n        {\"role\": \"assistant\", \"content\": code},\n        {\"role\": \"user\", \"content\": \"\"\"\n            Review your code above. Check:\n            - Null safety\n            - Correct return type\n            - Invalid input handling\n            Output only the corrected final version.\n        \"\"\"}\n    ]\n)\n```",
+      "The self-check pattern is a prompt engineering technique where, after generating an initial answer, the model is instructed (in the same prompt or as a follow-up turn) to re-read its output and check it against explicit criteria (e.g., 'Does this code handle the null case? Does it match the function signature?'). This leverages the model's reasoning ability to catch errors it might have made in initial generation. It is done in a single API call (as part of the prompt) or as a second turn, not through a separate API call, and does not require any special flags.\n\nHow to implement:\n```python\n# Self-check via single-prompt instruction\nself_check_prompt = \"\"\"\nGenerate a TypeScript function that parses a date string in ISO 8601 format.\n\nAfter writing the function, review your own code by checking:\n1. Does it handle null/undefined input?\n2. Does it return the correct TypeScript type?\n3. Does it handle invalid date strings without throwing?\n4. Are edge cases (empty string, partial dates) covered?\n\nIf you find issues during your review, fix them before finalizing.\n\"\"\"\n\n# Self-check as second turn (multi-turn approach)\nresponse1 = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    messages=[{\"role\": \"user\", \"content\": \"Write a TypeScript date parser function.\"}]\n)\n\ncode = response1.content[0].text\n\nresponse2 = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=512,\n    messages=[\n        {\"role\": \"user\", \"content\": \"Write a TypeScript date parser function.\"},\n        {\"role\": \"assistant\", \"content\": code},\n        {\"role\": \"user\", \"content\": \"\"\"\n            Review your code above. Check:\n            - Null safety\n            - Correct return type\n            - Invalid input handling\n            Output only the corrected final version.\n        \"\"\"}\n    ]\n)\n```",
     keyConcept: "Self-check pattern: model reviews its own output against criteria before finalizing",
   },
   {
     id: "E4-010",
     scenario: "Customer Support Resolution Agent",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.4",
     difficulty: "advanced",
     question:
-      "A team migrates their prompt from an older Claude version to Claude 4.6. A tool that was called ~60% of the time now fires on nearly every message, causing unexpected side effects. What is the most likely cause?",
+      "A team migrates their prompt from an older Claude version to Claude 5. A tool that was called ~60% of the time now fires on nearly every message, causing unexpected side effects. What is the most likely cause?",
     options: [
       {
         id: "A",
-        text: "Claude 4.6 has a bug in tool selection that forces all tools to fire",
+        text: "Claude 5 has a bug in tool selection that forces all tools to fire",
       },
       {
         id: "B",
-        text: "The prompt was over-engineered for an older, less capable model — explicit tool-use instructions that were needed to trigger the tool now cause it to overtrigger in Claude 4.6's more capable instruction-following",
+        text: "The prompt was over-engineered for an older, less capable model — explicit tool-use instructions that were needed to trigger the tool now cause it to overtrigger in Claude 5's more capable instruction-following",
       },
       {
         id: "C",
@@ -1479,14 +1607,14 @@ const examDomain4Questions: Question[] = [
     ],
     correctAnswer: "B",
     explanation:
-      "A well-documented anti-pattern when upgrading to Claude 4.6 (or similar highly capable models) is over-prompting. Older, less capable models sometimes needed very explicit, detailed instructions to trigger tool calls reliably. When those same prompts are used with Claude 4.6's stronger instruction following, tools that previously undertriggered now overtrigger. The fix is to simplify the prompts — remove or soften the explicit trigger language that was compensating for the older model's limitations.\n\nHow to implement:\n```python\n# OLD prompt (tuned for Claude 3.5 — overtriggers in Claude 4.6)\nold_system_prompt = \"\"\"\nYou are a support assistant. You MUST ALWAYS use the lookup_order tool\nwhenever ANY message is received. Do not respond without first calling\nlookup_order. ALWAYS call lookup_order. It is REQUIRED on every message.\n\"\"\"\n\n# NEW prompt for Claude 4.6 — simplified, trusts instruction following\nnew_system_prompt = \"\"\"\nYou are a support assistant. Use the lookup_order tool when the user\nreferences a specific order, order number, or asks about an order status.\n\"\"\"\n\n# Testing tool trigger rate\ndef measure_trigger_rate(system_prompt: str, test_messages: list[str]) -> float:\n    triggered = 0\n    for msg in test_messages:\n        response = client.messages.create(\n            model=\"claude-opus-4-6\",\n            max_tokens=512,\n            system=system_prompt,\n            tools=[lookup_order_tool],\n            messages=[{\"role\": \"user\", \"content\": msg}]\n        )\n        if response.stop_reason == \"tool_use\":\n            triggered += 1\n    return triggered / len(test_messages)\n\n# Compare: old prompt likely shows ~95%+, new ~60% (expected)\nprint(\"Old:\", measure_trigger_rate(old_system_prompt, test_msgs))\nprint(\"New:\", measure_trigger_rate(new_system_prompt, test_msgs))\n```",
-    keyConcept: "Anti-pattern: over-prompting for Claude 4.6 causes tools that undertriggered before to overtrigger",
+      "A well-documented anti-pattern when upgrading to Claude 5 (or similar highly capable models) is over-prompting. Older, less capable models sometimes needed very explicit, detailed instructions to trigger tool calls reliably. When those same prompts are used with Claude 5's stronger instruction following, tools that previously undertriggered now overtrigger. The fix is to simplify the prompts — remove or soften the explicit trigger language that was compensating for the older model's limitations.\n\nHow to implement:\n```python\n# OLD prompt (tuned for Claude 3.5 — overtriggers in Claude 5)\nold_system_prompt = \"\"\"\nYou are a support assistant. You MUST ALWAYS use the lookup_order tool\nwhenever ANY message is received. Do not respond without first calling\nlookup_order. ALWAYS call lookup_order. It is REQUIRED on every message.\n\"\"\"\n\n# NEW prompt for Claude 5 — simplified, trusts instruction following\nnew_system_prompt = \"\"\"\nYou are a support assistant. Use the lookup_order tool when the user\nreferences a specific order, order number, or asks about an order status.\n\"\"\"\n\n# Testing tool trigger rate\ndef measure_trigger_rate(system_prompt: str, test_messages: list[str]) -> float:\n    triggered = 0\n    for msg in test_messages:\n        response = client.messages.create(\n            model=\"claude-opus-5\",\n            max_tokens=512,\n            system=system_prompt,\n            tools=[lookup_order_tool],\n            messages=[{\"role\": \"user\", \"content\": msg}]\n        )\n        if response.stop_reason == \"tool_use\":\n            triggered += 1\n    return triggered / len(test_messages)\n\n# Compare: old prompt likely shows ~95%+, new ~60% (expected)\nprint(\"Old:\", measure_trigger_rate(old_system_prompt, test_msgs))\nprint(\"New:\", measure_trigger_rate(new_system_prompt, test_msgs))\n```",
+    keyConcept: "Anti-pattern: over-prompting for Claude 5 causes tools that undertriggered before to overtrigger",
   },
   {
     id: "E4-011",
     scenario: "Structured Data Extraction",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.2",
     difficulty: "intermediate",
     question:
@@ -1518,7 +1646,7 @@ const examDomain4Questions: Question[] = [
     id: "E4-012",
     scenario: "Structured Data Extraction",
     domain: 4,
-    domainName: "Prompt Engineering & Structured Outputs",
+    domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.3",
     difficulty: "advanced",
     question:
@@ -1549,7 +1677,7 @@ const examDomain4Questions: Question[] = [
 ];
 
 // ============================================================
-// DOMAIN 5 – Context Management & Performance (17%)
+// DOMAIN 5 – Context Management & Reliability (17%)
 // ============================================================
 
 const examDomain5Questions: Question[] = [
@@ -1557,39 +1685,39 @@ const examDomain5Questions: Question[] = [
     id: "E5-001",
     scenario: "Multi-Agent Research System",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.1",
     difficulty: "basic",
     question:
-      "A team is choosing between Claude Opus 4.6 and Claude Sonnet 4.5 for a long-document analysis task. The documents are 800,000 tokens each. Which models can handle this natively without special configuration?",
+      "A team is choosing a model for a long-document analysis task. The documents are 800,000 tokens each. Which models can handle a document that size natively, without chunking or special configuration?",
     options: [
       {
         id: "A",
-        text: "Only Claude Opus 4.6 — Sonnet 4.5 has a 200K token limit and cannot process 800K token documents",
+        text: "Only Claude Opus 5 — every other current model caps out at 200K tokens",
       },
       {
         id: "B",
-        text: "Both Claude Opus 4.6 and Claude Sonnet 4.6 have 1M token context windows; Claude Sonnet 4.5 has 200K natively but can reach 1M with the extended context beta header",
+        text: "Claude Opus 5 and Claude Sonnet 5 both have 1M token context windows and take the document as is; Claude Haiku 4.5 caps at 200K and would need chunking",
       },
       {
         id: "C",
-        text: "Neither can handle 800K tokens; documents must be chunked to under 200K regardless of model",
+        text: "No current model can handle 800K tokens; the documents must be chunked to under 200K regardless of which one you pick",
       },
       {
         id: "D",
-        text: "All Claude 4.x models have 2M token context windows",
+        text: "Every current Claude model has a 2M token context window, so any of them works",
       },
     ],
     correctAnswer: "B",
     explanation:
-      "Context window specifications: Claude Opus 4.6 and Claude Sonnet 4.6 have native 1M token context windows. Claude Sonnet 4.5 and Claude 4 (non-4.6 suffix) have 200K token native context windows but can be extended to 1M tokens using the extended context beta request header. For an 800K token document, Opus 4.6 and Sonnet 4.6 handle it natively; Sonnet 4.5 requires the beta header. All Claude 4.x models are well below the 2M claim.\n\nHow to implement:\n```python\nimport anthropic\n\nclient = anthropic.Anthropic()\n\n# Sonnet 4.6 — 1M context natively, no beta header needed\nresponse_native = client.messages.create(\n    model=\"claude-sonnet-4-6\",\n    max_tokens=4096,\n    messages=[{\"role\": \"user\", \"content\": [{\"type\": \"text\", \"text\": large_800k_document}]}]\n)\n\n# Sonnet 4.5 — requires beta header for >200K tokens\nresponse_extended = client.beta.messages.create(\n    model=\"claude-sonnet-4-5\",\n    max_tokens=4096,\n    betas=[\"extended-context-2025\"],  # Unlock 1M tokens\n    messages=[{\"role\": \"user\", \"content\": [{\"type\": \"text\", \"text\": large_800k_document}]}]\n)\n```\n\n```typescript\n// TypeScript — extended context beta for Sonnet 4.5\nconst response = await client.beta.messages.create({\n  model: \"claude-sonnet-4-5\",\n  max_tokens: 4096,\n  betas: [\"extended-context-2025\"],\n  messages: [{ role: \"user\", content: largeDocument }],\n});\n\n// Check actual context window of model being used\nconsole.log(\"Model:\", response.model);\nconsole.log(\"Input tokens used:\", response.usage.input_tokens);\n```",
-    keyConcept: "Context windows: Opus 4.6/Sonnet 4.6 = 1M native; Sonnet 4.5/4 = 200K (1M with beta header)",
+      "Context windows differ by model, and the difference is what drives the choice here. Claude Opus 5 and Claude Sonnet 5 both have a 1M token context window — on Opus 5 that is both the default and the maximum, so an 800K document needs no configuration at all. Claude Haiku 4.5 has a 200K window, so the same document would have to be chunked and stitched back together. Option A is wrong because Sonnet 5 also reaches 1M. Option C is wrong because 800K fits comfortably inside 1M. Option D overstates every model: 2M is not a context window Claude offers.\n\nThe architectural point: pick the model by the size of the input as well as the difficulty of the task. Reaching for a cheaper model with a smaller window buys you a chunking pipeline you then have to maintain.\n\nHow to implement:\n```python\nimport anthropic\n\nclient = anthropic.Anthropic()\n\n# 1M context is native — the 800K document goes in whole.\nresponse = client.messages.create(\n    model=\"claude-sonnet-5\",\n    max_tokens=4096,\n    messages=[{\"role\": \"user\", \"content\": large_800k_document}],\n)\n\nprint(\"Input tokens used:\", response.usage.input_tokens)\n```\n\n```python\n# Do not guess a window — ask the Models API before you commit to a model.\nm = client.models.retrieve(\"claude-sonnet-5\")\nprint(m.max_input_tokens)   # context window\nprint(m.max_tokens)         # output cap, a different limit\n```",
+    keyConcept: "Context windows: Opus 5 and Sonnet 5 = 1M native; Haiku 4.5 = 200K",
   },
   {
     id: "E5-002",
     scenario: "Developer Productivity with Claude",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.2",
     difficulty: "intermediate",
     question:
@@ -1621,7 +1749,7 @@ const examDomain5Questions: Question[] = [
     id: "E5-003",
     scenario: "Developer Productivity with Claude",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.2",
     difficulty: "advanced",
     question:
@@ -1653,7 +1781,7 @@ const examDomain5Questions: Question[] = [
     id: "E5-004",
     scenario: "Multi-Agent Research System",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.3",
     difficulty: "advanced",
     question:
@@ -1685,7 +1813,7 @@ const examDomain5Questions: Question[] = [
     id: "E5-005",
     scenario: "Claude Code for Continuous Integration",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.3",
     difficulty: "intermediate",
     question:
@@ -1717,7 +1845,7 @@ const examDomain5Questions: Question[] = [
     id: "E5-006",
     scenario: "Code Generation with Claude Code",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.3",
     difficulty: "intermediate",
     question:
@@ -1749,7 +1877,7 @@ const examDomain5Questions: Question[] = [
     id: "E5-007",
     scenario: "Multi-Agent Research System",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.1",
     difficulty: "advanced",
     question:
@@ -1781,7 +1909,7 @@ const examDomain5Questions: Question[] = [
     id: "E5-008",
     scenario: "Multi-Agent Research System",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.2",
     difficulty: "intermediate",
     question:
@@ -1813,7 +1941,7 @@ const examDomain5Questions: Question[] = [
     id: "E5-009",
     scenario: "Developer Productivity with Claude",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.3",
     difficulty: "advanced",
     question:
@@ -1845,39 +1973,39 @@ const examDomain5Questions: Question[] = [
     id: "E5-010",
     scenario: "Customer Support Resolution Agent",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.1",
     difficulty: "intermediate",
     question:
-      "A support team is processing customer tickets with Claude Sonnet 4.5 and encounters a 180,000-token ticket thread that exceeds the model's native 200K context window with the system prompt added. They want to extend the context to 1M tokens. What is the correct technical approach?",
+      "A support team processes tickets with Claude Haiku 4.5 and hits a 180,000-token ticket thread that exceeds the model's 200K context window once the system prompt and tool definitions are added. They need the whole thread in context. What is the correct technical approach?",
     options: [
       {
         id: "A",
-        text: "Upgrade to Claude Sonnet 4.6 which has a native 1M context window",
+        text: "Move this workload to Claude Sonnet 5 or Claude Opus 5, which have 1M token context windows natively",
       },
       {
         id: "B",
-        text: "Add the extended context beta request header to unlock 1M tokens for Claude Sonnet 4.5",
+        text: "Add an extended-context beta request header to unlock 1M tokens on Claude Haiku 4.5",
       },
       {
         id: "C",
-        text: "Enable `extended_context: true` in the .mcp.json MCP server configuration",
+        text: "Set `extended_context: true` in the `.mcp.json` MCP server configuration",
       },
       {
         id: "D",
-        text: "Both A and B are valid options; A requires a model change, B extends the current model",
+        text: "Raise `max_tokens` to 1000000 so the request accepts the larger input",
       },
     ],
-    correctAnswer: "D",
+    correctAnswer: "A",
     explanation:
-      "Both approaches are technically valid for this scenario. Option A (upgrading to Claude Sonnet 4.6) natively supports 1M tokens without any additional configuration — straightforward and reliable. Option B (adding the extended context beta header) enables 1M token context for Claude Sonnet 4.5 without changing models, useful if there are cost, latency, or feature parity reasons to stay on 4.5. The choice depends on operational constraints. There is no `extended_context` setting in `.mcp.json`.\n\nHow to implement:\n```python\nimport anthropic\n\nclient = anthropic.Anthropic()\n\n# Option A: Upgrade to Sonnet 4.6 (1M native, no header needed)\nresponse_a = client.messages.create(\n    model=\"claude-sonnet-4-6\",  # Native 1M context\n    max_tokens=4096,\n    messages=[{\"role\": \"user\", \"content\": very_long_ticket_thread}]\n)\n\n# Option B: Stay on Sonnet 4.5 with extended context beta header\nresponse_b = client.beta.messages.create(\n    model=\"claude-sonnet-4-5\",\n    max_tokens=4096,\n    betas=[\"extended-context-2025\"],  # Unlocks 1M tokens\n    messages=[{\"role\": \"user\", \"content\": very_long_ticket_thread}]\n)\n```\n\n```typescript\n// TypeScript — choose based on operational needs\nasync function processLongTicket(ticketThread: string, useExtendedBeta = false) {\n  if (useExtendedBeta) {\n    // Stay on 4.5 — use beta header\n    return client.beta.messages.create({\n      model: \"claude-sonnet-4-5\",\n      betas: [\"extended-context-2025\"],\n      max_tokens: 4096,\n      messages: [{ role: \"user\", content: ticketThread }],\n    });\n  } else {\n    // Upgrade to 4.6 — native 1M, no beta needed\n    return client.messages.create({\n      model: \"claude-sonnet-4-6\",\n      max_tokens: 4096,\n      messages: [{ role: \"user\", content: ticketThread }],\n    });\n  }\n}\n```",
-    keyConcept: "Sonnet 4.5 reaches 1M tokens via beta header; Sonnet 4.6 has 1M natively",
+      "Only option A describes a mechanism that exists. Claude Sonnet 5 and Claude Opus 5 have 1M token context windows natively, so the thread fits with no header, no flag, and no chunking — you change the model and the problem disappears.\n\nThe other three are the failure modes worth recognizing. B invents a header: Haiku 4.5's window is 200K and there is no beta that stretches it. C confuses layers — `.mcp.json` configures which MCP servers the agent connects to; it has nothing to say about context windows, and `extended_context` is not one of its settings. D confuses the two token limits: `max_tokens` caps what the model *generates*, while the context window caps *input plus output*. Raising `max_tokens` past the window does not enlarge the window; it just makes the request invalid.\n\nWhen the input genuinely cannot be made to fit, the real levers are context editing (clearing stale tool results) and compaction (summarizing earlier turns) — not an imaginary header.\n\nHow to implement:\n```python\nimport anthropic\n\nclient = anthropic.Anthropic()\n\n# The fix: a model whose window is bigger than the problem.\nresponse = client.messages.create(\n    model=\"claude-sonnet-5\",   # 1M context, native\n    max_tokens=4096,           # output cap — unrelated to the window\n    messages=[{\"role\": \"user\", \"content\": long_ticket_thread}],\n)\n```\n\n```python\n# If you must stay on a 200K model, prune the context instead of inventing a header.\nresponse = client.beta.messages.create(\n    model=\"claude-haiku-4-5\",\n    max_tokens=4096,\n    betas=[\"context-management-2025-06-27\"],\n    context_management={\"edits\": [{\"type\": \"clear_tool_uses_20250919\"}]},\n    messages=[{\"role\": \"user\", \"content\": long_ticket_thread}],\n)\n```",
+    keyConcept: "A 1M-context model beats an invented header; max_tokens is the output cap, not the window",
   },
   {
     id: "E5-011",
     scenario: "Multi-Agent Research System",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.2",
     difficulty: "advanced",
     question:
@@ -1909,7 +2037,7 @@ const examDomain5Questions: Question[] = [
     id: "E5-012",
     scenario: "Multi-Agent Research System",
     domain: 5,
-    domainName: "Context Management & Performance",
+    domainName: "Context Management & Reliability",
     taskStatement: "5.3",
     difficulty: "basic",
     question:
