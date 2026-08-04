@@ -1,19 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type Tema = "light" | "dark";
 const CLAVE = "cca-tema";
 
-/* El tema inicial ya lo dejó puesto public/tema.js antes del primer pintado.
-   Este componente solo lo lee del DOM y lo cambia; no vuelve a decidirlo, para
-   no pelearse con ese script ni provocar un parpadeo. */
-function temaActual(): Tema {
-  if (typeof document === "undefined") return "light";
-  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-}
+/* Este componente no guarda el tema en estado de React, a propósito.
+ *
+ * El HTML se genera una sola vez al compilar, cuando todavía no se sabe qué
+ * tema quiere quien visita; el tema real lo fija public/tema.js justo antes
+ * del primer pintado. Si el icono dependiera de un estado que se corrige en
+ * un efecto, ese re-render puede adelantarse a la hidratación —React 19
+ * hidrata de forma concurrente— y React encuentra «☾» en el HTML servido
+ * donde el cliente ya escribió «☀»: error de hidratación en cada carga.
+ *
+ * Con los dos iconos siempre en el marcado y la visibilidad resuelta por CSS,
+ * el HTML del servidor y el primer render del cliente son idénticos por
+ * construcción, y no hay desajuste posible. El estado real vive donde debe:
+ * en el atributo del documento, que es lo que se lee al pulsar. */
 
 function aplicar(tema: Tema) {
   const raiz = document.documentElement;
@@ -27,26 +32,16 @@ function aplicar(tema: Tema) {
 }
 
 export default function ThemeToggle({ locale }: { locale: Locale }) {
-  // Arranca en "light" y se corrige tras montar: en el HTML exportado no hay
-  // forma de saber el tema, y leer el DOM durante el render rompe la hidratación.
-  const [tema, setTema] = useState<Tema>("light");
-
-  useEffect(() => setTema(temaActual()), []);
-
   const cambiar = () => {
-    const siguiente: Tema = tema === "dark" ? "light" : "dark";
-    aplicar(siguiente);
-    setTema(siguiente);
+    const actual: Tema =
+      document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    aplicar(actual === "dark" ? "light" : "dark");
   };
 
+  // Etiqueta independiente del tema: si dijera «cambiar a modo oscuro» tendría
+  // el mismo problema que el icono, solo que en un atributo.
   const etiqueta =
-    locale === "es"
-      ? tema === "dark"
-        ? "Cambiar a modo claro"
-        : "Cambiar a modo oscuro"
-      : tema === "dark"
-        ? "Switch to light mode"
-        : "Switch to dark mode";
+    locale === "es" ? "Alternar entre modo claro y oscuro" : "Toggle light and dark mode";
 
   return (
     <button
@@ -61,7 +56,8 @@ export default function ThemeToggle({ locale }: { locale: Locale }) {
       )}
     >
       <span aria-hidden="true" className="text-xs leading-none">
-        {tema === "dark" ? "☀" : "☾"}
+        <span className="dark:hidden">☾</span>
+        <span className="hidden dark:inline">☀</span>
       </span>
     </button>
   );

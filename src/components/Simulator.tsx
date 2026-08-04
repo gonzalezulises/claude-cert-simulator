@@ -15,6 +15,7 @@ import {
   ExamResults as ExamResultsType,
   calculateResults,
   loadProgress,
+  createEmptyProgress,
   saveProgress,
   resetProgress,
   StudyProgress,
@@ -56,7 +57,10 @@ export default function Simulator() {
   const [questionStartTime, setQuestionStartTime] = useState(0);
   const [showExplanation, setShowExplanation] = useState(false);
   const [results, setResults] = useState<ExamResultsType | null>(null);
-  const [progress, setProgress] = useState<StudyProgress>(loadProgress());
+  // Arranca vacío a propósito: leer localStorage durante el render hace que el
+  // primer render del cliente no coincida con el HTML generado al compilar, y
+  // React aborta la hidratación de este árbol. El useEffect de abajo lo rellena.
+  const [progress, setProgress] = useState<StudyProgress>(createEmptyProgress);
   const [studyDomain, setStudyDomain] = useState<number | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
 

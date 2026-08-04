@@ -281,6 +281,95 @@ seccion('Sistema de diseño Rizoma');
 }
 
 /* ─────────────────────────────────────────────────────────────
+   4b. Riesgos de hidratación
+   El HTML se genera una vez al compilar. Todo lo que en el primer render del
+   cliente dependa del navegador —localStorage, el tema, la hora— produce un
+   marcado distinto al servido y React aborta la hidratación de ese árbol.
+   No rompe la página (repinta), pero deja un error en consola en cada carga.
+   ───────────────────────────────────────────────────────────── */
+seccion('Riesgos de hidratación');
+{
+  const COMPONENTES = [
+    'src/components/Simulator.tsx',
+    'src/components/ThemeToggle.tsx',
+    'src/components/ProgressDashboard.tsx',
+    'src/components/QuestionCard.tsx',
+    'src/components/StudyGuide.tsx',
+    'src/components/ExamResults.tsx',
+  ].filter((f) => existsSync(join(RAIZ, f)));
+
+  // useState(algo que lee el navegador) se evalúa en el primer render.
+  const EN_RENDER = /useState\s*(?:<[^>]*>)?\s*\(\s*(load\w+|.*localStorage|.*matchMedia|.*document\.)/;
+  const sospechosos = [];
+  for (const f of COMPONENTES) {
+    leer(f)
+      .split('\n')
+      .forEach((l, i) => {
+        if (EN_RENDER.test(l)) sospechosos.push(`${f.replace('src/components/', '')}:${i + 1}`);
+      });
+  }
+  sospechosos.length === 0
+    ? ok('ningún estado inicial se lee del navegador durante el render')
+    : mal(
+        'estado inicial dependiente del navegador',
+        'useState con un valor fijo + useEffect que lo rellena',
+        sospechosos.join(', '),
+      );
+
+  // El icono del tema no puede depender de estado de React: el HTML compilado
+  // no sabe qué tema se elegirá, así que la visibilidad la resuelve el CSS.
+  if (existsSync(join(RAIZ, 'src/components/ThemeToggle.tsx'))) {
+    const tt = leer('src/components/ThemeToggle.tsx');
+    const porCSS = /dark:hidden/.test(tt) && /hidden dark:inline/.test(tt);
+    const porEstado = /useState/.test(tt);
+    porCSS && !porEstado
+      ? ok('el icono del tema se resuelve por CSS, no por estado')
+      : mal(
+          'icono del tema',
+          'dos iconos en el marcado, visibilidad por CSS y sin useState',
+          `por CSS: ${porCSS} · usa useState: ${porEstado}`,
+        );
+  }
+
+  // La prueba de fuego, sobre el HTML ya compilado: si el marcado solo trae uno
+  // de los dos iconos, es que se eligió al compilar según un tema que entonces
+  // no se conocía — y en el navegador contrario no coincidirá. Con los dos
+  // presentes, el HTML servido vale para cualquier tema.
+  const SALIDA = 'out/index.html';
+  if (existsSync(join(RAIZ, SALIDA))) {
+    const html = leer(SALIDA);
+    const luna = html.includes('☾');
+    const sol = html.includes('☀');
+    luna && sol
+      ? ok('el HTML compilado sirve para ambos temas', 'trae ☾ y ☀')
+      : mal(
+          'iconos del tema en el HTML compilado',
+          'los dos, para que el marcado no dependa del tema',
+          `☾: ${luna} · ☀: ${sol}`,
+        );
+  } else {
+    aviso('HTML compilado', `${SALIDA} no existe todavía: correr «npm run build» antes para incluir esta comprobación`);
+  }
+
+  // toLocaleDateString/Number formatean distinto al compilar (Node) que en el
+  // navegador: si eso llega al primer render, es un desajuste garantizado.
+  const formateo = [];
+  for (const f of COMPONENTES) {
+    const s = leer(f);
+    for (const m of s.matchAll(/toLocale(?:Date|Time|)String\(/g)) {
+      const linea = s.slice(0, m.index).split('\n').length;
+      formateo.push(`${f.replace('src/components/', '')}:${linea}`);
+    }
+  }
+  formateo.length === 0
+    ? ok('sin formateo por configuración regional en el marcado')
+    : aviso(
+        'formateo regional en el marcado',
+        `${formateo.join(', ')} — solo es seguro si nunca aparece en el primer render`,
+      );
+}
+
+/* ─────────────────────────────────────────────────────────────
    5. Contraste AA del texto de acento
    ───────────────────────────────────────────────────────────── */
 seccion('Contraste WCAG AA');
