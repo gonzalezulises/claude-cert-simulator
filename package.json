@@ -35,8 +35,6 @@
   "overrides": {
     "brace-expansion": "^5.0.12",
     "minimatch": "^11.0.4",
-    "shadcn": {
-      "deepmerge": "4.1.2"
-    }
+    "deepmerge": "4.1.2"
   }
 }
