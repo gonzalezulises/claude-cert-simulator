@@ -29,7 +29,7 @@ jobs:
       # ya compilado, así que necesita out/ generado.
       - run: npm run build
       - run: npm run verificar -- --sin-red
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: ./out
 
