@@ -7,7 +7,7 @@
  *   3. que el sitio lleve el sistema de diseño Rizoma y su sello de versión.
  *
  * Fuente de la verdad del punto 1: «Claude Certified Architect – Foundations,
- * Exam Guide, Version 1.0 · Effective July 2026 · Exam code CCAR-F».
+ * Exam Guide, Version 1.1 · Effective November 2026 · Exam code CCAR-F».
  *
  * Uso:  node scripts/verificar.mjs           (todo, con red)
  *       node scripts/verificar.mjs --sin-red (omite la comprobación de enlaces)
@@ -41,7 +41,7 @@ function aviso(nombre, detalle) {
 const seccion = (t) => console.log(`\n\x1b[1m${t}\x1b[0m`);
 
 /* ─────────────────────────────────────────────────────────────
-   1. Formato del examen contra la guía oficial CCAR-F v1.0
+   1. Formato del examen contra la guía oficial CCAR-F v1.1
    ───────────────────────────────────────────────────────────── */
 const GUIA = {
   codigo: 'CCAR-F',
@@ -54,7 +54,7 @@ const GUIA = {
   escenariosBanco: 6,
 };
 
-seccion('Formato del examen (guía oficial CCAR-F v1.0, julio 2026)');
+seccion('Formato del examen (guía oficial CCAR-F v1.1, noviembre 2026)');
 {
   const sim = leer('src/components/Simulator.tsx');
 

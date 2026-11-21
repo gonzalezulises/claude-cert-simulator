@@ -67,7 +67,7 @@ const domain1Questions: Question[] = [
     sources: [
       { title: "Handle tool calls", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls" },
       { title: "Handling stop reasons", url: "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -92,7 +92,7 @@ const domain1Questions: Question[] = [
     sources: [
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
       { title: "Subagents in the SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -117,7 +117,7 @@ const domain1Questions: Question[] = [
     sources: [
       { title: "Subagents in the SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
       { title: "Create custom subagents", url: "https://code.claude.com/docs/en/sub-agents" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -142,7 +142,7 @@ const domain1Questions: Question[] = [
     sources: [
       { title: "Work with sessions", url: "https://code.claude.com/docs/en/agent-sdk/sessions" },
       { title: "CLI reference", url: "https://code.claude.com/docs/en/cli-reference" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.7", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.7", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -165,7 +165,7 @@ const domain1Questions: Question[] = [
       "A mid-process handoff has to let someone without the transcript act at once. A structured summary (customer ID, what the agent verified and the root cause, the amount involved, and the action it recommends) gives the human the decision instead of the research. That is the handoff protocol the guide describes for humans who lack access to the conversation.\n\nOption A forces the human to redo the whole investigation. Option B technically carries everything, but buries the root cause and the requested amount in a conversation the human must re-read. Option D makes the customer repeat their story, which is the opposite of first-contact resolution.\n\nHow to implement:\n```typescript\nawait tools.escalate_to_human({\n  customer_id: \"C-48213\",\n  issue: \"Duplicate charge\",\n  root_cause: \"Payment retried after gateway timeout; both captures settled on 2026-11-03\",\n  amount: { value: 89.0, currency: \"USD\" },\n  verified: [\"identity\", \"both charges in ledger\"],\n  recommended_action: \"Reverse capture ch_2 (89.00 USD)\",\n});\n```",
     keyConcept: "Structured handoff summaries for humans who cannot see the conversation",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -190,7 +190,7 @@ const domain1Questions: Question[] = [
     sources: [
       { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
       { title: "Hooks reference", url: "https://code.claude.com/docs/en/hooks" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -214,7 +214,7 @@ const domain1Questions: Question[] = [
     keyConcept: "Prompt chaining for fixed, predictable sequences of dependent steps",
     sources: [
       { title: "Building effective agents", url: "https://www.anthropic.com/research/building-effective-agents" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -239,7 +239,7 @@ const domain1Questions: Question[] = [
     sources: [
       { title: "Building effective agents", url: "https://www.anthropic.com/research/building-effective-agents" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -264,7 +264,7 @@ const domain1Questions: Question[] = [
     sources: [
       { title: "CLI reference", url: "https://code.claude.com/docs/en/cli-reference" },
       { title: "Manage sessions", url: "https://code.claude.com/docs/en/sessions" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.7", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.7", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -288,7 +288,7 @@ const domain1Questions: Question[] = [
     keyConcept: "Programmatic prerequisite gates block downstream tools until earlier steps are done",
     sources: [
       { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -312,7 +312,7 @@ const domain1Questions: Question[] = [
     keyConcept: "Tool results are appended to the conversation history so the next iteration can use them",
     sources: [
       { title: "Handle tool calls", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -337,7 +337,7 @@ const domain1Questions: Question[] = [
     sources: [
       { title: "Subagents in the SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -391,7 +391,7 @@ const domain2Questions: Question[] = [
       "A is correct. The evidence isolates the cause: the descriptions were already good, and the misrouting started when a keyword-triggered instruction was added to the system prompt. An instruction like \"whenever a customer mentions a refund, call lookup_order\" creates an unintended association between a word and a tool, and it overrides well-written descriptions. Scoping the instruction to order-specific refund requests removes the conflict at its source.\n\nB fights the system prompt with the description: the boundary is already stated there and the prompt still wins, so capital letters only escalate the conflict. C adds an over-engineered layer that rewrites customer input and hides the real defect. D replaces model judgment with another keyword rule: \"refund\" also appears in order-specific requests, so forcing `search_policies` would break the legitimate case.\n\nHow to implement:\n```text\n# BEFORE (keyword trigger)\nWhenever a customer mentions a refund, call lookup_order first.\n\n# AFTER (scoped to the real need)\nWhen a customer asks for a refund on a specific purchase, confirm the order\nwith lookup_order before discussing eligibility. For general questions about\nrefund rules, follow the tool descriptions.\n```",
     keyConcept: "Keyword-sensitive system prompt instructions can override well-written tool descriptions",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
     ],
   },
@@ -415,7 +415,7 @@ const domain2Questions: Question[] = [
       "B is correct. A generic tool that does three jobs forces the model to infer the purpose from free-text instructions, and it gives downstream code no stable output contract. Splitting it into purpose-specific tools gives each job a precise description, its own input schema and a fixed output, for example `{ supported, evidence_quote }` for claim verification, so the model picks the right operation and the coordinator gets parseable results.\n\nA keeps the ambiguity and moves the contract into per-call prose that nothing validates. C adds token overhead without creating a contract, and the single tool still covers three jobs. D treats the symptom after the fact, adds latency and cost, and cannot turn a summary back into the verification that was needed. Anthropic's docs also recommend grouping related operations behind one tool with an `action` parameter; that works when the operations share a contract, which these three do not.\n\nHow to implement:\n```typescript\nconst tools = [\n  { name: \"extract_data_points\",\n    description: \"Extracts numeric facts (value, unit, page) from one document. Returns a list; never summarizes.\",\n    input_schema: { type: \"object\", properties: { document_id: { type: \"string\" } }, required: [\"document_id\"] } },\n  { name: \"summarize_content\",\n    description: \"Writes a summary of one document of at most 200 words. Does not check claims.\",\n    input_schema: { type: \"object\", properties: { document_id: { type: \"string\" } }, required: [\"document_id\"] } },\n  { name: \"verify_claim_against_source\",\n    description: \"Checks one claim against one document. Returns { supported: boolean, evidence_quote: string | null }.\",\n    input_schema: { type: \"object\", properties: { document_id: { type: \"string\" }, claim: { type: \"string\" } }, required: [\"document_id\", \"claim\"] } },\n];\n```",
     keyConcept: "Splitting a generic tool into purpose-specific tools with defined contracts",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
       { title: "Writing effective tools for agents (Anthropic Engineering)", url: "https://www.anthropic.com/research/writing-tools-for-agents" },
     ],
@@ -441,7 +441,7 @@ const domain2Questions: Question[] = [
     keyConcept: "MCP isError with structured, non-retryable validation metadata",
     sources: [
       { title: "MCP specification — Tools (error handling)", url: "https://modelcontextprotocol.io/specification/2026-07-28/server/tools" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -464,7 +464,7 @@ const domain2Questions: Question[] = [
       "D is correct. An access failure and a valid empty result are different outcomes and need different decisions: the first calls for a retry or a reported gap, the second is a successful query with no matches. Returning a structured transient error for the outage, and a successful empty list only for real no-match queries, lets the agent tell them apart.\n\nA wastes calls on every genuine empty result and still can't tell an outage from a real absence. B overreacts: it kills the whole workflow, and all its finished work, for a recoverable outage. C adds a field that always says \"ok\", so the failure is still disguised as success; no prompt can recover information the tool threw away.\n\nHow to implement:\n```typescript\ntry {\n  const hits = await archive.search(query);\n  return { content: [{ type: \"text\", text: JSON.stringify({ results: hits }) }] }; // [] = real no-match\n} catch (err) {\n  return {\n    isError: true,\n    content: [{ type: \"text\", text: JSON.stringify({\n      errorCategory: \"transient\", isRetryable: true,\n      message: \"Archive index unreachable; results unknown, not empty.\",\n    }) }],\n  };\n}\n```",
     keyConcept: "Distinguishing access failures from valid empty results",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "MCP specification — Tools (error handling)", url: "https://modelcontextprotocol.io/specification/2026-07-28/server/tools" },
     ],
   },
@@ -488,7 +488,7 @@ const domain2Questions: Question[] = [
       "B is correct. Giving an agent many tools increases decision complexity and degrades selection, and agents with tools outside their specialization tend to misuse them, as the synthesis agent's web searches show. Scoping each subagent to the tools of its role removes the wrong options instead of asking the model to ignore them.\n\nA keeps the 18-way decision and relies on probabilistic compliance with a list. C makes the problem worse: one agent with every role and every tool, and no specialization. D turns the coordinator into a bottleneck with a round trip per tool call, and the 18 tools are still concentrated in one place.\n\nHow to implement:\n```typescript\nimport { query } from \"@anthropic-ai/claude-agent-sdk\";\n\nconst agents = {\n  \"web-searcher\": { description: \"Finds sources\", prompt: \"...\",\n    tools: [\"mcp__research__web_search\", \"mcp__research__fetch_page\"] },\n  \"synthesizer\": { description: \"Combines findings\", prompt: \"...\",\n    tools: [\"Read\", \"mcp__research__merge_findings\"] },\n  \"reporter\": { description: \"Renders the report\", prompt: \"...\",\n    tools: [\"mcp__research__format_citations\", \"mcp__research__render_report\"] },\n};\n\nfor await (const msg of query({ prompt: topic, options: { agents, allowedTools: [\"Agent\"] } })) { /* ... */ }\n```",
     keyConcept: "Scoped tool access per subagent role",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Subagents in the Agent SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
     ],
   },
@@ -513,7 +513,7 @@ const domain2Questions: Question[] = [
     keyConcept: "Forced tool_choice for the first step, auto for follow-up turns",
     sources: [
       { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -537,7 +537,7 @@ const domain2Questions: Question[] = [
     keyConcept: "MCP scopes: project (.mcp.json) for shared tooling, user (~/.claude.json) for personal servers",
     sources: [
       { title: "Connect Claude Code to tools via MCP", url: "https://code.claude.com/docs/en/mcp" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -561,7 +561,7 @@ const domain2Questions: Question[] = [
     keyConcept: "Environment variable expansion in .mcp.json keeps secrets out of version control",
     sources: [
       { title: "Connect Claude Code to tools via MCP", url: "https://code.claude.com/docs/en/mcp" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -584,7 +584,7 @@ const domain2Questions: Question[] = [
       "C is correct. Building understanding incrementally, with Grep to find the entry points and Read to follow the imports from there, spends context only on the files that matter to the payment flow.\n\nA and B are the same upfront-reading mistake as the prototype: they load thousands of files, or one giant file, and run out of context. D saves context by not looking at the code, so the explanation is guesswork. Product note: in interactive Claude Code on macOS, Linux and WSL, Glob and Grep are left out of the default tool set and searches run as `grep` or `find` through Bash; naming them in `allowedTools`, as this agent does, brings them back, and the strategy is the same either way.\n\nHow to implement:\n```text\n1. Grep  pattern=\"router\\.(post|put)\\(['\\\"]/payments\"   output_mode=files_with_matches\n2. Read  src/routes/payments.ts          -> imports PaymentService\n3. Read  src/services/payment-service.ts -> imports gateway/stripe-adapter\n4. Read  src/gateway/stripe-adapter.ts   -> end of the flow\n```",
     keyConcept: "Incremental exploration: Grep for entry points, then Read along the imports",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Claude Code tools reference", url: "https://code.claude.com/docs/en/tools-reference" },
     ],
   },
@@ -609,7 +609,7 @@ const domain2Questions: Question[] = [
     keyConcept: "Glob for file name patterns; Grep for file contents",
     sources: [
       { title: "Claude Code tools reference", url: "https://code.claude.com/docs/en/tools-reference" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -632,7 +632,7 @@ const domain2Questions: Question[] = [
       "A is correct. A 503 is transient, so the subagent should recover locally first and propagate to the coordinator only what it couldn't resolve, together with its partial results and what it attempted. The coordinator can then decide whether six sources are enough or whether it should try an alternative, without repeating work that already succeeded.\n\nB hides the failure, so the coordinator believes coverage is complete when two sources are missing. C has no bound: a long outage blocks the whole research run. D keeps the wasteful escalation and changes the workload instead of the error handling.\n\nHow to implement:\n```typescript\nconst results = await Promise.all(urls.map(u => fetchWithRetry(u, { retries: 3, backoffMs: 500 })));\nconst ok = results.filter(r => r.ok);\nconst failed = results.filter(r => !r.ok).map(r => ({ url: r.url, error: \"503\", attempts: 4 }));\nreturn { findings: ok.map(r => r.data), partial: failed.length > 0, failed };\n```",
     keyConcept: "Local recovery of transient errors in subagents; propagate only unresolved errors with partial results",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
     ],
   },
@@ -656,7 +656,7 @@ const domain2Questions: Question[] = [
       "C is correct. The two tools overlap in both name and description, so the model has no signal to tell them apart. Renaming the web tool and rewriting its description around its real input (search-result snippets, not files) removes the functional overlap that causes the misrouting.\n\nA removes a capability: `analyze_document` was not built for web snippets, so their results would degrade. B adds a vague, keyword-sensitive instruction; web pages also \"look like documents\", so it creates a new kind of misrouting. D catches the mistake after a wasted call and leaves the ambiguity in place.\n\nHow to implement:\n```typescript\n{\n  name: \"extract_web_results\",\n  description: \"Extracts facts from web search result snippets (title, url, snippet text) \" +\n    \"returned by web_search. Input: the raw results array. Does NOT accept PDFs, \" +\n    \"archive files or document IDs; use analyze_document for those.\",\n  input_schema: { type: \"object\", properties: { results: { type: \"array\" } }, required: [\"results\"] },\n}\n```",
     keyConcept: "Renaming tools and rewriting descriptions to eliminate functional overlap",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
     ],
   },
@@ -712,7 +712,7 @@ const domain3Questions: Question[] = [
     keyConcept: "User-level CLAUDE.md (~/.claude/CLAUDE.md) holds personal defaults that are not shared with the team",
     sources: [
       { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -736,7 +736,7 @@ const domain3Questions: Question[] = [
     keyConcept: "Path-scoped rules (paths frontmatter) load only for matching files, cutting irrelevant context",
     sources: [
       { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -760,7 +760,7 @@ const domain3Questions: Question[] = [
     keyConcept: "@path imports let each package's CLAUDE.md include only the standards it needs",
     sources: [
       { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -784,7 +784,7 @@ const domain3Questions: Question[] = [
     keyConcept: "Re-reviews include prior findings and report only new or unaddressed issues",
     sources: [
       { title: "Claude Code docs — Run Claude Code programmatically (-p)", url: "https://code.claude.com/docs/en/headless" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -809,7 +809,7 @@ const domain3Questions: Question[] = [
     sources: [
       { title: "Claude Code docs — Permission modes (plan mode)", url: "https://code.claude.com/docs/en/permission-modes" },
       { title: "Claude Code docs — Common workflows (plan mode, subagents)", url: "https://code.claude.com/docs/en/common-workflows" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -833,7 +833,7 @@ const domain3Questions: Question[] = [
     keyConcept: "Personal skill variants go in ~/.claude/skills/ under a different name so teammates are unaffected",
     sources: [
       { title: "Claude Code docs — Skills", url: "https://code.claude.com/docs/en/skills" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -858,7 +858,7 @@ const domain3Questions: Question[] = [
     sources: [
       { title: "Claude Code docs — Skills", url: "https://code.claude.com/docs/en/skills" },
       { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -882,7 +882,7 @@ const domain3Questions: Question[] = [
     keyConcept: "Direct execution for simple, well-scoped changes with a clear cause",
     sources: [
       { title: "Claude Code docs — Common workflows (plan mode, subagents)", url: "https://code.claude.com/docs/en/common-workflows" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -907,7 +907,7 @@ const domain3Questions: Question[] = [
     sources: [
       { title: "Claude Code docs — Run Claude Code programmatically (-p)", url: "https://code.claude.com/docs/en/headless" },
       { title: "Claude Code docs — Best practices", url: "https://code.claude.com/docs/en/best-practices" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -931,7 +931,7 @@ const domain3Questions: Question[] = [
     keyConcept: "Test-driven iteration: write the tests first, then iterate by sharing the failures",
     sources: [
       { title: "Claude Code docs — Best practices", url: "https://code.claude.com/docs/en/best-practices" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -955,7 +955,7 @@ const domain3Questions: Question[] = [
     keyConcept: "Glob-scoped rules beat directory CLAUDE.md files for conventions spread across many directories",
     sources: [
       { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -980,7 +980,7 @@ const domain3Questions: Question[] = [
     sources: [
       { title: "Claude Code docs — Best practices", url: "https://code.claude.com/docs/en/best-practices" },
       { title: "Claude API docs — Prompting best practices (use examples)", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1033,7 +1033,7 @@ const domain4Questions: Question[] = [
       "The root cause is that \"risky\" is never defined, so the model applies its own threshold. Option A states which categories to report and which to skip, which is what raises precision. Option B is confidence-based filtering: the guide notes that \"be conservative\" or \"only high-confidence\" wording does not improve precision, because the model's confidence is not anchored to the lawyers' definition. Option C fixes the format of the flags, not which clauses qualify. Option D runs a second pass with the same vague definition, so its deletions are as arbitrary as the original flags and the cost doubles. High false-positive rates also erode trust in the accurate flags, which is why fixing the criteria matters.\n\nHow to implement:\n```typescript\nconst systemPrompt = `Flag a clause ONLY if it matches one of these categories:\n1. Liability cap below $50,000\n2. Automatic renewal without an opt-out window\n3. Assignment of client IP to the vendor\nDo NOT flag: confidentiality boilerplate, standard Net-30/60 payment terms, governing-law clauses.\nFor each flag return: clause number, quoted text, category (1-3).`;\n```",
     keyConcept: "Explicit categorical criteria, not confidence wording, raise precision",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
     ],
   },
@@ -1057,7 +1057,7 @@ const domain4Questions: Question[] = [
       "The structure is already guaranteed by the tool schema; what varies is the content. When detailed instructions alone produce inconsistent results, few-shot examples are the most effective way to show what an actionable finding looks like, and a borderline example teaches how to calibrate severity. Option A cannot enforce actionability: a long vague sentence still passes a length check (and string-length constraints such as `minLength` are not supported by Claude's strict mode anyway). Option B repeats the same instructions that already failed. Option C reduces randomness but does not show the model what \"specific\" means, so it would just be consistently vague.\n\nHow to implement:\n```typescript\nconst examples = `<example>\nfile: src/cart.ts  line: 42  severity: major\nissue: total is computed before discounts are applied, so the order is charged full price\nsuggested_fix: move applyDiscounts(cart) above computeTotal(cart) on line 40\n</example>\n<example>\nfile: src/log.ts  line: 8  severity: minor\nissue: debug log prints the full request body, including the email address\nsuggested_fix: log only request.id; why minor: internal logs, no secrets\n</example>`;\n```",
     keyConcept: "Few-shot examples fix inconsistent content that schemas cannot enforce",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
     ],
   },
@@ -1081,7 +1081,7 @@ const domain4Questions: Question[] = [
       "A required field forces the model to produce a value even when the source has none, which is exactly what drives fabrication. Making the field nullable lets the schema express \"not present\", which the guide names as the way to stop the model from inventing values to satisfy required fields. Option A leaves the schema pressure in place and relies on an instruction that competes with it. Option B cannot work: retries fail when the information is simply absent from the document, so the loop either exhausts its attempts or produces a different invented number. Option C replaces a typed null with a magic string that downstream systems must special-case and that can leak into reports. (Claude's strict mode also accepts leaving the field out of `required`; nullable keeps the key present on every record.)\n\nHow to implement:\n```typescript\nconst schema = {\n  type: \"object\",\n  properties: {\n    invoice_number: { type: \"string\" },\n    purchase_order_number: {\n      type: [\"string\", \"null\"],\n      description: \"PO number exactly as printed. null if the invoice shows none.\",\n    },\n  },\n  required: [\"invoice_number\", \"purchase_order_number\"],\n  additionalProperties: false,\n};\n```",
     keyConcept: "Nullable fields prevent fabrication when the source may lack the data",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Structured outputs", url: "https://platform.claude.com/docs/en/build-with-claude/structured-outputs" },
       { title: "Reduce hallucinations", url: "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations" },
     ],
@@ -1106,7 +1106,7 @@ const domain4Questions: Question[] = [
       "The enum + \"other\" + detail pattern keeps the known categories filterable while giving genuine outliers an honest place to go, and an \"unclear\" value covers emails that are too ambiguous to classify. Option B throws away the enum, so dashboards must reconcile endless spellings. Option C keeps the forced misclassification; a confidence number does not tell you which category the email actually belongs to. Option D makes missing data indistinguishable from \"didn't fit\" versus \"too vague\", and downstream code cannot count either.\n\nHow to implement:\n```typescript\nconst schema = {\n  type: \"object\",\n  properties: {\n    complaint_category: {\n      type: \"string\",\n      enum: [\"billing\", \"shipping\", \"product_defect\", \"account_access\", \"other\", \"unclear\"],\n    },\n    category_detail: { type: [\"string\", \"null\"], description: \"Short label when category is 'other', else null\" },\n  },\n  required: [\"complaint_category\", \"category_detail\"],\n  additionalProperties: false,\n};\n```",
     keyConcept: "Enum with 'other' + detail and 'unclear' for extensible categories",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Structured outputs", url: "https://platform.claude.com/docs/en/build-with-claude/structured-outputs" },
     ],
   },
@@ -1130,7 +1130,7 @@ const domain4Questions: Question[] = [
       "This is a semantic error, not a syntax error: the schema is satisfied but the values are inconsistent. Because the correct numbers are in the source, a retry that includes the document, the failed output and the precise validation error gives the model what it needs to self-correct. Option A gives the model no new information. Option B confuses the two error types: strict schemas eliminate syntax errors but do not prevent values that don't sum. Option C hides the error by trusting whichever line item was misread, so a wrong record is stored as valid. Product note: Claude Opus 5.5 and Sonnet 5.5 reject forced `tool_choice` (`any` or `tool`) with a 400; the exam guide still tests forced selection, so the example uses `claude-haiku-5-5`, which accepts it. On the newer models, use `auto` with `strict: true` tools or structured outputs.\n\nHow to implement:\n```typescript\nconst retry = await client.messages.create({\n  model: \"claude-haiku-5-5\",\n  max_tokens: 2048,\n  tools: [extractInvoiceTool],\n  tool_choice: { type: \"tool\", name: \"extract_invoice\" },\n  messages: [{ role: \"user\", content:\n    `<document>${doc}</document>\\n<previous_extraction>${JSON.stringify(prev)}</previous_extraction>\\n` +\n    `<validation_error>line_items sum to 1240.00 but total is 1420.00. Re-read the line items and correct the extraction.</validation_error>` }],\n});\n```",
     keyConcept: "Retry with document, failed output and specific error fixes semantic errors",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Strict tool use", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use" },
     ],
   },
@@ -1154,7 +1154,7 @@ const domain4Questions: Question[] = [
       "The worst case for a document is the time it waits for the next submission plus the maximum processing window: interval + 24 h must stay under 30 h, so the interval must be at most 6 h. A 4-hour cadence (28 h worst case) leaves a margin for resubmitting failures. Option A can reach 48 h and option B 36 h, both breaking the SLA. Option D meets the SLA but gives up the 50% discount, which the requirement rules out. Most batches finish in under an hour, but there is no latency guarantee, so the plan must assume the full 24 hours.",
     keyConcept: "Batch submission frequency = SLA minus the 24-hour processing window",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Batch processing", url: "https://platform.claude.com/docs/en/build-with-claude/batch-processing" },
     ],
   },
@@ -1178,7 +1178,7 @@ const domain4Questions: Question[] = [
       "Batch requests accept tool definitions, so a single-turn extraction with a forced tool works: the result already contains the `tool_use` block you need. What a batch cannot do is multi-turn tool calling within one request, because nothing executes `run_tests` and returns the result mid-request; that loop needs the synchronous API. Option A is the teammate's misconception. Option B invents an automatic tool loop that does not exist. Option D is doubly wrong: forced `tool_choice` works in batches, and Claude has no \"JSON mode\" (structured output comes from tool use or, in the current API, `output_config.format`).",
     keyConcept: "Batches support single-turn tool use, not multi-turn tool loops",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Batch processing", url: "https://platform.claude.com/docs/en/build-with-claude/batch-processing" },
     ],
   },
@@ -1202,7 +1202,7 @@ const domain4Questions: Question[] = [
       "In the same session the model still holds the reasoning that produced the code, so it tends to re-confirm its own decisions. An independent instance that sees only the code and the requirements reviews it without those assumptions, and the guide states that this catches subtle issues more effectively than self-review instructions or extended thinking. Option A is still self-review with stronger wording. Option B improves generation but adds no independent check. Option C repeats the same biased review three times.\n\nHow to implement:\n```typescript\nconst review = await client.messages.create({\n  model: \"claude-opus-5-5\",\n  max_tokens: 4096,\n  system: \"You are reviewing code you did not write. Look for concurrency and correctness bugs.\",\n  messages: [{ role: \"user\", content: `<requirements>${spec}</requirements>\\n<code>${generatedCode}</code>` }],\n});\n```",
     keyConcept: "Independent review instance beats same-session self-review",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1225,7 +1225,7 @@ const domain4Questions: Question[] = [
       "Per-file passes are the right tool for local issues, but a units mismatch lives between files. A separate integration pass focused on the changed interfaces and the data that crosses them is the multi-pass pattern the guide describes. Option A brings back attention dilution: one huge prompt gives uneven coverage and can lose the local findings that already work. Option C asks every local pass to do integration work over a whole repository, which dilutes attention and duplicates effort. Option D votes among runs that all lack cross-file visibility, so the bug still goes unseen.",
     keyConcept: "Multi-pass review: per-file local passes plus a cross-file integration pass",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1248,7 +1248,7 @@ const domain4Questions: Question[] = [
       "The information is present; the model just does not recognize it in unfamiliar layouts. Few-shot examples that demonstrate extraction from varied document structures are the guide's remedy for empty or null extraction of required fields, and they generalize to layouts that were not listed. Option A hides a recall problem as missing data, even though the details are in the papers. Option B loses cross-section context (a sample size in a caption, a method in the introduction), multiplies cost, and \"first non-empty\" may keep the wrong value. Option D is more instructions of the kind that already failed, and a list only matches the cases it names.",
     keyConcept: "Few-shot examples for varied document structures fix empty extractions",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
     ],
   },
@@ -1272,7 +1272,7 @@ const domain4Questions: Question[] = [
       "Retries work when the error is about format or structure and the information is in the document, which is why group 1 succeeds. They are ineffective when the information exists only in an external document that was not provided: no amount of feedback can produce a rate from Schedule B. The right move is to keep the retry loop for group 1 and detect group 2 as \"source incomplete\" (request the schedule or flag for review). Option A burns tokens and invites fabrication. Option C discards a retry loop that is working. Option D pressures the model to invent a value.",
     keyConcept: "Retries fix format errors, not information absent from the source",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Reduce hallucinations", url: "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations" },
     ],
   },
@@ -1296,7 +1296,7 @@ const domain4Questions: Question[] = [
       "One noisy category is undermining trust in the accurate ones. Temporarily disabling the high false-positive category restores trust right away, and rewriting its criteria (for example, flag a comment only when its claimed behavior contradicts the code) lets you bring it back once it is precise. Option B is a general confidence instruction, which the guide says does not improve precision and would also suppress valid security findings. Option C uses confidence ranking that can crowd out real bugs. Option D keeps posting the noise that developers have learned to ignore.",
     keyConcept: "Temporarily disable high false-positive categories to restore trust",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1373,7 +1373,7 @@ const domain5Questions: Question[] = [
       "D wins because progressive summarization turns precise transactional facts ($112.50, March 14, #8812) into vague prose (\"a partial refund soon\"). Pulling those facts into a persistent, structured block that is sent verbatim with every request, and that the summarizer never rewrites, keeps them exact however much history is condensed.\n\nA only delays the loss: long sessions still cross the higher threshold. B still trusts a lossy summarizer to decide what is \"important\", which is the same mechanism that already dropped the figure. C undoes the summarization: the token problem returns, and a very long transcript invites lost-in-the-middle errors.\n\nHow to implement:\n```typescript\ninterface CaseFacts {\n  orderId: string;            // \"8812\"\n  agreedRefund: number | null; // 112.50\n  refundDueBy: string | null;  // \"2026-03-14\"\n  status: \"open\" | \"agreed\" | \"escalated\" | \"resolved\";\n}\n\nfunction buildPrompt(facts: CaseFacts, summary: string, recent: string) {\n  // Facts are never summarized: they travel verbatim on every turn\n  return `<case_facts>\\n${JSON.stringify(facts, null, 2)}\\n</case_facts>\\n` +\n         `<history_summary>\\n${summary}\\n</history_summary>\\n${recent}`;\n}\n```",
     keyConcept: "Keep transactional facts in a persistent case-facts block outside summarized history",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Effective context engineering for AI agents", url: "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents" },
     ],
   },
@@ -1397,7 +1397,7 @@ const domain5Questions: Question[] = [
       "B is correct: when a lookup returns several matches, the agent should ask for an additional identifier rather than choose by heuristic. One extra question resolves the ambiguity and keeps the case within the agent's capability.\n\nA still acts on a guess; the confirmation arrives after a stranger's subscription may already be cancelled. C over-escalates a case the agent can resolve with one question, which hurts first-contact resolution. D is just another heuristic: phone area codes do not reliably map to account ownership.\n\nHow to implement (system prompt excerpt):\n```markdown\n## Identity\nIf get_customer returns more than one match, do NOT pick one.\nAsk for one more identifier (email on file, order number, or last 4\ndigits of the payment card) and call get_customer again with it.\nOnly act on an account after exactly one match remains.\n```",
     keyConcept: "Multiple customer matches require asking for another identifier, not heuristic selection",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Customer support agent guide", url: "https://platform.claude.com/docs/en/about-claude/use-case-guides/customer-support-chat" },
     ],
   },
@@ -1421,7 +1421,7 @@ const domain5Questions: Question[] = [
       "D is correct. The pattern (beginning and end used, middle ignored) is the \"lost in the middle\" effect: models process the start and end of long inputs reliably and may skip findings in the middle. A key-findings summary at the top puts the most important evidence in the strongest position, and explicit section headers make every block addressable.\n\nA removes the effect by removing synthesis: twelve isolated sections cannot compare or reconcile sources. B reorders by a property unrelated to importance, so the strongest evidence may still sit in the middle. C relies on the model's self-report; asking it to confirm does not change how position affects attention.\n\nHow to implement:\n```typescript\nfunction buildSynthesisInput(outputs: SubagentOutput[]): string {\n  const keyFindings = outputs.flatMap(o => o.topFindings).slice(0, 15);\n  return [\n    \"## KEY FINDINGS (read first)\",\n    ...keyFindings.map(f => `- ${f.claim} [${f.sourceId}]`),\n    ...outputs.map(o => `\\n## SUBAGENT: ${o.topic}\\n${o.detail}`),\n  ].join(\"\\n\");\n}\n```",
     keyConcept: "Mitigate lost-in-the-middle: key findings first, explicit section headers",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Prompting best practices (long context prompting)", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
     ],
   },
@@ -1445,7 +1445,7 @@ const domain5Questions: Question[] = [
       "C is correct. Coverage annotations tell the reader which findings rest on solid sources and which areas have gaps because a source was unavailable, so a partial failure is visible instead of silently shaping the conclusions.\n\nA turns one failed source into a stalled workflow, the \"terminate or block on a single failure\" anti-pattern. B hides the gap: the reader cannot tell that the legal topics were never researched, which is the complaint you started with. D fills the gap with unsourced content and makes the report look more complete than the research was.\n\nHow to implement:\n```typescript\ninterface CoverageNote {\n  topic: string;                         // \"EU legal framework\"\n  status: \"well_supported\" | \"partial\" | \"gap\";\n  reason?: string;                       // \"legal DB unavailable after 3 retries\"\n  sourcesUsed: number;\n}\n// The synthesis prompt requires a \"Coverage\" section built from these notes\n```",
     keyConcept: "Coverage annotations in synthesis output expose gaps from unavailable sources",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
     ],
   },
@@ -1469,7 +1469,7 @@ const domain5Questions: Question[] = [
       "C is correct. An explicit request for a human is an escalation trigger on its own; the agent should honor it immediately, without first attempting investigation or resolution. Passing along what the customer said keeps the hand-off useful.\n\nA ignores the stated preference and acts first. B is the right pattern for a frustrated customer who has not asked for a person (acknowledge, offer to resolve, escalate if they insist), but here the request is explicit. D delays the transfer to investigate, which is exactly what the customer declined.\n\nHow to implement (system prompt excerpt):\n```markdown\n## Escalation\n- If the customer explicitly asks for a human, call escalate_to_human\n  immediately. Do not investigate or attempt a fix first.\n- If the customer is frustrated but has NOT asked for a human and the\n  issue is within your capability, acknowledge it and offer to resolve.\n```",
     keyConcept: "Honor explicit requests for a human immediately, without investigating first",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Customer support agent guide", url: "https://platform.claude.com/docs/en/about-claude/use-case-guides/customer-support-chat" },
     ],
   },
@@ -1493,7 +1493,7 @@ const domain5Questions: Question[] = [
       "A is correct. The duplicates happen because the coordinator cannot see that part of the operation already succeeded. Structured error context should include what was attempted and the partial results; with \"order updated, payment unconfirmed\" the coordinator can retry only the payment step or check its status instead of repeating the whole refund.\n\nB adds transport detail but still says nothing about which steps completed. C is the most tempting option and makes things worse: \"retryable\" with no partial results invites exactly the full re-run that caused the duplicates. D helps the customer conversation but gives the coordinator nothing to decide with.\n\nHow to implement:\n```typescript\ntype RefundError = {\n  isError: true;\n  failureType: \"transient_timeout\";\n  attempted: { tool: \"process_refund\"; orderId: string; amount: number };\n  partialResults: { orderRecordUpdated: true; paymentStatus: \"unconfirmed\" };\n  alternatives: [\"check_payment_status\", \"retry_payment_only\"];\n};\n```",
     keyConcept: "Structured errors must carry what was attempted and partial results",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "MCP specification: Tools (error handling)", url: "https://modelcontextprotocol.io/specification/2025-06-18/server/tools" },
     ],
   },
@@ -1517,7 +1517,7 @@ const domain5Questions: Question[] = [
       "A is correct. Inconsistent answers and references to \"typical patterns\" instead of classes found earlier are the signature of context degradation in long sessions. A scratchpad file persists key findings outside the conversation, and reading it before each answer brings the specific facts back into a strong position.\n\nB pushes the memory work onto the engineer and loses anything they forget to restate. C treats the symptom: the model cannot reliably name what it no longer holds well, so the rule may produce confident wrong names. D reloads the same long, degraded history, which is the cause, not the cure.\n\nHow to implement:\n```markdown\n<!-- notes/exploration.md, maintained by the agent -->\n## Confirmed classes\n- InvoiceLedger (src/billing/ledger.ts): append-only, owns totals\n- RetryScheduler (src/billing/retry.ts): custom backoff, NOT a cron\n## Open questions\n- Who calls RetryScheduler.flush()?\n```\nSystem prompt: \"Before answering, read notes/exploration.md. After each discovery, update it.\"",
     keyConcept: "Scratchpad files counter context degradation in long exploration sessions",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Effective context engineering for AI agents", url: "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents" },
       { title: "Claude Code: Best practices", url: "https://code.claude.com/docs/en/best-practices" },
     ],
@@ -1542,7 +1542,7 @@ const domain5Questions: Question[] = [
       "D is correct. /compact summarizes the conversation so far and frees context in the same session; adding instructions (for example \"/compact keep the refactoring decisions and the list of files changed\") tells Claude what to preserve while the verbose discovery output is condensed. Claude Code also auto-compacts near the limit, but running it yourself with focus instructions controls what survives.\n\nA loses every decision that is not in the last few messages. B deletes project configuration (settings, commands, rules) and does nothing to the live conversation. C confuses limits: max_tokens caps the length of the model's output, not the size of the context window.\n\nHow to implement:\n```text\n/compact Keep: the target module layout, the 6 files already migrated,\nand the decision to keep the legacy adapter until phase 2. Drop grep output.\n```",
     keyConcept: "/compact with focus instructions reduces context filled by verbose discovery output",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Claude Code: Manage costs effectively (/compact)", url: "https://code.claude.com/docs/en/costs" },
     ],
   },
@@ -1566,7 +1566,7 @@ const domain5Questions: Question[] = [
       "B is correct. A stratified random sample of high-confidence extractions (stratified by supplier, template or document type) gives an ongoing, unbiased error rate for the stream nobody reviews, and it surfaces novel error patterns such as a new template before they spread for weeks.\n\nA moves the threshold without measuring anything; a template that is read confidently wrong stays above 0.90 too. C only catches errors that a downstream system happens to reject, and a misread tax amount usually passes validation. D checks the model against itself: a confidently wrong extraction tends to get the same high score twice.\n\nHow to implement:\n```python\nimport random\ndef daily_audit_sample(auto_approved, per_stratum=10):\n    by_stratum = {}\n    for doc in auto_approved:\n        by_stratum.setdefault((doc.supplier_template, doc.doc_type), []).append(doc)\n    # every stratum is sampled, including new, low-volume templates\n    return [d for docs in by_stratum.values()\n              for d in random.sample(docs, min(per_stratum, len(docs)))]\n```",
     keyConcept: "Stratified random sampling of high-confidence extractions measures error rates and finds novel patterns",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Define success criteria and build evaluations", url: "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests" },
     ],
   },
@@ -1590,7 +1590,7 @@ const domain5Questions: Question[] = [
       "B is correct. Attribution is lost at the summarization step because findings are compressed without their claim-source mapping. Making every subagent emit structured mappings (claim, source URL or document name, supporting excerpt), and requiring the summarizer and the synthesis agent to preserve and merge them, keeps each statement traceable end to end.\n\nA lists sources but does not say which source backs which claim. C asks the model to guess attribution, which produces plausible but unverifiable citations. D inflates the synthesis input with full documents, adds lost-in-the-middle risk, and still produces no explicit mapping.\n\nHow to implement:\n```typescript\ninterface ClaimSource {\n  claim: string;\n  sourceUrl: string;\n  documentTitle: string;\n  excerpt: string;          // verbatim supporting text\n  publishedAt?: string;\n}\n// Summarizer contract: input ClaimSource[] -> output ClaimSource[] (merged, never dropped)\n```",
     keyConcept: "Structured claim-source mappings must survive summarization and synthesis",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Citations", url: "https://platform.claude.com/docs/en/build-with-claude/citations" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
     ],
@@ -1615,7 +1615,7 @@ const domain5Questions: Question[] = [
       "B is correct. The report should have explicit sections that distinguish well-established findings (weight loss, three large trials agreeing) from contested ones (insulin sensitivity, small and conflicting studies), preserving how each source characterized its result and the methodological context, such as trial versus observational cohort.\n\nA hides real but contested evidence, so the reader never learns the question is open. C pools studies with different designs into one number, which erases the methodological differences the reader needs. D is a vague disclaimer that does not say which claim is contested or why.\n\nHow to implement (synthesis prompt excerpt):\n```markdown\nStructure the report as:\n## Well-established (consistent, high-quality evidence)\n## Contested or emerging (conflicting or limited evidence)\nFor each finding keep: the source's own wording, study design\n(RCT / cohort / survey), sample size, and the citation.\n```",
     keyConcept: "Separate well-established from contested findings, preserving methodological context",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
     ],
   },
@@ -1639,7 +1639,7 @@ const domain5Questions: Question[] = [
       "A is correct. The labeled set shows the same score means different accuracy for different fields, so one global threshold is miscalibrated. Field-level thresholds tuned on a labeled validation set (for example, the score at which each field reaches 98% observed accuracy) route review attention where errors actually occur.\n\nB discards a useful signal and spends review capacity on fields that are almost always right. C asks the model to calibrate itself through wording; self-reported confidence does not become calibrated because a prompt says so, and the result still has to be measured. D over-routes party_name, which was already 99% accurate, and still has not checked where contract_end_date becomes reliable.\n\nHow to implement:\n```python\ndef calibrate_threshold(scores, correct, target=0.98):\n    # lowest threshold whose accepted set meets the target accuracy\n    for t in sorted(set(scores)):\n        kept = [c for s, c in zip(scores, correct) if s >= t]\n        if kept and sum(kept) / len(kept) >= target:\n            return t\n    return None  # field always goes to review\n\nthresholds = {f: calibrate_threshold(val[f].scores, val[f].correct) for f in FIELDS}\n```",
     keyConcept: "Calibrate field-level confidence thresholds with a labeled validation set",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Define success criteria and build evaluations", url: "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests" },
     ],
   },

@@ -1,0 +1,19 @@
+{
+  "revisado": "2026-11-21",
+  "guia": {
+    "version": "1.1 (noviembre 2026)",
+    "pagina": "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification",
+    "pdf": "https://cc.sj-cdn.net/instructor/6nizmqk8tpzpfjvt6qmmav7rh/public/1794946250/Claude_Certified_Architect_-_Foundations_Exam_Guide.pdf",
+    "sha256": "d4b17b38f6e82efb6ffca39c7ae51eec47a3ab8efb3288d1a7c2b4c444323e01"
+  },
+  "modelos": {
+    "pagina": "https://platform.claude.com/docs/en/about-claude/models/overview.md",
+    "vigentes": [
+      "claude-fable-5-2",
+      "claude-haiku-5-5",
+      "claude-opus-5-5",
+      "claude-sonnet-5-5"
+    ],
+    "sha256Tabla": "4f9f867fa6f2a0fa64d695c1b32045c7efae198d04f9e16170bdcbf1351bcbb5"
+  }
+}

@@ -5,7 +5,7 @@ Simulador interactivo para prepararte para el examen **Claude Certified Architec
 
 **[Usar el simulador →](https://gonzalezulises.github.io/claude-cert-simulator/)**
 
-El formato reproduce la guía oficial **versión 1.0, vigente desde julio de 2026**. Si Anthropic
+El formato reproduce la guía oficial **versión 1.1, vigente desde noviembre de 2026**. Si Anthropic
 publica una revisión, `npm run verificar` es lo que avisa de que este repositorio se quedó atrás.
 
 ## El examen real
@@ -76,7 +76,7 @@ Comprueba lo que se degrada solo con el tiempo:
 
 - que el formato del examen siga coincidiendo con la guía oficial;
 - que el puntaje mida conocimiento y no un patrón: claves repartidas entre A–D, la correcta ni siempre la
-  más larga ni siempre la más corta, una sola respuesta por ítem, las 30 tareas de la guía cubiertas en
+  más larga ni siempre la más corta, pares variados en los ítems de dos respuestas, las 30 tareas de la guía cubiertas en
   cada banco y fuentes oficiales en cada pregunta;
 - que el muestreo ponderado pueda entregar los 60 ítems que anuncia la ficha;
 - que el contenido no enseñe API retirada ni modelos que ya no existen — una mención marcada
@@ -84,6 +84,14 @@ Comprueba lo que se degrada solo con el tiempo:
 - que todos los enlaces respondan **y que ninguno redirija**, porque una redirección es el
   primer síntoma de que la documentación se movió;
 - la paleta Rizoma, el contraste AA y las tildes de la interfaz en español.
+
+### Vigilancia semanal de Anthropic
+
+Cada lunes, `.github/workflows/vigilar-fuentes.yml` corre `scripts/vigilar-fuentes.mjs` y la
+comprobación de enlaces. Si cambió el PDF de la guía del examen o la tabla de modelos vigentes
+de la documentación, o si un enlace oficial dejó de responder, abre un issue con la etiqueta
+`fuentes`. Tras revisar el banco contra la fuente nueva, se vuelve a fijar en
+`scripts/fuentes-vigiladas.json`.
 
 ## Tecnologías
 

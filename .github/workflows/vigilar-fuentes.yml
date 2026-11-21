@@ -1,0 +1,68 @@
+name: Vigilar fuentes de Anthropic
+
+# Cada lunes comprueba que el banco sigue al día con Anthropic: que la guía del examen y la
+# tabla de modelos vigentes no cambiaron (scripts/vigilar-fuentes.mjs) y que los enlaces a la
+# documentación oficial siguen vivos (scripts/verificar.mjs). Si algo cambió, abre un issue
+# con la etiqueta `fuentes`, o comenta en el que ya esté abierto, para no apilar duplicados.
+on:
+  schedule:
+    - cron: "0 13 * * 1" # lunes 8:00 en Panamá
+  workflow_dispatch:
+
+# Una corrida a la vez: dos corridas a la par podrían abrir dos issues.
+concurrency:
+  group: vigilar-fuentes
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  vigilar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Guía del examen y modelos vigentes
+        id: fuentes
+        shell: bash # pipefail: que tee no esconda el código de salida
+        run: node scripts/vigilar-fuentes.mjs 2>&1 | tee fuentes.txt
+        continue-on-error: true
+
+      - name: Construir y verificar enlaces oficiales
+        id: enlaces
+        shell: bash
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+          npm run -s verificar 2>&1 | tee enlaces.txt
+        continue-on-error: true
+
+      - name: Avisar con un issue
+        if: steps.fuentes.outcome == 'failure' || steps.enlaces.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "La revisión semanal encontró algo que pide actualizar el simulador: $RUN_URL"
+            echo
+            echo '```'
+            cat fuentes.txt 2>/dev/null
+            sed 's/\x1b\[[0-9;]*m//g' enlaces.txt 2>/dev/null | grep -E '✗|esperado|encontrado|FALLA' || true
+            echo '```'
+          } > cuerpo.md
+          gh label create fuentes --color D93F0B --description "Cambió una fuente de Anthropic" 2>/dev/null || true
+          abierto=$(gh issue list --label fuentes --state open --json number -q '.[0].number')
+          if [ -n "$abierto" ]; then
+            gh issue comment "$abierto" --body-file cuerpo.md
+          else
+            gh issue create --title "Revisar el simulador: cambió una fuente de Anthropic" --label fuentes --body-file cuerpo.md
+          fi
+          exit 1
