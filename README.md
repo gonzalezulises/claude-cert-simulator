@@ -24,13 +24,14 @@ publica una revisión, `npm run verificar` es lo que avisa de que este repositor
 ## Modos
 
 ### Modo estudio
-- 60 preguntas basadas en escenarios reales, con explicación después de cada respuesta
+- 66 preguntas basadas en escenarios reales (6 de varias respuestas), con explicación después de cada respuesta
 - Filtrado por dominio o todos a la vez
 - Un concepto clave y sus fuentes oficiales de Anthropic (documentación, guía del examen, Anthropic Academy) por pregunta
 
 ### Modo examen
-- 60 preguntas sacadas de un banco de 64, distintas a las del modo estudio
-- Solo ítems de una respuesta, y mezcla los 6 escenarios (el examen real usa 4); el puntaje escalado es una estimación lineal
+- Como el examen real: sortea 4 de los 6 escenarios y arma 60 preguntas solo de esos cuatro
+- Toma primero el banco del examen (76, 12 de ellas de varias respuestas) y completa con el de estudio los dominios que a esos escenarios les faltan
+- Ítems de una y de varias respuestas («Selecciona dos»); el puntaje escalado es una estimación lineal
 - Muestreo **ponderado por el peso oficial de cada dominio**, no a partes iguales
 - Temporizador de 120 minutos y navegador visual de preguntas
 - Puntuación escalada 100–1000, sin explicaciones hasta terminar
@@ -43,15 +44,15 @@ publica una revisión, `npm run verificar` es lo que avisa de que este repositor
 ## Dominios
 
 Los pesos son los de la guía oficial. El banco tiene más preguntas del dominio 1 justamente
-porque es el que más pesa: con 12 por dominio, un examen ponderado de 60 ítems solo llegaba a 56.
+porque es el que más pesa. Con 4 escenarios sorteados, si a esos cuatro les faltan ítems de un dominio, sus lugares pasan a los demás: la mezcla por dominio es aproximada, como dice la guía.
 
-| # | Dominio | Peso | En el examen | En el banco |
+| # | Dominio | Peso | En el examen (objetivo) | En el banco del examen |
 |---|---------|------|--------------|-------------|
-| 1 | Agentic Architecture & Orchestration | 27 % | 16 | 16 |
-| 2 | Tool Design & MCP Integration | 18 % | 11 | 12 |
-| 3 | Claude Code Configuration & Workflows | 20 % | 12 | 12 |
-| 4 | Prompt Engineering & Structured Output | 20 % | 12 | 12 |
-| 5 | Context Management & Reliability | 15 % | 9 | 12 |
+| 1 | Agentic Architecture & Orchestration | 27 % | 16 | 18 |
+| 2 | Tool Design & MCP Integration | 18 % | 11 | 13 |
+| 3 | Claude Code Configuration & Workflows | 20 % | 12 | 15 |
+| 4 | Prompt Engineering & Structured Output | 20 % | 12 | 16 |
+| 5 | Context Management & Reliability | 15 % | 9 | 14 |
 
 ## Escenarios
 
