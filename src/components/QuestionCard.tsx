@@ -1,6 +1,6 @@
 "use client";
 
-import { Question } from "@/data/questions";
+import { AnswerKey, OptionId, Question } from "@/data/questions";
 import { questionsEs } from "@/data/questions-es";
 import { examQuestionsEs } from "@/data/questions-exam-es";
 import { Locale, t } from "@/lib/i18n";
@@ -16,8 +16,8 @@ interface QuestionCardProps {
   locale: Locale;
   index: number;
   total: number;
-  selectedAnswer: "A" | "B" | "C" | "D" | null;
-  onAnswer: (answer: "A" | "B" | "C" | "D") => void;
+  selectedAnswer: AnswerKey | null;
+  onAnswer: (answer: AnswerKey) => void;
   showExplanation: boolean;
   isStudyMode: boolean;
   onNext: () => void;
@@ -47,6 +47,13 @@ export default function QuestionCard({
   const [hoveredOption, setHoveredOption] = useState<string | null>(null);
   const answered = selectedAnswer !== null;
   const isCorrect = selectedAnswer === question.correctAnswer;
+  const responsesNeeded = question.correctAnswer.length;
+  const isMulti = responsesNeeded > 1;
+  // Multiple response: letters stay in a draft until the learner confirms the set.
+  const [draft, setDraft] = useState<OptionId[]>(() => (selectedAnswer ? ([...selectedAnswer] as OptionId[]) : []));
+  const toggleDraft = (id: OptionId) =>
+    setDraft((d) => (d.includes(id) ? d.filter((x) => x !== id) : d.length < responsesNeeded ? [...d, id] : d));
+  const draftKey = [...draft].sort().join("") as AnswerKey;
 
   const tr = locale === "es" ? (questionsEs[question.id] ?? examQuestionsEs[question.id]) : null;
   const questionText = tr?.question ?? question.question;
@@ -90,12 +97,19 @@ export default function QuestionCard({
           <p className="text-base leading-relaxed font-medium">
             {questionText}
           </p>
+          {isMulti && (
+            <Badge variant="outline" className="w-fit text-xs">
+              {t("question.selectN", locale).replace("{n}", String(responsesNeeded))}
+            </Badge>
+          )}
         </CardHeader>
         <CardContent className="space-y-2">
           {question.options.map((option) => {
-            const isSelected = selectedAnswer === option.id;
-            const isCorrectOption = option.id === question.correctAnswer;
             const showResult = showExplanation && answered;
+            const isSelected = isMulti
+              ? (showResult ? (selectedAnswer ?? "") : draftKey).includes(option.id)
+              : selectedAnswer === option.id;
+            const isCorrectOption = question.correctAnswer.includes(option.id);
 
             let optionStyle = "border-border hover:border-primary/40 hover:bg-accent/50 cursor-pointer";
             if (isSelected && !showResult) {
@@ -115,8 +129,11 @@ export default function QuestionCard({
               <button
                 key={option.id}
                 onClick={() => {
-                  if (!showResult) onAnswer(option.id);
+                  if (showResult) return;
+                  if (isMulti) toggleDraft(option.id);
+                  else onAnswer(option.id);
                 }}
+                aria-pressed={isSelected}
                 onMouseEnter={() => setHoveredOption(option.id)}
                 onMouseLeave={() => setHoveredOption(null)}
                 disabled={showResult}
@@ -144,6 +161,16 @@ export default function QuestionCard({
               </button>
             );
           })}
+          {isMulti && !(showExplanation && answered) && (
+            <div className="flex justify-end pt-1">
+              <Button
+                onClick={() => onAnswer(draftKey)}
+                disabled={draft.length !== responsesNeeded || draftKey === selectedAnswer}
+              >
+                {t("question.confirm", locale)}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -173,7 +200,7 @@ export default function QuestionCard({
               )}>
                 {isCorrect
                   ? t("question.correct", locale)
-                  : `${t("question.incorrect", locale)} ${question.correctAnswer}`}
+                  : `${t("question.incorrect", locale)} ${question.correctAnswer.split("").join(", ")}`}
               </span>
             </div>
             <Separator className="mb-3" />

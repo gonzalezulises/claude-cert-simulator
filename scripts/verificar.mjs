@@ -256,7 +256,8 @@ seccion('Calidad del banco de preguntas');
         id: m[1],
         dominio: Number(cadena(/"?domain"?:\s*(\d)/, trozo)),
         tarea: cadena(/"?taskStatement"?:\s*"([^"]+)"/, trozo),
-        clave: cadena(/"?correctAnswer"?:\s*"([A-D])"/, trozo),
+        clave: cadena(/"?correctAnswer"?:\s*"([A-D]{1,2})"/, trozo),
+        pregunta: cadena(/"?question"?:\s*"((?:[^"\\]|\\.)*)"/, trozo) ?? '',
         opciones,
         fuentes: [...(cadena(/"?sources"?:\s*\[([\s\S]*?)\]/, trozo) ?? '').matchAll(/https:\/\/[^"]+/g)].map((u) => u[0]),
       };
@@ -267,7 +268,10 @@ seccion('Calidad del banco de preguntas');
     ['estudio', 'src/data/questions.ts', 'D', 'src/data/questions-es.ts'],
     ['examen', 'src/data/questions-exam.ts', 'E', 'src/data/questions-exam-es.ts'],
   ]) {
-    const qs = items(archivo, prefijo);
+    const todos = items(archivo, prefijo);
+    // Reparto y longitud se miden aparte: ítems de una respuesta (qs) y de dos (varias).
+    const qs = todos.filter((q) => q.clave?.length === 1);
+    const varias = todos.filter((q) => q.clave?.length === 2);
     const n = qs.length;
 
     const letras = { A: 0, B: 0, C: 0, D: 0 };
@@ -277,9 +281,9 @@ seccion('Calidad del banco de preguntas');
       ? ok(`${banco}: claves repartidas entre A–D`, Object.entries(letras).map(([l, c]) => `${l} ${c}`).join(' · '))
       : mal(`${banco}: reparto de claves`, 'cada letra entre 15 % y 35 %', Object.entries(letras).map(([l, c]) => `${l} ${c}`).join(' · '));
 
-    const malFormadas = qs.filter((q) => q.opciones.length !== 4 || !q.clave);
+    const malFormadas = todos.filter((q) => q.opciones.length !== 4 || !q.clave || (q.clave.length === 2 && q.clave[0] >= q.clave[1]));
     malFormadas.length === 0
-      ? ok(`${banco}: cuatro opciones y una clave por ítem`, `${n} ítems`)
+      ? ok(`${banco}: cuatro opciones y una clave por ítem`, `${todos.length} ítems`)
       : mal(`${banco}: ítems mal formados`, '4 opciones y correctAnswer', malFormadas.map((q) => q.id).join(', '));
 
     const larga = qs.filter((q) => {
@@ -299,12 +303,26 @@ seccion('Calidad del banco de preguntas');
       ? ok(`${banco}: la correcta no es siempre la más corta`, `${corta.length}/${n}`)
       : mal(`${banco}: sesgo de longitud inverso`, '≤ 35 % de ítems con la correcta como opción más corta', `${corta.length}/${n}`);
 
+    // Varias respuestas: el enunciado dice cuántas, ningún par domina y el par correcto no son las dos más largas.
+    const pares = {};
+    for (const q of varias) pares[q.clave] = (pares[q.clave] || 0) + 1;
+    const sinAviso = varias.filter((q) => !/\(Select two\.\)\s*$/.test(q.pregunta));
+    const parMax = Math.max(0, ...Object.values(pares));
+    const dosLargas = varias.filter((q) => {
+      const largos = [...q.opciones].sort((a, b) => b.len - a.len).slice(0, 2).map((o) => o.id).sort().join('');
+      return largos === q.clave;
+    });
+    varias.length > 0 && sinAviso.length === 0 && parMax / varias.length <= 0.35 && dosLargas.length / varias.length <= 0.35
+      ? ok(`${banco}: ítems de varias respuestas bien armados`, `${varias.length} ítems · pares ${Object.entries(pares).map(([p, c]) => `${p} ${c}`).join(' · ')} · par más largo ${dosLargas.length}`)
+      : mal(`${banco}: ítems de varias respuestas`, '≥ 1, «(Select two.)» al final, ningún par > 35 %, par correcto = dos más largas ≤ 35 %',
+          `${varias.length} ítems · sin aviso: ${sinAviso.map((q) => q.id).join(', ') || '—'} · par máx ${parMax} · dos largas ${dosLargas.length}`);
+
     const multi = qs.filter((q) => q.opciones.some((o) => /\b(options?|opciones) [A-D] (and|y) [A-D]\b|all of the above|none of the above/i.test(o.text)));
     multi.length === 0
       ? ok(`${banco}: una sola respuesta por ítem`)
       : mal(`${banco}: ítems con respuesta compuesta`, 'ninguno', multi.map((q) => q.id).join(', '));
 
-    const tareaMal = qs.filter((q) => {
+    const tareaMal = todos.filter((q) => {
       const [d, t] = (q.tarea ?? '').split('.').map(Number);
       return d !== q.dominio || !(t >= 1 && t <= TAREAS[d]);
     });
@@ -314,18 +332,18 @@ seccion('Calidad del banco de preguntas');
 
     const sinCubrir = [];
     for (const [d, total] of Object.entries(TAREAS))
-      for (let t = 1; t <= total; t++) if (!qs.some((q) => q.tarea === `${d}.${t}`)) sinCubrir.push(`${d}.${t}`);
+      for (let t = 1; t <= total; t++) if (!todos.some((q) => q.tarea === `${d}.${t}`)) sinCubrir.push(`${d}.${t}`);
     sinCubrir.length === 0
       ? ok(`${banco}: cubre las 30 tareas de la guía`)
       : mal(`${banco}: tareas sin preguntas`, 'al menos una por tarea', sinCubrir.join(', '));
 
-    const sinFuente = qs.filter((q) => !q.fuentes.length || !q.fuentes.every((u) => HOSTS.test(u)));
+    const sinFuente = todos.filter((q) => !q.fuentes.length || !q.fuentes.every((u) => HOSTS.test(u)));
     sinFuente.length === 0
       ? ok(`${banco}: cada ítem cita fuentes oficiales de Anthropic`)
       : mal(`${banco}: fuentes`, '≥ 1 URL y solo de dominios oficiales', sinFuente.map((q) => q.id).join(', '));
 
     const es = leer(archivoEs);
-    const sinEs = qs.filter((q) => !es.includes(`"${q.id}": {`));
+    const sinEs = todos.filter((q) => !es.includes(`"${q.id}": {`));
     sinEs.length === 0
       ? ok(`${banco}: traducción al español completa`)
       : mal(`${banco}: faltan traducciones`, 'una por ítem', sinEs.map((q) => q.id).join(', '));

@@ -6,8 +6,8 @@ const translations = {
   "menu.title": { es: "Claude Certified Architect", en: "Claude Certified Architect" },
   "menu.subtitle": { es: "Simulador de certificación — Foundations", en: "Certification Simulator — Foundations" },
   "menu.description": {
-    es: "124 preguntas basadas en escenarios reales. 5 dominios. Modo estudio (60 preguntas) y modo examen (60 ítems distintos, sorteados según el peso oficial de cada dominio) para evaluar tu preparación.",
-    en: "124 scenario-based questions. 5 domains. Study mode (60 questions) and exam mode (60 different items, drawn by official domain weight) to test your readiness.",
+    es: "142 preguntas basadas en escenarios reales. 5 dominios. Modo estudio (66 preguntas) y modo examen (60 ítems de 4 escenarios sorteados, según el peso oficial de cada dominio) para evaluar tu preparación.",
+    en: "142 scenario-based questions. 5 domains. Study mode (66 questions) and exam mode (60 items from 4 randomly drawn scenarios, by official domain weight) to test your readiness.",
   },
 
   // Study mode
@@ -23,8 +23,8 @@ const translations = {
   // Exam mode
   "exam.title": { es: "Modo Examen", en: "Exam Mode" },
   "exam.description": {
-    es: "Simula el examen real: 60 preguntas exclusivas (distintas al modo estudio), 120 minutos, sin explicaciones hasta terminar.",
-    en: "Simulate the real exam: 60 exclusive questions (different from study mode), 120 minutes, no explanations until the end.",
+    es: "Simula el examen real: 60 preguntas de 4 escenarios sorteados, 120 minutos, sin explicaciones hasta terminar. Usa primero el banco del examen y completa con el de estudio.",
+    en: "Simulate the real exam: 60 questions from 4 randomly drawn scenarios, 120 minutes, no explanations until the end. Uses the exam bank first and fills in from the study bank.",
   },
   "exam.questions": { es: "Preguntas", en: "Questions" },
   "exam.minutes": { es: "Minutos", en: "Minutes" },
@@ -44,6 +44,9 @@ const translations = {
   "question.correct": { es: "Correcto", en: "Correct" },
   "question.incorrect": { es: "Incorrecto — La respuesta correcta es", en: "Incorrect — The correct answer is" },
   "question.keyConcept": { es: "Concepto clave:", en: "Key concept:" },
+  "question.selectN": { es: "Selecciona {n} respuestas", en: "Select {n} responses" },
+  "question.confirm": { es: "Confirmar respuesta", en: "Confirm answer" },
+  "exam.scenarios": { es: "Escenarios de este intento:", en: "Scenarios in this attempt:" },
   "question.sources": { es: "Fuentes oficiales:", en: "Official sources:" },
   "question.prev": { es: "← Anterior", en: "← Previous" },
   "question.next": { es: "Siguiente →", en: "Next →" },
@@ -82,12 +85,12 @@ const translations = {
   "info.tech": { es: "Tecnologías evaluadas", en: "Technologies tested" },
   "info.multipleChoice": { es: "60 ítems en 120 minutos", en: "60 items in 120 minutes" },
   "info.oneCorrect": {
-    es: "El examen real tiene ítems de una y de varias respuestas; este simulador solo usa ítems de una respuesta",
-    en: "The real exam has single- and multiple-response items; this simulator only uses single-response items",
+    es: "Ítems de una y de varias respuestas; cada ítem dice cuántas elegir",
+    en: "Single- and multiple-response items; each item states how many to select",
   },
   "info.scenarioMix": {
-    es: "Aquí el modo examen mezcla los 6 escenarios; el real usa 4",
-    en: "Here exam mode mixes all 6 scenarios; the real exam uses 4",
+    es: "4 escenarios sorteados de los 6, como en el examen real",
+    en: "4 scenarios drawn at random from the 6, as in the real exam",
   },
   "info.noPenalty": { es: "Sin penalidad por adivinar", en: "No penalty for guessing" },
   "info.scaledScore": { es: "Puntuación escalada 100–1000 (aquí, una estimación lineal)", en: "Scaled score 100-1000 (here, a linear estimate)" },

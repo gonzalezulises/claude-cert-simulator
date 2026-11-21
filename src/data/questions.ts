@@ -17,6 +17,9 @@ export type Difficulty = "basic" | "intermediate" | "advanced";
 
 export type OptionId = "A" | "B" | "C" | "D";
 
+// A key is the correct letters in order: "C" for single response, "BD" for "select two".
+export type AnswerKey = OptionId | "AB" | "AC" | "AD" | "BC" | "BD" | "CD";
+
 export interface Option {
   id: OptionId;
   text: string;
@@ -31,7 +34,7 @@ export interface Question {
   difficulty: Difficulty;
   question: string;
   options: Option[];
-  correctAnswer: OptionId;
+  correctAnswer: AnswerKey;
   explanation: string;
   keyConcept: string;
   sources?: { title: string; url: string }[];
@@ -1594,17 +1597,33 @@ export function getExamSample(totalQuestions: number = 60): Question[] {
   return sample.sort(() => Math.random() - 0.5);
 }
 
-export function getExamSampleFromPool(pool: Question[], totalQuestions: number = 30): Question[] {
-  const sample: Question[] = [];
-  const domainList: Domain[] = [1, 2, 3, 4, 5];
-
-  for (const domain of domainList) {
-    const weight = domainWeights[domain] / 100;
-    const count = Math.round(totalQuestions * weight);
-    const domainQs = pool.filter((q) => q.domain === domain);
-    const shuffled = [...domainQs].sort(() => Math.random() - 0.5);
-    sample.push(...shuffled.slice(0, count));
+function shuffled<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
   }
+  return out;
+}
 
-  return sample.sort(() => Math.random() - 0.5);
+export const EXAM_SCENARIO_COUNT = 4;
+
+// Like the real exam: 4 of the 6 scenarios at random, then items weighted by domain.
+// `primary` items go first; `backup` fills a domain the chosen scenarios lack in `primary`.
+export function getScenarioExamSample(primary: Question[], backup: Question[], totalQuestions: number) {
+  const chosen = shuffled(scenarios).slice(0, EXAM_SCENARIO_COUNT);
+  const inExam = (q: Question) => chosen.includes(q.scenario);
+  const candidates = (pool: Question[], d: Domain) => shuffled(pool.filter((q) => inExam(q) && q.domain === d));
+  const sample: Question[] = [];
+  const leftovers: Question[] = [];
+  for (const d of [1, 2, 3, 4, 5] as Domain[]) {
+    const ranked = [...candidates(primary, d), ...candidates(backup, d)];
+    const count = Math.round((totalQuestions * domainWeights[d]) / 100);
+    sample.push(...ranked.slice(0, count));
+    leftovers.push(...ranked.slice(count));
+  }
+  // A domain short on items gives its slots to the rest, primary bank first.
+  const fill = leftovers.sort((a, b) => Number(backup.includes(a)) - Number(backup.includes(b)));
+  sample.push(...fill.slice(0, totalQuestions - sample.length));
+  return { questions: shuffled(sample), scenarios: chosen };
 }
