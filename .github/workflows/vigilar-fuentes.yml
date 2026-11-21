@@ -9,6 +9,11 @@ on:
     - cron: "0 13 * * 1" # lunes 8:00 en Panamá
   workflow_dispatch:
 
+# Una corrida a la vez: dos corridas a la par podrían abrir dos issues.
+concurrency:
+  group: vigilar-fuentes
+  cancel-in-progress: false
+
 permissions:
   contents: read
   issues: write
@@ -27,7 +32,7 @@ jobs:
       - name: Guía del examen y modelos vigentes
         id: fuentes
         shell: bash # pipefail: que tee no esconda el código de salida
-        run: node scripts/vigilar-fuentes.mjs | tee fuentes.txt
+        run: node scripts/vigilar-fuentes.mjs 2>&1 | tee fuentes.txt
         continue-on-error: true
 
       - name: Construir y verificar enlaces oficiales

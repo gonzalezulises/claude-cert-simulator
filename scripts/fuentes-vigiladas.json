@@ -8,6 +8,12 @@
   },
   "modelos": {
     "pagina": "https://platform.claude.com/docs/en/about-claude/models/overview.md",
-    "vigentes": ["claude-fable-5-2", "claude-haiku-5-5", "claude-opus-5-5", "claude-sonnet-5-5"]
+    "vigentes": [
+      "claude-fable-5-2",
+      "claude-haiku-5-5",
+      "claude-opus-5-5",
+      "claude-sonnet-5-5"
+    ],
+    "sha256Tabla": "4f9f867fa6f2a0fa64d695c1b32045c7efae198d04f9e16170bdcbf1351bcbb5"
   }
 }
