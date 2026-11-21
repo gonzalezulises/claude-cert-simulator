@@ -225,12 +225,111 @@ seccion('Vigencia técnica del contenido');
 
   // Los modelos vigentes sí deben aparecer: el examen se rinde sobre la API actual.
   const todo = cuerpo.map(([, s]) => s).join('');
-  const vigentes = ['claude-opus-5', 'claude-sonnet-5', 'claude-haiku-4-5'].filter((m) =>
+  const vigentes = ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5'].filter((m) =>
     todo.includes(m),
   );
   vigentes.length >= 2
     ? ok('menciona modelos vigentes', vigentes.join(', '))
-    : mal('modelos vigentes', 'al menos 2 de opus-5 / sonnet-5 / haiku-4-5', vigentes.join(', ') || 'ninguno');
+    : mal('modelos vigentes', 'al menos 2 de opus-5-5 / sonnet-5-5 / haiku-5-5', vigentes.join(', ') || 'ninguno');
+}
+
+/* ─────────────────────────────────────────────────────────────
+   3b. Calidad del banco: que el puntaje mida conocimiento
+   ───────────────────────────────────────────────────────────── */
+// Nació el 21-nov-2026: 92 de 124 claves eran B, ninguna D, y la correcta era
+// la opción más larga en 109. Marcar siempre B aprobaba el examen simulado.
+seccion('Calidad del banco de preguntas');
+{
+  const TAREAS = { 1: 7, 2: 5, 3: 6, 4: 6, 5: 6 }; // tareas por dominio en la guía §6
+  const HOSTS = /^https:\/\/(code\.claude\.com|platform\.claude\.com|modelcontextprotocol\.io|www\.anthropic\.com|claude\.com|anthropic\.skilljar\.com|anthropic-partners\.skilljar\.com)\//;
+  const cadena = (re, s) => s.match(re)?.[1];
+
+  // Parte el archivo en un trozo por pregunta: desde su id hasta el siguiente.
+  const items = (archivo, prefijo) => {
+    const s = leer(archivo);
+    const re = new RegExp(`^\\s*id: "(${prefijo}\\d-\\d{3})",$`, 'gm');
+    const marcas = [...s.matchAll(re)];
+    return marcas.map((m, i) => {
+      const trozo = s.slice(m.index, marcas[i + 1]?.index ?? s.length);
+      const opciones = [...trozo.matchAll(/\{\s*"?id"?:\s*"([A-D])",\s*"?text"?:\s*"((?:[^"\\]|\\.)*)"/g)].map((o) => ({ id: o[1], len: o[2].length, text: o[2] }));
+      return {
+        id: m[1],
+        dominio: Number(cadena(/"?domain"?:\s*(\d)/, trozo)),
+        tarea: cadena(/"?taskStatement"?:\s*"([^"]+)"/, trozo),
+        clave: cadena(/"?correctAnswer"?:\s*"([A-D])"/, trozo),
+        opciones,
+        fuentes: [...(cadena(/"?sources"?:\s*\[([\s\S]*?)\]/, trozo) ?? '').matchAll(/https:\/\/[^"]+/g)].map((u) => u[0]),
+      };
+    });
+  };
+
+  for (const [banco, archivo, prefijo, archivoEs] of [
+    ['estudio', 'src/data/questions.ts', 'D', 'src/data/questions-es.ts'],
+    ['examen', 'src/data/questions-exam.ts', 'E', 'src/data/questions-exam-es.ts'],
+  ]) {
+    const qs = items(archivo, prefijo);
+    const n = qs.length;
+
+    const letras = { A: 0, B: 0, C: 0, D: 0 };
+    for (const q of qs) letras[q.clave] = (letras[q.clave] || 0) + 1;
+    const fuera = Object.entries(letras).filter(([, c]) => c / n < 0.15 || c / n > 0.35);
+    fuera.length === 0
+      ? ok(`${banco}: claves repartidas entre A–D`, Object.entries(letras).map(([l, c]) => `${l} ${c}`).join(' · '))
+      : mal(`${banco}: reparto de claves`, 'cada letra entre 15 % y 35 %', Object.entries(letras).map(([l, c]) => `${l} ${c}`).join(' · '));
+
+    const malFormadas = qs.filter((q) => q.opciones.length !== 4 || !q.clave);
+    malFormadas.length === 0
+      ? ok(`${banco}: cuatro opciones y una clave por ítem`, `${n} ítems`)
+      : mal(`${banco}: ítems mal formados`, '4 opciones y correctAnswer', malFormadas.map((q) => q.id).join(', '));
+
+    const larga = qs.filter((q) => {
+      const c = q.opciones.find((o) => o.id === q.clave)?.len ?? 0;
+      return q.opciones.every((o) => o.id === q.clave || o.len < c);
+    });
+    larga.length / n <= 0.35
+      ? ok(`${banco}: la correcta no es siempre la más larga`, `${larga.length}/${n}`)
+      : mal(`${banco}: sesgo de longitud`, '≤ 35 % de ítems con la correcta como opción más larga', `${larga.length}/${n}`);
+
+    // El arreglo al revés también es una pista: la correcta nunca puede ser siempre la más corta.
+    const corta = qs.filter((q) => {
+      const c = q.opciones.find((o) => o.id === q.clave)?.len ?? 0;
+      return q.opciones.every((o) => o.id === q.clave || o.len > c);
+    });
+    corta.length / n <= 0.35
+      ? ok(`${banco}: la correcta no es siempre la más corta`, `${corta.length}/${n}`)
+      : mal(`${banco}: sesgo de longitud inverso`, '≤ 35 % de ítems con la correcta como opción más corta', `${corta.length}/${n}`);
+
+    const multi = qs.filter((q) => q.opciones.some((o) => /\b(options?|opciones) [A-D] (and|y) [A-D]\b|all of the above|none of the above/i.test(o.text)));
+    multi.length === 0
+      ? ok(`${banco}: una sola respuesta por ítem`)
+      : mal(`${banco}: ítems con respuesta compuesta`, 'ninguno', multi.map((q) => q.id).join(', '));
+
+    const tareaMal = qs.filter((q) => {
+      const [d, t] = (q.tarea ?? '').split('.').map(Number);
+      return d !== q.dominio || !(t >= 1 && t <= TAREAS[d]);
+    });
+    tareaMal.length === 0
+      ? ok(`${banco}: cada ítem apunta a una tarea real de su dominio`)
+      : mal(`${banco}: taskStatement inválido`, 'una tarea de la guía §6 en su dominio', tareaMal.map((q) => `${q.id}:${q.tarea}`).join(', '));
+
+    const sinCubrir = [];
+    for (const [d, total] of Object.entries(TAREAS))
+      for (let t = 1; t <= total; t++) if (!qs.some((q) => q.tarea === `${d}.${t}`)) sinCubrir.push(`${d}.${t}`);
+    sinCubrir.length === 0
+      ? ok(`${banco}: cubre las 30 tareas de la guía`)
+      : mal(`${banco}: tareas sin preguntas`, 'al menos una por tarea', sinCubrir.join(', '));
+
+    const sinFuente = qs.filter((q) => !q.fuentes.length || !q.fuentes.every((u) => HOSTS.test(u)));
+    sinFuente.length === 0
+      ? ok(`${banco}: cada ítem cita fuentes oficiales de Anthropic`)
+      : mal(`${banco}: fuentes`, '≥ 1 URL y solo de dominios oficiales', sinFuente.map((q) => q.id).join(', '));
+
+    const es = leer(archivoEs);
+    const sinEs = qs.filter((q) => !es.includes(`"${q.id}": {`));
+    sinEs.length === 0
+      ? ok(`${banco}: traducción al español completa`)
+      : mal(`${banco}: faltan traducciones`, 'una por ítem', sinEs.map((q) => q.id).join(', '));
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -504,9 +603,10 @@ if (!SIN_RED) {
   for (const f of fuentes) {
     for (const m of leer(f).matchAll(/https:\/\/[^\s"'`)\\]+/g)) {
       const u = m[0].replace(/[.,;]$/, '');
-      // Dominios inventados dentro de los enunciados: no son enlaces reales.
+      // Dominios inventados dentro de los enunciados, marcadores como https://... y
+      // endpoints de configuración de ejemplo (un servidor MCP exige auth: 401 es lo esperado).
       if (
-        /example\.com|your-app\.com|\b(prod|staging)\.|internal\.company|localhost|analytics\.com/.test(u)
+        /example\.(com|org|net)|^https:\/\/\.\.|api\.githubcopilot\.com\/mcp|your-app\.com|\b(prod|staging)\.|internal\.company|localhost|analytics\.com/.test(u)
       )
         continue;
       urls.add(u);
