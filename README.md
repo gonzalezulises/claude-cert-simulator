@@ -112,3 +112,5 @@ npm run sellar-version # sella version.json con la fecha del último commit
 
 Simulador no oficial — solo para estudio personal. Basado en la guía pública del examen
 Claude Certified Architect – Foundations de Anthropic.
+
+Elaborado por Ulises González · [ulises@rizo.ma](mailto:ulises@rizo.ma)
