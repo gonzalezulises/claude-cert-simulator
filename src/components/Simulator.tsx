@@ -321,7 +321,7 @@ export default function Simulator() {
                 <div className="space-y-0.5">
                   <a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Headless Mode (CI/CD)</a>
                   <a href="https://platform.claude.com/docs/en/build-with-claude/batch-processing" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Message Batches API</a>
-                  <a href="https://claude.com/blog/building-agents-with-the-claude-agent-sdk" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Building Agents (Blog)</a>
+                  <a href="https://claude.com/resources/articles/building-agents-with-the-claude-agent-sdk" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Building Agents (Blog)</a>
                   <a href="https://github.com/anthropics/claude-agent-sdk-python" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Agent SDK Python (GitHub)</a>
                 </div>
               </div>
@@ -333,6 +333,12 @@ export default function Simulator() {
                 </p>
                 <div className="space-y-0.5">
                   <a href="https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">{locale === "es" ? "Inscripción al examen (Skilljar)" : "Exam Access (Skilljar)"}</a>
+                  <a href="https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">{locale === "es" ? "Guía oficial del examen (PDF, en la misma página)" : "Official exam guide (PDF, same page)"}</a>
+                  <a href="https://anthropic.skilljar.com/claude-code-in-action" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Anthropic Academy: Claude Code in Action</a>
+                  <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Anthropic Academy: Building with the Claude API</a>
+                  <a href="https://anthropic.skilljar.com/introduction-to-model-context-protocol" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Anthropic Academy: Introduction to MCP</a>
+                  <a href="https://anthropic.skilljar.com/introduction-to-agent-skills" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Anthropic Academy: Introduction to agent skills</a>
+                  <a href="https://anthropic.skilljar.com/introduction-to-subagents" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Anthropic Academy: Introduction to subagents</a>
                   <a href="https://www.anthropic.com/news/claude-partner-network" target="_blank" rel="noopener noreferrer" className="block text-xs text-primary hover:underline">Claude Partner Network</a>
                 </div>
               </div>
@@ -467,6 +473,7 @@ export default function Simulator() {
                 <ul className="text-xs text-muted-foreground space-y-0.5">
                   <li>• {t("info.multipleChoice", locale)}</li>
                   <li>• {t("info.oneCorrect", locale)}</li>
+                  <li>• {t("info.scenarioMix", locale)}</li>
                   <li>• {t("info.noPenalty", locale)}</li>
                   <li>• {t("info.scaledScore", locale)}</li>
                   <li>• {t("info.min720", locale)}</li>

@@ -2,7 +2,7 @@ export type Locale = "es" | "en";
 
 const translations = {
   // Menu
-  "menu.badge": { es: "ANTHROPIC", en: "ANTHROPIC" },
+  "menu.badge": { es: "SIMULADOR NO OFICIAL", en: "UNOFFICIAL SIMULATOR" },
   "menu.title": { es: "Claude Certified Architect", en: "Claude Certified Architect" },
   "menu.subtitle": { es: "Simulador de certificación — Foundations", en: "Certification Simulator — Foundations" },
   "menu.description": {
@@ -44,6 +44,7 @@ const translations = {
   "question.correct": { es: "Correcto", en: "Correct" },
   "question.incorrect": { es: "Incorrecto — La respuesta correcta es", en: "Incorrect — The correct answer is" },
   "question.keyConcept": { es: "Concepto clave:", en: "Key concept:" },
+  "question.sources": { es: "Fuentes oficiales:", en: "Official sources:" },
   "question.prev": { es: "← Anterior", en: "← Previous" },
   "question.next": { es: "Siguiente →", en: "Next →" },
   "question.finish": { es: "Finalizar", en: "Finish" },
@@ -66,7 +67,7 @@ const translations = {
   // Results
   "results.passed": { es: "Aprobado", en: "Passed" },
   "results.failed": { es: "No aprobado", en: "Not passed" },
-  "results.scaledScore": { es: "Puntaje escalado", en: "Scaled score" },
+  "results.scaledScore": { es: "Puntaje escalado estimado", en: "Estimated scaled score" },
   "results.minToPass": { es: "(mín. 720 para aprobar)", en: "(min. 720 to pass)" },
   "results.correctAnswers": { es: "Respuestas correctas", en: "Correct answers" },
   "results.totalTime": { es: "Tiempo total:", en: "Total time:" },
@@ -81,11 +82,15 @@ const translations = {
   "info.tech": { es: "Tecnologías evaluadas", en: "Technologies tested" },
   "info.multipleChoice": { es: "60 ítems en 120 minutos", en: "60 items in 120 minutes" },
   "info.oneCorrect": {
-    es: "Opción múltiple y respuesta múltiple: cada ítem indica cuántas marcar",
-    en: "Multiple-choice and multiple-response: each item states how many to select",
+    es: "El examen real tiene ítems de una y de varias respuestas; este simulador solo usa ítems de una respuesta",
+    en: "The real exam has single- and multiple-response items; this simulator only uses single-response items",
+  },
+  "info.scenarioMix": {
+    es: "Aquí el modo examen mezcla los 6 escenarios; el real usa 4",
+    en: "Here exam mode mixes all 6 scenarios; the real exam uses 4",
   },
   "info.noPenalty": { es: "Sin penalidad por adivinar", en: "No penalty for guessing" },
-  "info.scaledScore": { es: "Puntuación escalada 100–1000", en: "Scaled score 100-1000" },
+  "info.scaledScore": { es: "Puntuación escalada 100–1000 (aquí, una estimación lineal)", en: "Scaled score 100-1000 (here, a linear estimate)" },
   "info.min720": { es: "Mínimo 720 para aprobar", en: "Minimum 720 to pass" },
 
   // Footer
