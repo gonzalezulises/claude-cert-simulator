@@ -65,6 +65,7 @@ export default function Simulator() {
   const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- leer localStorage solo tras hidratar (ver arriba)
     setProgress(loadProgress());
     setLocale(loadLocale());
   }, []);
