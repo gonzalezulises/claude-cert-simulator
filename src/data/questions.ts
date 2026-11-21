@@ -17,6 +17,9 @@ export type Difficulty = "basic" | "intermediate" | "advanced";
 
 export type OptionId = "A" | "B" | "C" | "D";
 
+// A key is the correct letters in order: "C" for single response, "BD" for "select two".
+export type AnswerKey = OptionId | "AB" | "AC" | "AD" | "BC" | "BD" | "CD";
+
 export interface Option {
   id: OptionId;
   text: string;
@@ -31,7 +34,7 @@ export interface Question {
   difficulty: Difficulty;
   question: string;
   options: Option[];
-  correctAnswer: OptionId;
+  correctAnswer: AnswerKey;
   explanation: string;
   keyConcept: string;
   sources?: { title: string; url: string }[];
@@ -337,6 +340,30 @@ const domain1Questions: Question[] = [
       { title: "CCAR-F Exam Guide v1.0 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
+  {
+    id: "D1-013",
+    scenario: "Developer Productivity with Claude",
+    domain: 1,
+    domainName: "Agentic Architecture & Orchestration",
+    taskStatement: "1.7",
+    difficulty: "advanced",
+    question:
+      "Last week your Agent SDK exploration tool ran a named session, \"auth-audit\", that mapped 30 files of a legacy auth module. Since then a teammate rewrote `token.ts` and `session.ts`; the other 28 files are unchanged. You now want to compare two refactoring approaches that both start from that analysis, without one approach influencing the other. Which two actions fit? (Select two.)",
+    options: [
+      { id: "A", text: "Resume \"auth-audit\" without comment, since the agent will notice the rewritten files by itself the next time it reads them" },
+      { id: "B", text: "Resume \"auth-audit\" and tell the agent that token.ts and session.ts changed, so it re-reads only those two files" },
+      { id: "C", text: "Try both refactoring approaches one after the other in the resumed session, so the second can learn from the first" },
+      { id: "D", text: "Fork the resumed session with fork_session into two branches, one per refactoring approach, from the shared baseline" },
+    ],
+    correctAnswer: "BD",
+    explanation:
+      "Option B is right because most of the prior context is still valid: 28 of 30 files are unchanged. The guide's rule is to resume when prior context is mostly valid and to tell the resumed session exactly which files changed, so it re-analyzes those files instead of re-exploring everything.\n\nOption D is right because fork_session creates independent branches from a shared analysis baseline. Each refactoring approach starts from the same understanding of the module, and neither branch sees the other's reasoning.\n\nOption A is wrong because the session holds stale tool results for token.ts and session.ts. The agent has no reason to re-read files it believes it already knows, so it will reason from the old contents. The guide stresses informing the agent about changes to previously analyzed files.\n\nOption C is wrong because running both approaches in one session lets the first approach's reasoning shape the second. That is exactly the contamination forking exists to avoid.",
+    keyConcept: "Resume when prior context is mostly valid and name the changed files; use fork_session to explore divergent approaches from one baseline.",
+    sources: [
+      { title: "Work with sessions (Agent SDK)", url: "https://code.claude.com/docs/en/agent-sdk/sessions" },
+      { title: "Claude Code docs — Best practices", url: "https://code.claude.com/docs/en/best-practices" },
+    ],
+  },
 ];
 
 // ============================================================
@@ -631,6 +658,30 @@ const domain2Questions: Question[] = [
     sources: [
       { title: "CCAR-F Exam Guide v1.0 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
+    ],
+  },
+  {
+    id: "D2-013",
+    scenario: "Customer Support Resolution Agent",
+    domain: 2,
+    domainName: "Tool Design & MCP Integration",
+    taskStatement: "2.2",
+    difficulty: "intermediate",
+    question:
+      "Your `process_refund` MCP tool returns the same `{\"error\": \"Operation failed\"}` for every failure: payment gateway timeouts, malformed order IDs, refunds outside the 60-day policy window, and calls made with a credential that lacks refund permission. The agent retries all of them, policy violations included, and then tells customers \"something went wrong.\" Which two changes let the agent choose the right recovery? (Select two.)",
+    options: [
+      { id: "A", text: "Return isError: true with an errorCategory (transient, validation, business or permission) and a human-readable message" },
+      { id: "B", text: "Return isError: false with an empty result for policy violations, so the agent moves on to the next step without retrying" },
+      { id: "C", text: "Add isRetryable: false and a customer-friendly explanation to the 60-day window error, so the agent stops and explains it" },
+      { id: "D", text: "Keep the generic message but raise the agent's retry limit, so that transient gateway timeouts eventually go through" },
+    ],
+    correctAnswer: "AC",
+    explanation:
+      "Option A is right because the MCP isError flag tells the agent the call failed, and a category tells it why. A timeout calls for a retry, a malformed ID for fixing the input, a permission error for escalation, and a policy violation for an explanation. The guide names these four categories and warns that uniform \"Operation failed\" responses block appropriate recovery.\n\nOption C is right because a business-rule violation will fail every time it is retried. Marking it isRetryable: false prevents wasted attempts, and a customer-friendly explanation lets the agent tell the customer why the refund cannot be processed instead of saying \"something went wrong.\"\n\nOption B is wrong because it reports a failure as success. The agent may tell the customer the refund went through, and nothing records that the policy blocked it.\n\nOption D is wrong because more retries only add waste: three of the four failure types can never succeed on retry, and the agent still cannot tell them apart.",
+    keyConcept: "Return isError with a category and retryability so the agent can retry transient errors, fix validation errors, and explain business-rule violations.",
+    sources: [
+      { title: "Handle tool calls (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls" },
+      { title: "Writing effective tools for agents", url: "https://www.anthropic.com/research/writing-tools-for-agents" },
     ],
   },
 ];
@@ -932,6 +983,29 @@ const domain3Questions: Question[] = [
       { title: "CCAR-F Exam Guide v1.0 — Task 3.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
+  {
+    id: "D3-013",
+    scenario: "Code Generation with Claude Code",
+    domain: 3,
+    domainName: "Claude Code Configuration & Workflows",
+    taskStatement: "3.1",
+    difficulty: "intermediate",
+    question:
+      "A new hire clones the repository and finds that Claude Code ignores the API conventions the rest of the team gets. The conventions turn out to live in the tech lead's `~/.claude/CLAUDE.md`. Meanwhile the root CLAUDE.md has grown to 600 lines covering testing, API design and deployment, and edits to it often conflict. Which two actions fix the problem and keep the configuration maintainable? (Select two.)",
+    options: [
+      { id: "A", text: "Ask the new hire to copy the tech lead's ~/.claude/CLAUDE.md into their own home directory so both setups match" },
+      { id: "B", text: "Move the API conventions into a new docs/CLAUDE.md, so they load for every file anywhere in the repository" },
+      { id: "C", text: "Move the API conventions into the committed project configuration, so every clone gets them via version control" },
+      { id: "D", text: "Split the 600-line root CLAUDE.md into topic files in .claude/rules/, such as testing.md and api-conventions.md" },
+    ],
+    correctAnswer: "CD",
+    explanation:
+      "Option C is right because user-level instructions in ~/.claude/CLAUDE.md apply only to that user and are never shared through version control. Team conventions belong in project-level configuration (root CLAUDE.md, .claude/CLAUDE.md or a committed .claude/rules/ file), which every clone receives.\n\nOption D is right because the guide recommends splitting a large CLAUDE.md into focused, topic-specific files in .claude/rules/. Each topic is easier to own and edit, which reduces conflicting changes.\n\nOption A is wrong because a private copy is not version-controlled: it drifts as the tech lead edits theirs, and every future hire hits the same problem.\n\nOption B is wrong because a subdirectory CLAUDE.md is directory-level configuration: it is loaded when Claude works with files in docs/, not for code elsewhere in the repository.",
+    keyConcept: "Team instructions go in version-controlled project configuration, not ~/.claude/CLAUDE.md; split a large CLAUDE.md into topic files in .claude/rules/.",
+    sources: [
+      { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
+    ],
+  },
 ];
 
 // ============================================================
@@ -1068,7 +1142,7 @@ const domain4Questions: Question[] = [
     taskStatement: "4.5",
     difficulty: "intermediate",
     question:
-      "Scanned insurance claims arrive continuously throughout the day. Your contract guarantees extracted results within 30 hours of each document's arrival, and finance requires you to keep the 50% Message Batches API discount. A batch can take up to 24 hours to finish. How often should you submit batches?",
+      "Scanned insurance claims arrive continuously throughout the day. Your contract guarantees extracted results within 30 hours of each document's arrival, and finance requires you to keep the 50% Message Batches API discount. There is no latency guarantee, so plan for each batch to use its full 24-hour processing window. How often should you submit batches?",
     options: [
       { id: "A", text: "Once a day at midnight, so each batch is as large as possible and the per-request overhead stays at its lowest." },
       { id: "B", text: "Every 12 hours, which halves the waiting time compared with a nightly batch while still keeping the batches large." },
@@ -1223,6 +1297,53 @@ const domain4Questions: Question[] = [
     keyConcept: "Temporarily disable high false-positive categories to restore trust",
     sources: [
       { title: "CCAR-F Exam Guide v1.0 — Task 4.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
+  },
+  {
+    id: "D4-013",
+    scenario: "Claude Code for Continuous Integration",
+    domain: 4,
+    domainName: "Prompt Engineering & Structured Output",
+    taskStatement: "4.1",
+    difficulty: "intermediate",
+    question:
+      "Your CI review prompt says: \"Review this PR carefully. Be conservative and only report high-confidence findings.\" Developers still dismiss most comments: style nits, naming preferences, and flags on patterns the codebase uses everywhere. Now they have started ignoring the real bug reports too. Which two changes best improve precision and trust? (Select two.)",
+    options: [
+      { id: "A", text: "Replace the instruction with explicit criteria: report bugs, security flaws and data-loss risks; skip style and local patterns" },
+      { id: "B", text: "Temporarily disable the style and naming categories while you rewrite their criteria, to restore trust in the rest" },
+      { id: "C", text: "Strengthen the wording to \"Be extremely conservative; report only findings you are over 95% sure are real problems\"" },
+      { id: "D", text: "Ask Claude to self-rate each finding from 1 to 10 and post only findings it rates 9 or higher, discarding all others" },
+    ],
+    correctAnswer: "AB",
+    explanation:
+      "Option A is right because the guide says explicit categorical criteria, stating which issues to report and which to skip, improve precision, while general instructions like \"be conservative\" do not. The model needs to know what counts as a finding, not how cautious to feel.\n\nOption B is right because high false-positive categories undermine trust in the accurate ones. Turning those categories off while you improve their prompts restores confidence in the bug and security findings right away.\n\nOption C is wrong because it is the same vague instruction made louder. It still does not say which kinds of issues matter, so the style and naming noise continues.\n\nOption D is wrong because it is confidence-based filtering, which the guide contrasts with specific criteria. An uncalibrated self-rating does not define what to report, and a style nit can be rated 9 as easily as a real bug.",
+    keyConcept: "Define which issue categories to report and which to skip; vague caution or confidence filters do not raise precision, and noisy categories can be paused to restore trust.",
+    sources: [
+      { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
+    ],
+  },
+  {
+    id: "D4-014",
+    scenario: "Structured Data Extraction",
+    domain: 4,
+    domainName: "Prompt Engineering & Structured Output",
+    taskStatement: "4.3",
+    difficulty: "advanced",
+    question:
+      "Your contract extraction tool's schema marks `renewal_terms` as a required string and `governing_law` as an enum of 12 jurisdiction codes that downstream reports group by. Reviewers find invented renewal terms in contracts that have no renewal clause, and contracts governed by a jurisdiction outside the list get forced into the closest enum value. Which two schema changes fix these errors? (Select two.)",
+    options: [
+      { id: "A", text: "Keep renewal_terms required but add \"never invent values\" to the tool description, since required fields must be filled" },
+      { id: "B", text: "Make renewal_terms nullable (type [\"string\", \"null\"]) so the model can return null when the contract has no such clause" },
+      { id: "C", text: "Add \"other\" to the governing_law enum, plus a governing_law_detail string that records the jurisdiction outside the list" },
+      { id: "D", text: "Change governing_law to a free-text string with no enum, so downstream reports can parse whatever name each contract uses" },
+    ],
+    correctAnswer: "BC",
+    explanation:
+      "Option B is right because the guide says fields the source may not contain should be optional or nullable. A required string forces the model to produce something, which is where the invented renewal terms come from.\n\nOption C is right because the \"other\" plus detail-string pattern keeps the 12 codes that downstream reports group by while giving unlisted jurisdictions an honest place to go, instead of being squeezed into the nearest value.\n\nOption A is wrong because the schema still demands a value. An instruction in the description competes with a structural requirement, and the structural requirement wins often enough to keep producing fabrications.\n\nOption D is wrong because free text breaks the downstream integration: reports grouped by 12 fixed codes would receive spelling variants and abbreviations they cannot group.",
+    keyConcept: "Make fields nullable when the source may lack them, and use enum + \"other\" + detail for categories that need to stay consistent but extensible.",
+    sources: [
+      { title: "Structured outputs", url: "https://platform.claude.com/docs/en/build-with-claude/structured-outputs" },
+      { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
     ],
   },
 ];
@@ -1522,6 +1643,30 @@ const domain5Questions: Question[] = [
       { title: "Define success criteria and build evaluations", url: "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests" },
     ],
   },
+  {
+    id: "D5-013",
+    scenario: "Multi-Agent Research System",
+    domain: 5,
+    domainName: "Context Management & Reliability",
+    taskStatement: "5.6",
+    difficulty: "advanced",
+    question:
+      "For a report on electric-bus adoption, the report-generation subagent receives per-city fleet cost figures, recent news about procurement delays, technical findings on battery range, and two ridership studies with different numbers; the findings carry no dates. It renders everything as uniform bullet points and labels the ridership numbers a \"contradiction.\" Reviewers later learn the studies are from 2019 and 2025. Which two changes improve the report? (Select two.)",
+    options: [
+      { id: "A", text: "Require subagents to include publication or data collection dates, so figures from different years read as change over time" },
+      { id: "B", text: "Tell the report agent to keep only the newest ridership study and drop the older one, so readers are not confused by it" },
+      { id: "C", text: "Keep uniform bullet points for every content type, since one consistent format makes all the sections easier to compare" },
+      { id: "D", text: "Render the cost figures as a table, the procurement news as prose and the battery-range findings as a structured list" },
+    ],
+    correctAnswer: "AD",
+    explanation:
+      "Option A is right because the guide requires publication or collection dates in structured outputs so temporal differences are not misread as contradictions. With dates, the 2019 and 2025 figures become a trend.\n\nOption D is right because the guide says synthesis output should render content types appropriately: financial data as tables, news as prose, technical findings as structured lists, rather than forcing one uniform format.\n\nOption B is wrong because it drops credible evidence and its provenance. Even when sources truly conflict, the guide says to annotate the conflict with attribution, not to pick one value arbitrarily; here the older study also shows the trend.\n\nOption C is wrong because it keeps the exact problem the guide warns against: converting every content type into one format loses the structure that makes financial comparisons and narrative news readable.",
+    keyConcept: "Carry dates in structured findings so time differences are not read as conflicts, and render each content type in the format that suits it.",
+    sources: [
+      { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
+      { title: "Effective context engineering for AI agents", url: "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents" },
+    ],
+  },
 ];
 
 // ============================================================
@@ -1594,17 +1739,33 @@ export function getExamSample(totalQuestions: number = 60): Question[] {
   return sample.sort(() => Math.random() - 0.5);
 }
 
-export function getExamSampleFromPool(pool: Question[], totalQuestions: number = 30): Question[] {
-  const sample: Question[] = [];
-  const domainList: Domain[] = [1, 2, 3, 4, 5];
-
-  for (const domain of domainList) {
-    const weight = domainWeights[domain] / 100;
-    const count = Math.round(totalQuestions * weight);
-    const domainQs = pool.filter((q) => q.domain === domain);
-    const shuffled = [...domainQs].sort(() => Math.random() - 0.5);
-    sample.push(...shuffled.slice(0, count));
+function shuffled<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
   }
+  return out;
+}
 
-  return sample.sort(() => Math.random() - 0.5);
+export const EXAM_SCENARIO_COUNT = 4;
+
+// Like the real exam: 4 of the 6 scenarios at random, then items weighted by domain.
+// `primary` items go first; `backup` fills a domain the chosen scenarios lack in `primary`.
+export function getScenarioExamSample(primary: Question[], backup: Question[], totalQuestions: number) {
+  const chosen = shuffled(scenarios).slice(0, EXAM_SCENARIO_COUNT);
+  const inExam = (q: Question) => chosen.includes(q.scenario);
+  const candidates = (pool: Question[], d: Domain) => shuffled(pool.filter((q) => inExam(q) && q.domain === d));
+  const sample: Question[] = [];
+  const leftovers: Question[] = [];
+  for (const d of [1, 2, 3, 4, 5] as Domain[]) {
+    const ranked = [...candidates(primary, d), ...candidates(backup, d)];
+    const count = Math.round((totalQuestions * domainWeights[d]) / 100);
+    sample.push(...ranked.slice(0, count));
+    leftovers.push(...ranked.slice(count));
+  }
+  // A domain short on items gives its slots to the rest, primary bank first.
+  const fill = leftovers.sort((a, b) => Number(backup.includes(a)) - Number(backup.includes(b)));
+  sample.push(...fill.slice(0, totalQuestions - sample.length));
+  return { questions: shuffled(sample), scenarios: chosen };
 }

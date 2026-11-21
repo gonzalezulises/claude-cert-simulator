@@ -1,10 +1,10 @@
-import { Question } from "@/data/questions";
+import { AnswerKey, Question } from "@/data/questions";
 
 export type Mode = "menu" | "study" | "exam" | "review" | "results" | "guide";
 
 export interface UserAnswer {
   questionId: string;
-  selectedAnswer: "A" | "B" | "C" | "D" | null;
+  selectedAnswer: AnswerKey | null;
   isCorrect: boolean;
   timeSpent: number; // seconds
 }

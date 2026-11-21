@@ -23,6 +23,7 @@ export default function RootLayout({
         <meta name="curso-version" content={version.version} />
         <meta name="curso-actualizado" content={version.actualizado} />
         {/* Síncrono y a propósito: fija el tema antes del primer pintado. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts -- bloquear aquí evita el parpadeo de tema */}
         <script src={`${BASE}/tema.js`} />
       </head>
       <body className="antialiased" data-version={version.version}>

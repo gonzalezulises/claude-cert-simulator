@@ -4,7 +4,9 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import {
   questions,
   getQuestionsByDomain,
-  getExamSampleFromPool,
+  getScenarioExamSample,
+  AnswerKey,
+  Scenario,
   domainNames,
   Question,
 } from "@/data/questions";
@@ -62,9 +64,11 @@ export default function Simulator() {
   // React aborta la hidratación de este árbol. El useEffect de abajo lo rellena.
   const [progress, setProgress] = useState<StudyProgress>(createEmptyProgress);
   const [studyDomain, setStudyDomain] = useState<number | null>(null);
+  const [examScenarios, setExamScenarios] = useState<Scenario[]>([]);
   const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- leer localStorage solo tras hidratar (ver arriba)
     setProgress(loadProgress());
     setLocale(loadLocale());
   }, []);
@@ -97,7 +101,8 @@ export default function Simulator() {
   }, []);
 
   const startExamMode = useCallback(() => {
-    const qs = getExamSampleFromPool(examQuestions, EXAM_QUESTION_COUNT);
+    const { questions: qs, scenarios: drawn } = getScenarioExamSample(examQuestions, questions, EXAM_QUESTION_COUNT);
+    setExamScenarios(drawn);
     setActiveQuestions(qs);
     setCurrentIndex(0);
     setAnswers(new Array(qs.length).fill(null).map(() => ({
@@ -114,7 +119,7 @@ export default function Simulator() {
   }, []);
 
   const handleAnswer = useCallback(
-    (answer: "A" | "B" | "C" | "D") => {
+    (answer: AnswerKey) => {
       const q = activeQuestions[currentIndex];
       const isCorrect = answer === q.correctAnswer;
       const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
@@ -546,6 +551,11 @@ export default function Simulator() {
               <span>{activeQuestions.length - answeredCount} {t("topbar.pending", locale)}</span>
             )}
           </div>
+          {mode === "exam" && examScenarios.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {t("exam.scenarios", locale)} {examScenarios.join(" · ")}
+            </p>
+          )}
         </div>
 
         {/* Question navigator (mini) */}
@@ -580,6 +590,7 @@ export default function Simulator() {
 
         {/* Question card */}
         <QuestionCard
+          key={q.id}
           question={q}
           locale={locale}
           index={currentIndex}
