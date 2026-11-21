@@ -587,7 +587,7 @@ export const questionsEs: Record<string, QuestionTranslation> = {
 
   "D4-006": {
     question:
-      "Los reclamos de seguro escaneados llegan de forma continua durante el día. Tu contrato garantiza resultados extraídos dentro de las 30 horas desde la llegada de cada documento, y finanzas exige conservar el descuento del 50% de la Message Batches API. Un batch puede tardar hasta 24 horas en terminar. ¿Cada cuánto deberías enviar batches?",
+      "Los reclamos de seguro escaneados llegan de forma continua durante el día. Tu contrato garantiza resultados extraídos dentro de las 30 horas desde la llegada de cada documento, y finanzas exige conservar el descuento del 50% de la Message Batches API. No hay garantía de latencia, así que planifica que cada batch use su ventana completa de 24 horas. ¿Cada cuánto deberías enviar batches?",
     options: {
       A: "Una vez al día a medianoche, para que cada batch sea lo más grande posible y el costo fijo por solicitud sea el menor.",
       B: "Cada 12 horas, lo que reduce a la mitad la espera frente a un batch nocturno y mantiene los batches grandes.",
@@ -849,5 +849,83 @@ export const questionsEs: Record<string, QuestionTranslation> = {
     explanation:
       "A es la correcta. El conjunto etiquetado muestra que la misma puntuación implica precisiones distintas según el campo, así que un umbral global está mal calibrado. Umbrales por campo ajustados con un conjunto de validación etiquetado (por ejemplo, la puntuación a partir de la cual cada campo llega al 98% de precisión observada) dirigen la revisión adonde de verdad ocurren los errores.\n\nB descarta una señal útil y gasta capacidad de revisión en campos que casi siempre están bien. C le pide al modelo que se calibre con palabras; la confianza autoinformada no queda calibrada porque un prompt lo diga, y el resultado igual habría que medirlo. D envía de más party_name, que ya acertaba el 99%, y sigue sin comprobar dónde se vuelve confiable contract_end_date.\n\nCómo implementarlo:\n```python\ndef calibrate_threshold(scores, correct, target=0.98):\n    # lowest threshold whose accepted set meets the target accuracy\n    for t in sorted(set(scores)):\n        kept = [c for s, c in zip(scores, correct) if s >= t]\n        if kept and sum(kept) / len(kept) >= target:\n            return t\n    return None  # field always goes to review\n\nthresholds = {f: calibrate_threshold(val[f].scores, val[f].correct) for f in FIELDS}\n```",
     keyConcept: "Calibrar umbrales de confianza por campo con un conjunto de validación etiquetado",
+  },
+  "D1-013": {
+    question:
+      "La semana pasada, tu herramienta de exploración del Agent SDK ejecutó una sesión con nombre, «auth-audit», que mapeó 30 archivos de un módulo de autenticación heredado. Desde entonces, un compañero reescribió `token.ts` y `session.ts`; los otros 28 archivos no cambiaron. Ahora quieres comparar dos enfoques de refactorización que partan de ese análisis, sin que un enfoque influya en el otro. ¿Qué dos acciones son adecuadas? (Selecciona dos.)",
+    options: {
+      A: "Reanudar «auth-audit» sin comentarios, porque el agente notará por sí solo los archivos reescritos la próxima vez que los lea",
+      B: "Reanudar «auth-audit» e indicarle al agente que token.ts y session.ts cambiaron, para que vuelva a leer solo esos dos archivos",
+      C: "Probar ambos enfoques de refactorización uno tras otro en la sesión reanudada, para que el segundo aprenda del primero",
+      D: "Bifurcar la sesión reanudada con fork_session en dos ramas, una por enfoque de refactorización, desde la base compartida",
+    },
+    explanation:
+      "La opción B es correcta porque la mayor parte del contexto previo sigue siendo válido: 28 de 30 archivos no cambiaron. La regla de la guía es reanudar cuando el contexto previo es mayormente válido e indicarle a la sesión reanudada exactamente qué archivos cambiaron, para que vuelva a analizar esos archivos en lugar de explorar todo de nuevo.\n\nLa opción D es correcta porque fork_session crea ramas independientes a partir de una base de análisis compartida. Cada enfoque de refactorización parte de la misma comprensión del módulo, y ninguna rama ve el razonamiento de la otra.\n\nLa opción A es incorrecta porque la sesión guarda resultados de herramientas desactualizados de token.ts y session.ts. El agente no tiene motivo para releer archivos que cree conocer, así que razonará con el contenido viejo. La guía insiste en informar al agente sobre los cambios en archivos ya analizados.\n\nLa opción C es incorrecta porque ejecutar ambos enfoques en una sola sesión deja que el razonamiento del primero condicione al segundo. Esa es justamente la contaminación que la bifurcación busca evitar.",
+    keyConcept: "Reanuda cuando el contexto previo es mayormente válido y nombra los archivos que cambiaron; usa fork_session para explorar enfoques divergentes desde una misma base.",
+  },
+  "D2-013": {
+    question:
+      "Tu herramienta MCP `process_refund` devuelve el mismo `{\"error\": \"Operation failed\"}` para cualquier falla: tiempos de espera agotados de la pasarela de pago, ID de pedido mal formados, reembolsos fuera de la ventana de 60 días de la política y llamadas hechas con una credencial sin permiso de reembolso. El agente reintenta todas, incluidas las violaciones de política, y luego les dice a los clientes «algo salió mal». ¿Qué dos cambios le permiten al agente elegir la recuperación correcta? (Selecciona dos.)",
+    options: {
+      A: "Devolver isError: true con un errorCategory (transient, validation, business o permission) y un mensaje legible para personas",
+      B: "Devolver isError: false con un resultado vacío para violaciones de política, para que el agente siga al próximo paso sin reintentar",
+      C: "Agregar isRetryable: false y una explicación apta para el cliente al error de la ventana de 60 días, para que el agente pare y explique",
+      D: "Mantener el mensaje genérico pero subir el límite de reintentos del agente, para que los timeouts transitorios terminen pasando",
+    },
+    explanation:
+      "La opción A es correcta porque el indicador isError de MCP le dice al agente que la llamada falló, y una categoría le dice por qué. Un timeout pide un reintento; un ID mal formado, corregir la entrada; un error de permisos, escalar; y una violación de política, una explicación. La guía nombra estas cuatro categorías y advierte que las respuestas uniformes del tipo «Operation failed» impiden una recuperación adecuada.\n\nLa opción C es correcta porque una violación de regla de negocio fallará cada vez que se reintente. Marcarla con isRetryable: false evita intentos inútiles, y una explicación apta para el cliente le permite al agente decirle por qué no se puede procesar el reembolso en lugar de «algo salió mal».\n\nLa opción B es incorrecta porque reporta una falla como éxito. El agente podría decirle al cliente que el reembolso se hizo, y nada registra que la política lo bloqueó.\n\nLa opción D es incorrecta porque más reintentos solo agregan desperdicio: tres de los cuatro tipos de falla nunca tendrán éxito al reintentar, y el agente sigue sin poder distinguirlos.",
+    keyConcept: "Devuelve isError con una categoría y si es reintentable, para que el agente reintente errores transitorios, corrija los de validación y explique las violaciones de reglas de negocio.",
+  },
+  "D3-013": {
+    question:
+      "Una persona recién contratada clona el repositorio y descubre que Claude Code ignora las convenciones de API que el resto del equipo sí recibe. Resulta que esas convenciones viven en el `~/.claude/CLAUDE.md` del líder técnico. Mientras tanto, el CLAUDE.md raíz creció a 600 líneas que cubren pruebas, diseño de API y despliegue, y sus ediciones suelen entrar en conflicto. ¿Qué dos acciones resuelven el problema y mantienen la configuración mantenible? (Selecciona dos.)",
+    options: {
+      A: "Pedirle a la nueva persona que copie el ~/.claude/CLAUDE.md del líder técnico en su propio directorio personal para igualarlos",
+      B: "Mover las convenciones de API a un nuevo docs/CLAUDE.md, para que se carguen con cualquier archivo de todo el repositorio",
+      C: "Mover las convenciones de API a la configuración del proyecto versionada, para que cada clon las reciba por control de versiones",
+      D: "Dividir el CLAUDE.md raíz de 600 líneas en archivos por tema en .claude/rules/, como testing.md y api-conventions.md",
+    },
+    explanation:
+      "La opción C es correcta porque las instrucciones de nivel usuario en ~/.claude/CLAUDE.md solo aplican a ese usuario y nunca se comparten por control de versiones. Las convenciones del equipo van en la configuración de nivel proyecto (CLAUDE.md raíz, .claude/CLAUDE.md o un archivo versionado en .claude/rules/), que recibe cada clon.\n\nLa opción D es correcta porque la guía recomienda dividir un CLAUDE.md grande en archivos enfocados por tema dentro de .claude/rules/. Cada tema es más fácil de mantener y editar, lo que reduce los cambios en conflicto.\n\nLa opción A es incorrecta porque una copia privada no está versionada: se desfasa a medida que el líder técnico edita la suya, y cada nueva contratación enfrentará el mismo problema.\n\nLa opción B es incorrecta porque un CLAUDE.md en un subdirectorio es configuración de nivel directorio: se carga cuando Claude trabaja con archivos de docs/, no con el código del resto del repositorio.",
+    keyConcept: "Las instrucciones del equipo van en la configuración del proyecto versionada, no en ~/.claude/CLAUDE.md; divide un CLAUDE.md grande en archivos por tema en .claude/rules/.",
+  },
+  "D4-013": {
+    question:
+      "El prompt de revisión de tu CI dice: «Revisa este PR con cuidado. Sé conservador y reporta solo hallazgos de alta confianza». Los desarrolladores igual descartan la mayoría de los comentarios: detalles de estilo, preferencias de nombres y alertas sobre patrones que el código usa en todas partes. Ahora también empezaron a ignorar los reportes de bugs reales. ¿Qué dos cambios mejoran más la precisión y la confianza? (Selecciona dos.)",
+    options: {
+      A: "Reemplazar la instrucción por criterios explícitos: reportar bugs, fallas de seguridad y pérdida de datos; omitir estilo y patrones locales",
+      B: "Desactivar por un tiempo las categorías de estilo y nombres mientras reescribes sus criterios, para recuperar la confianza en el resto",
+      C: "Reforzar la redacción a «Sé extremadamente conservador; reporta solo hallazgos con más de 95 % de certeza de ser reales»",
+      D: "Pedirle a Claude que califique cada hallazgo del 1 al 10 y publicar solo los que califique con 9 o más, descartando los demás",
+    },
+    explanation:
+      "La opción A es correcta porque la guía dice que los criterios categóricos explícitos, que indican qué problemas reportar y cuáles omitir, mejoran la precisión, mientras que instrucciones generales como «sé conservador» no lo hacen. El modelo necesita saber qué cuenta como hallazgo, no cuán prudente debe sentirse.\n\nLa opción B es correcta porque las categorías con muchos falsos positivos minan la confianza en las categorías precisas. Apagarlas mientras mejoras sus prompts recupera de inmediato la confianza en los hallazgos de bugs y seguridad.\n\nLa opción C es incorrecta porque es la misma instrucción vaga dicha con más fuerza. Sigue sin decir qué tipos de problemas importan, así que el ruido de estilo y nombres continúa.\n\nLa opción D es incorrecta porque es un filtro basado en confianza, que la guía contrapone a los criterios específicos. Una autocalificación sin calibrar no define qué reportar, y un detalle de estilo puede recibir un 9 con la misma facilidad que un bug real.",
+    keyConcept: "Define qué categorías de problemas reportar y cuáles omitir; la prudencia vaga o los filtros de confianza no suben la precisión, y las categorías ruidosas pueden pausarse para recuperar la confianza.",
+  },
+  "D4-014": {
+    question:
+      "El esquema de tu herramienta de extracción de contratos marca `renewal_terms` como string obligatorio y `governing_law` como un enum de 12 códigos de jurisdicción por los que se agrupan los reportes posteriores. Los revisores encuentran términos de renovación inventados en contratos que no tienen cláusula de renovación, y los contratos regidos por una jurisdicción fuera de la lista terminan forzados al valor del enum más cercano. ¿Qué dos cambios de esquema corrigen estos errores? (Selecciona dos.)",
+    options: {
+      A: "Mantener renewal_terms obligatorio pero agregar «nunca inventes valores» a la descripción, ya que los campos obligatorios deben llenarse",
+      B: "Hacer renewal_terms anulable (type [\"string\", \"null\"]) para que el modelo devuelva null cuando el contrato no tiene esa cláusula",
+      C: "Agregar «other» al enum de governing_law, más un string governing_law_detail que registre la jurisdicción que no está en la lista",
+      D: "Cambiar governing_law a un string de texto libre sin enum, para que los reportes interpreten el nombre que use cada contrato",
+    },
+    explanation:
+      "La opción B es correcta porque la guía dice que los campos que la fuente podría no contener deben ser opcionales o anulables. Un string obligatorio obliga al modelo a producir algo, y de ahí salen los términos de renovación inventados.\n\nLa opción C es correcta porque el patrón «other» más un string de detalle conserva los 12 códigos por los que agrupan los reportes y les da a las jurisdicciones no listadas un lugar honesto, en vez de meterlas en el valor más cercano.\n\nLa opción A es incorrecta porque el esquema sigue exigiendo un valor. Una instrucción en la descripción compite con un requisito estructural, y el requisito estructural gana con la frecuencia suficiente para seguir produciendo invenciones.\n\nLa opción D es incorrecta porque el texto libre rompe la integración posterior: los reportes agrupados por 12 códigos fijos recibirían variantes de escritura y abreviaturas que no pueden agrupar.",
+    keyConcept: "Haz anulables los campos que la fuente podría no tener, y usa enum + «other» + detalle para categorías que deben ser consistentes pero extensibles.",
+  },
+  "D5-013": {
+    question:
+      "Para un reporte sobre la adopción de autobuses eléctricos, el subagente que genera el reporte recibe cifras de costo de flota por ciudad, noticias recientes sobre retrasos en compras, hallazgos técnicos sobre la autonomía de las baterías y dos estudios de pasajeros con cifras distintas; los hallazgos no traen fechas. El agente lo presenta todo como viñetas uniformes y marca las cifras de pasajeros como una «contradicción». Luego los revisores descubren que los estudios son de 2019 y de 2025. ¿Qué dos cambios mejoran el reporte? (Selecciona dos.)",
+    options: {
+      A: "Exigir que los subagentes incluyan fechas de publicación o de recolección de datos, para que cifras de años distintos se lean como cambio en el tiempo",
+      B: "Indicarle al agente del reporte que conserve solo el estudio de pasajeros más reciente y descarte el antiguo, para no confundir al lector",
+      C: "Mantener viñetas uniformes para todo tipo de contenido, ya que un formato consistente facilita comparar todas las secciones",
+      D: "Presentar las cifras de costo como tabla, las noticias de compras como prosa y los hallazgos de autonomía como una lista estructurada",
+    },
+    explanation:
+      "La opción A es correcta porque la guía exige fechas de publicación o de recolección en las salidas estructuradas para que las diferencias temporales no se interpreten como contradicciones. Con fechas, las cifras de 2019 y 2025 se convierten en una tendencia.\n\nLa opción D es correcta porque la guía dice que la salida de la síntesis debe presentar cada tipo de contenido de forma apropiada: datos financieros como tablas, noticias como prosa y hallazgos técnicos como listas estructuradas, en lugar de forzar un formato uniforme.\n\nLa opción B es incorrecta porque descarta evidencia creíble y su procedencia. Incluso cuando las fuentes de verdad chocan, la guía pide anotar el conflicto con su atribución, no elegir un valor de forma arbitraria; aquí, además, el estudio antiguo muestra la tendencia.\n\nLa opción C es incorrecta porque mantiene justo el problema contra el que advierte la guía: convertir todo tipo de contenido a un solo formato pierde la estructura que hace legibles las comparaciones financieras y las noticias narrativas.",
+    keyConcept: "Incluye fechas en los hallazgos estructurados para que las diferencias de tiempo no se lean como conflictos, y presenta cada tipo de contenido en el formato que le corresponde.",
   },
 };

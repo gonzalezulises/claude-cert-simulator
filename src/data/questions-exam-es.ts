@@ -868,10 +868,10 @@ export const examQuestionsEs: Record<string, QuestionTranslation> = {
       A: "Un prompt de sistema más contundente, «CRÍTICO: ejecuta las pruebas antes de comentar», copiado también en CLAUDE.md",
       B: "Un nivel de esfuerzo más bajo, para que el modelo siga la instrucción más al pie de la letra e improvise menos",
       C: "Un hook PreToolUse que bloquee la herramienta de comentar hasta que la de pruebas haya pasado en esta sesión",
-      D: "Una sola herramienta combinada que ejecute todas las pruebas y publique el comentario en una única llamada",
+      D: "Un hook PostToolUse que borre cualquier comentario que el agente haya publicado antes de las pruebas",
     },
     explanation:
-      "Cuando el cumplimiento tiene que ser determinista, el prompt es la capa equivocada. Un prompt es una instrucción probabilística: tiene una tasa de fallo distinta de cero, que es justo ese uno de cada veinte. Un hook PreToolUse es código de la aplicación que inspecciona la llamada pendiente y la rechaza si no se cumple el prerrequisito, así que la tasa de fallo es cero por construcción.\n\nLa opción A cambia la redacción, no el mecanismo. La opción B confunde esfuerzo con obediencia: el esfuerzo ajusta la profundidad del razonamiento, no el seguimiento de reglas. La opción D funcionaría para este par de pasos, pero quita la posibilidad de ejecutar pruebas sin comentar y esconde los fallos: si las pruebas fallan, la herramienta combinada igual tiene que decidir qué publica.\n\nCómo implementarlo:\n```typescript\nlet testsPassed = false;\nconst hooks = {\n  PreToolUse: [{ matcher: \"post_review_comment\", hooks: [async () => testsPassed ? {} : {\n    hookSpecificOutput: { hookEventName: \"PreToolUse\", permissionDecision: \"deny\",\n      permissionDecisionReason: \"Run the test suite first; commenting is gated on a green run.\" } }] }],\n  PostToolUse: [{ matcher: \"run_tests\", hooks: [async (input: any) => {\n    testsPassed = input.tool_response?.exitCode === 0; return {}; }] }],\n};\n```",
+      "Cuando el cumplimiento tiene que ser determinista, el prompt es la capa equivocada. Un prompt es una instrucción probabilística: tiene una tasa de fallo distinta de cero, que es justo ese uno de cada veinte. Un hook PreToolUse es código de la aplicación que inspecciona la llamada pendiente y la rechaza si no se cumple el prerrequisito, así que la tasa de fallo es cero por construcción.\n\nLa opción A cambia la redacción, no el mecanismo. La opción B confunde esfuerzo con obediencia: el esfuerzo ajusta la profundidad del razonamiento, no el seguimiento de reglas. La opción D reacciona tarde: el comentario ya se publicó y ya salieron sus notificaciones, así que el orden se sigue rompiendo una de cada veinte veces. Un hook PostToolUse corre después de la herramienta; solo PreToolUse puede detener la llamada.\n\nCómo implementarlo:\n```typescript\nlet testsPassed = false;\nconst hooks = {\n  PreToolUse: [{ matcher: \"post_review_comment\", hooks: [async () => testsPassed ? {} : {\n    hookSpecificOutput: { hookEventName: \"PreToolUse\", permissionDecision: \"deny\",\n      permissionDecisionReason: \"Run the test suite first; commenting is gated on a green run.\" } }] }],\n  PostToolUse: [{ matcher: \"run_tests\", hooks: [async (input: any) => {\n    testsPassed = input.tool_response?.exitCode === 0; return {}; }] }],\n};\n```",
     keyConcept: "El prompt para preferencias, los hooks para garantías: un prerrequisito va en código",
   },
 
@@ -917,4 +917,160 @@ export const examQuestionsEs: Record<string, QuestionTranslation> = {
     keyConcept: "El coordinador elige dinámicamente los subagentes en vez de correr siempre toda la canalización",
   },
 
+  "E1-017": {
+    question:
+      "La política dice que los reembolsos de más de $500 requieren a una persona y que las cuentas marcadas para revisión de fraude nunca deben recibir reembolsos. El prompt de sistema indica ambas reglas, pero las auditorías siguen encontrando algunas violaciones cada semana. Aparte, `lookup_order` devuelve `refund_status` como códigos numéricos (0, 1, 2) que el agente a veces interpreta mal. ¿Qué dos cambios dan garantías deterministas? (Selecciona dos.)",
+    options: {
+      A: "Un hook PostToolUse en process_refund que revise el monto después de ejecutar el reembolso y alerte a un supervisor si pasa de $500",
+      B: "Una sección más fuerte del prompt de sistema, en mayúsculas, que repita ambas reglas con tres ejemplos resueltos de rechazos",
+      C: "Un hook PreToolUse en process_refund que bloquee llamadas de más de $500 o a cuentas marcadas por fraude y las mande a escalamiento",
+      D: "Un hook PostToolUse en lookup_order que convierta los códigos numéricos de refund_status en etiquetas antes de que el modelo los vea",
+    },
+    explanation:
+      "La opción C es correcta porque un hook que intercepta la llamada saliente a la herramienta se ejecuta antes de que ocurra el reembolso y aplica la regla en código. La guía pide bloquear las acciones que violan la política (como reembolsos de más de $500) y redirigirlas a un flujo alternativo, como el escalamiento a una persona, y preferir hooks sobre prompts cuando el cumplimiento debe estar garantizado.\n\nLa opción D es correcta porque los hooks PostToolUse pueden transformar los resultados de las herramientas antes de que el modelo los procese. Normalizar los códigos numéricos en etiquetas claras elimina la mala interpretación de forma determinista, en lugar de confiar en que el modelo recuerde qué significa cada código.\n\nLa opción A es incorrecta porque un hook PostToolUse en process_refund se dispara cuando el dinero ya se movió. Alertar después detecta la violación; no la evita.\n\nLa opción B es incorrecta porque las instrucciones del prompt son probabilísticas: las reglas ya están en el prompt y aun así fallan algunas veces por semana. Una redacción más enfática, en el mejor caso, baja la tasa; no puede llevarla a cero.",
+    keyConcept: "Usa hooks que intercepten las llamadas salientes para bloquear violaciones de política, y hooks PostToolUse para normalizar resultados; los prompts solos dan un cumplimiento solo probabilístico.",
+  },
+  "E1-018": {
+    question:
+      "Una solicitud para investigar «cómo la IA está cambiando las industrias creativas» produce un reporte que solo cubre las artes visuales. Las trazas muestran que el coordinador dividió el tema en tres subtareas: pintura digital, diseño gráfico y fotografía. Cada subagente completó bien su subtarea, y la síntesis es precisa respecto de lo que recibió. ¿Qué dos cambios en el coordinador atacan la causa raíz? (Selecciona dos.)",
+    options: {
+      A: "Descomponer los temas amplios en subtemas distintos que abarquen todo el dominio, como música, escritura, cine y artes visuales",
+      B: "Hacer que el coordinador revise la síntesis en busca de vacíos de cobertura y vuelva a delegar búsquedas puntuales hasta que sea suficiente",
+      C: "Dejar que los subagentes se escriban directamente para acordar quién cubre qué, para que el coordinador ya no gestione el alcance",
+      D: "Subir el límite de resultados por consulta del subagente de búsqueda web, para que reúna más fuentes en cada subtema asignado",
+    },
+    explanation:
+      "La opción A es correcta porque la falla está en la descomposición de la tarea: el coordinador eligió tres porciones superpuestas de un mismo subárea. La guía advierte que una descomposición demasiado estrecha deja temas amplios sin cobertura completa, y recomienda repartir el alcance en subtemas distintos que minimicen la duplicación.\n\nLa opción B es correcta porque la guía describe el refinamiento iterativo: el coordinador evalúa la síntesis en busca de vacíos, vuelve a delegar consultas puntuales a los subagentes de búsqueda y análisis, y repite la síntesis hasta que la cobertura sea suficiente. Ese ciclo detectaría áreas faltantes como la música o el cine.\n\nLa opción C es incorrecta porque rompe el patrón hub-and-spoke. El coordinador debe enrutar toda la comunicación entre subagentes para tener observabilidad y un flujo de información controlado; además, la negociación entre pares no amplía el alcance.\n\nLa opción D es incorrecta porque los subagentes ya hicieron bien el trabajo asignado. Más resultados sobre los mismos subtemas estrechos siguen dejando sin cubrir el resto del dominio.",
+    keyConcept: "El coordinador es responsable de la descomposición: reparte los temas amplios en subtemas distintos e itera sobre los vacíos de la síntesis con nuevas delegaciones puntuales.",
+  },
+  "E2-013": {
+    question:
+      "Tu equipo quiere que Claude Code trabaje con Jira y con un catálogo interno de servicios que lista 400 servicios y sus responsables. Además, un ingeniero quiere probar un servidor MCP experimental de búsqueda vectorial. Hoy, los ingenieros ven que el agente hace decenas de llamadas exploratorias solo para saber qué servicios existen antes de poder responder. ¿Qué dos decisiones son correctas? (Selecciona dos.)",
+    options: {
+      A: "Construir internamente un servidor MCP propio para Jira, porque los servidores de la comunidad no se pueden configurar en el .mcp.json de un proyecto",
+      B: "Exponer el catálogo de servicios como un recurso MCP, para que el agente vea qué servicios existen sin llamadas exploratorias",
+      C: "Agregar el servidor experimental de búsqueda vectorial al .mcp.json del proyecto, para que todo el equipo ayude a probarlo de una vez",
+      D: "Usar un servidor MCP de Jira existente de la comunidad en el .mcp.json del proyecto, con su token referenciado como ${JIRA_TOKEN}",
+    },
+    explanation:
+      "La opción B es correcta porque la guía describe los recursos MCP como la forma de exponer catálogos de contenido, como resúmenes de issues, jerarquías de documentación o esquemas de bases de datos, para que el agente vea qué datos existen sin llamadas exploratorias.\n\nLa opción D es correcta porque la guía recomienda servidores MCP existentes de la comunidad para integraciones estándar como Jira, y reservar los servidores propios para flujos específicos del equipo. Un servidor compartido va en el .mcp.json con alcance de proyecto, y la expansión de variables de entorno mantiene el token fuera del control de versiones.\n\nLa opción A es incorrecta porque su premisa es falsa: cualquier servidor MCP, de la comunidad o propio, se puede configurar en .mcp.json. Construir un servidor propio para Jira agrega mantenimiento sin beneficio para una integración estándar.\n\nLa opción C es incorrecta porque los servidores personales o experimentales van en el alcance de usuario (~/.claude.json). Ponerlo en el archivo versionado del proyecto le impone un servidor sin probar a todo el equipo.",
+    keyConcept: "Usa servidores de la comunidad para integraciones estándar en el .mcp.json del proyecto con credenciales ${VAR}, deja los experimentos en el alcance de usuario y expón los catálogos como recursos MCP.",
+  },
+  "E3-013": {
+    question:
+      "Estás escribiendo un skill `/release-notes` para tu equipo. Debe estar disponible para todos los que clonen el repositorio; lee cientos de commits, lo que produce una salida extensa que no quieres en la conversación principal; y no debe ejecutar comandos de shell, solo leer archivos y escribir NOTES.md. ¿Qué dos decisiones de configuración cumplen estos requisitos? (Selecciona dos.)",
+    options: {
+      A: "Versionarlo como .claude/skills/release-notes/SKILL.md en el repositorio, con context: fork en su frontmatter",
+      B: "Guardarlo en ~/.claude/skills/release-notes/ para que cada compañero lo reciba al abrir el proyecto",
+      C: "Escribir el procedimiento en el CLAUDE.md raíz para que esté siempre cargado y listo cuando alguien pida las notas",
+      D: "Definir allowed-tools en el frontmatter del skill con Read, Grep, Glob y Write, dejando Bash fuera del conjunto permitido",
+    },
+    explanation:
+      "La opción A es correcta por dos motivos. Los skills de proyecto en .claude/skills/ se comparten por control de versiones, así que cada clon recibe el skill. El frontmatter context: fork ejecuta el skill en un contexto de subagente aislado, de modo que el análisis extenso de commits no contamina la conversación principal.\n\nLa opción D es correcta porque la guía describe allowed-tools en el frontmatter del skill como la forma de restringir el acceso a herramientas mientras el skill se ejecuta, por ejemplo limitándolo a operaciones de lectura y escritura para que no pueda ejecutar comandos destructivos.\n\nLa opción B es incorrecta porque ~/.claude/skills/ es de alcance personal. Solo existe en la máquina de quien lo creó; los compañeros nunca lo reciben.\n\nLa opción C es incorrecta porque CLAUDE.md es para estándares universales que se cargan siempre. Un flujo específico que se invoca bajo demanda va en un skill; ponerlo en CLAUDE.md gasta contexto en cada sesión y aun así no da aislamiento ni restricción de herramientas.\n\nNota de producto: en el Claude Code actual, `allowed-tools` preaprueba las herramientas de la lista para que corran sin pedir permiso; para bloquear una herramienta del todo se usan reglas de permiso `deny`. La guía del examen lo trata como una restricción, y esta pregunta sigue la guía.",
+    keyConcept: "Los skills de proyecto en .claude/skills/ se comparten por git; context: fork aísla la salida extensa y allowed-tools restringe lo que el skill puede usar.",
+  },
+  "E3-014": {
+    question:
+      "Los ingenieros de tu equipo tienen cuatro tareas de Claude Code en cola esta semana. ¿Cuáles dos deben empezar en modo plan en lugar de ejecución directa? (Selecciona dos.)",
+    options: {
+      A: "Agregar una validación de null a formatDate(), donde un stack trace muestra que falla cuando falta el valor de entrada",
+      B: "Reemplazar la biblioteca de logging propia por OpenTelemetry en unos 60 archivos repartidos en tres servicios",
+      C: "Elegir entre una cola de mensajes y un sondeo programado para sincronizar inventario, cada uno con infraestructura distinta",
+      D: "Renombrar una variable local mal escrita dentro de una función y actualizar sus tres referencias en ese mismo archivo",
+    },
+    explanation:
+      "La opción B es correcta porque una migración de biblioteca que toca unos 60 archivos en tres servicios es un cambio a gran escala en muchos archivos. La guía cita las migraciones que afectan a más de 45 archivos como caso para el modo plan, de modo que el enfoque se explore y se acuerde antes de empezar a editar.\n\nLa opción C es correcta porque es una decisión de arquitectura entre enfoques válidos con requisitos de infraestructura distintos, que es justo para lo que está diseñado el modo plan: explorar y diseñar antes de comprometerse con los cambios.\n\nLa opción A es incorrecta porque es una corrección bien acotada, con un stack trace claro que apunta a una función. La guía pone este tipo de corrección en un solo archivo como caso de ejecución directa.\n\nLa opción D es incorrecta porque es un cambio trivial en un solo archivo, con un alcance obvio. Planificarlo agrega trabajo sin aportar seguridad.",
+    keyConcept: "El modo plan sirve para cambios grandes en muchos archivos y para decisiones de arquitectura entre enfoques; la ejecución directa, para cambios claros y bien acotados.",
+  },
+  "E3-015": {
+    question:
+      "Tu job de GitHub Actions ejecuta `claude \"Review this PR and list the issues\"`. En el CI, el job se queda colgado hasta que se agota el tiempo. Cuando un desarrollador ejecuta el mismo comando en local, termina, pero el script que publica los comentarios no logra convertir de forma confiable la salida en prosa en comentarios en línea del PR. ¿Qué dos cambios arreglan el pipeline? (Selecciona dos.)",
+    options: {
+      A: "Ejecutar Claude Code con la opción -p, para que trabaje sin interacción, imprima su resultado y termine en vez de esperar entrada",
+      B: "Canalizar el comando yes hacia claude, para que cualquier pregunta interactiva que aparezca se responda sola y el job siga",
+      C: "Agregar --output-format json con un --json-schema que defina archivo, línea, severidad y mensaje para cada uno de los hallazgos",
+      D: "Pedir en el prompt «solo JSON válido, sin prosa» y quitar cualquier texto antes de la primera llave antes de interpretar la salida",
+    },
+    explanation:
+      "La opción A es correcta porque, sin -p (--print), Claude Code abre una sesión interactiva y espera una entrada que nunca llega en el CI. La guía nombra -p como la forma de ejecutar Claude Code en pipelines automatizados y evitar que se cuelgue esperando interacción.\n\nLa opción C es correcta porque la guía combina --output-format json con --json-schema para producir hallazgos estructurados que una máquina puede interpretar y que un script puede publicar como comentarios en línea del PR.\n\nLa opción B es incorrecta porque no vuelve a Claude Code no interactivo; solo mete texto arbitrario en una sesión interactiva. La sesión sigue sin un final definido y sin salida estructurada.\n\nLa opción D es incorrecta porque una petición en el prompt no es una garantía, y quitar el texto antes de la primera llave es frágil. Las opciones de la CLI dan una estructura en la que el script puede confiar; las instrucciones en prosa, no.",
+    keyConcept: "En CI, ejecuta Claude Code con -p y exige una salida interpretable por máquina con --output-format json más --json-schema.",
+  },
+  "E4-013": {
+    question:
+      "Un desarrollador usó una sola sesión larga de Claude Code para escribir una funcionalidad de conciliación de pagos de 14 archivos. Antes de fusionar, quiere la revisión con más probabilidad de detectar problemas sutiles, incluida una diferencia entre cómo el importador y el módulo del libro mayor redondean las monedas. ¿Qué dos enfoques debe usar? (Selecciona dos.)",
+    options: {
+      A: "En la misma sesión, pedirle a Claude que relea su código con extended thinking activado y liste lo que ahora cambiaría",
+      B: "Abrir una instancia de Claude nueva e independiente que reciba solo el diff y los requisitos, sin el razonamiento de la sesión",
+      C: "Revisar los 14 archivos en una sola pasada, para que el revisor vea todo junto y pueda relacionar cualquier archivo con otro",
+      D: "Hacer pasadas enfocadas por archivo para problemas locales, más una pasada de integración que siga el flujo de datos entre archivos",
+    },
+    explanation:
+      "La opción B es correcta porque el modelo que generó el código conserva su contexto de razonamiento y es menos propenso a cuestionar sus propias decisiones. La guía dice que una instancia independiente, sin ese contexto, detecta mejor los problemas sutiles que las instrucciones de autorrevisión o el extended thinking.\n\nLa opción D es correcta porque la guía recomienda dividir las revisiones grandes de varios archivos en pasadas por archivo para problemas locales y una pasada de integración aparte para el flujo de datos entre archivos. La diferencia de redondeo entre el importador y el libro mayor es un problema entre archivos, justo el que la pasada de integración está pensada para encontrar.\n\nLa opción A es incorrecta porque es autorrevisión en la misma sesión. El extended thinking le da más espacio al mismo razonamiento; no elimina el sesgo hacia las decisiones ya tomadas.\n\nLa opción C es incorrecta porque una sola pasada sobre 14 archivos diluye la atención, lo que lleva a problemas no detectados y a hallazgos contradictorios. Ver todo a la vez no es lo mismo que analizarlo con cuidado.",
+    keyConcept: "Revisa el código generado con una instancia independiente, y divide las revisiones grandes en pasadas por archivo más una pasada de integración entre archivos.",
+  },
+  "E4-014": {
+    question:
+      "Tu subagente de análisis de documentos extrae de cada artículo una lista `citations` con {author, year, title}. Funciona bien en artículos con sección de bibliografía, pero devuelve una lista vacía en los que citan en el texto («como mostró Smith (2021)») o en notas al pie. Un párrafo de instrucciones que describe esos estilos no ayudó. ¿Qué dos cambios en el prompt son los más efectivos? (Selecciona dos.)",
+    options: {
+      A: "Agregar reglas en prosa más largas para cada estilo de cita, explicando con más detalle en qué se diferencian las notas al pie de las citas en el texto",
+      B: "Hacer de citations un campo obligatorio con minItems: 1, para que el modelo ya no pueda devolver una lista vacía en ningún artículo",
+      C: "Agregar 2 a 4 ejemplos few-shot con la extracción correcta de un artículo con bibliografía, uno con citas en el texto y uno con notas al pie",
+      D: "Hacer que cada ejemplo incluya una nota breve de por qué una mención en el texto cuenta como cita, para que el modelo generalice",
+    },
+    explanation:
+      "La opción C es correcta porque la guía señala los ejemplos few-shot como la solución más efectiva cuando las instrucciones detalladas por sí solas dan resultados inconsistentes, y en particular para manejar estructuras de documento variadas (citas en el texto frente a bibliografías) y extracciones vacías de campos obligatorios.\n\nLa opción D es correcta porque la guía recomienda ejemplos que muestren el razonamiento detrás de una decisión. Explicar por qué una mención en el texto es una cita ayuda al modelo a generalizar a estilos que los ejemplos no cubren, en lugar de reconocer solo los patrones exactos mostrados.\n\nLa opción A es incorrecta porque las instrucciones en prosa ya se probaron y no funcionaron. Más del mismo tipo de instrucción no ataca el problema.\n\nLa opción B es incorrecta porque obligar a una lista no vacía empuja al modelo a inventar citas en artículos que no logra interpretar, y algunos artículos legítimamente no citan nada. Oculta la falla en vez de corregirla.",
+    keyConcept: "Cuando las instrucciones fallan ante estructuras de documento variadas, agrega 2 a 4 ejemplos few-shot puntuales que muestren la extracción correcta y su razonamiento.",
+  },
+  "E4-015": {
+    question:
+      "Tu CI ejecuta tres cargas de trabajo con Claude: (1) una revisión previa a la fusión que bloquea y que los desarrolladores esperan, (2) la generación nocturna de pruebas para los archivos cambiados ese día y (3) una auditoría semanal de encabezados de licencia en 3,000 archivos. Finanzas te pide bajar el costo de la API sin perjudicar a los desarrolladores. ¿Qué dos decisiones son correctas? (Selecciona dos.)",
+    options: {
+      A: "Pasar la generación nocturna de pruebas y la auditoría semanal a la Message Batches API; dejar la revisión previa a la fusión en modo síncrono",
+      B: "Pasar también la revisión previa a la fusión a la Message Batches API, ya que la mayoría de los lotes termina mucho antes de las 24 horas",
+      C: "Enviar la auditoría semanal como un lote cuyas solicitudes llamen a una herramienta read_file a mitad de la solicitud para cargar cada archivo",
+      D: "Darle a cada solicitud del lote un custom_id derivado de su archivo, como src-auth-login, y reenviar solo los que fallaron tras cada corrida",
+    },
+    explanation:
+      "La opción A es correcta porque la Message Batches API reduce el costo en 50 % y sirve para trabajo que tolera latencia y no bloquea, como la generación nocturna y las auditorías semanales. No garantiza latencia, así que la revisión previa a la fusión, que bloquea, se queda en la API síncrona.\n\nLa opción D es correcta porque custom_id relaciona cada solicitud con su resultado. Solo admite letras, dígitos, guiones y guiones bajos (hasta 64 caracteres), así que se deriva de la ruta en vez de usar la ruta tal cual. Después de una corrida puedes identificar exactamente qué archivos fallaron y reenviar solo esos, con cambios si hace falta, en vez de reprocesar todo el lote.\n\nLa opción B es incorrecta porque un lote puede tardar hasta 24 horas sin un SLA de latencia. Que «la mayoría termine rápido» no es una garantía en la que pueda apoyarse un control que bloquea; a veces los desarrolladores esperarían horas.\n\nLa opción C es incorrecta porque la API de lotes no admite llamadas a herramientas de varios turnos dentro de una solicitud: tu código no puede ejecutar una herramienta a mitad de la solicitud y devolver su resultado. Cada solicitud debe traer ya el contenido del archivo que necesita.",
+    keyConcept: "Usa lotes para el trabajo que tolera latencia y la API síncrona para los controles que bloquean; relaciona los resultados con custom_id y reenvía solo las fallas.",
+  },
+  "E4-016": {
+    question:
+      "Tu extractor de órdenes de compra usa un esquema de herramienta estricto y valida cada resultado. Aparecen tres grupos de fallas: (1) `delivery_date` devuelto como «el próximo martes» en lugar de ISO 8601, aunque la orden trae impresa su fecha de emisión; (2) partidas que no suman el total indicado; (3) `contract_reference` vacío porque la orden solo dice «según el contrato marco», un documento que el pipeline nunca recibe. ¿Qué dos afirmaciones sobre los reintentos son correctas? (Selecciona dos.)",
+    options: {
+      A: "Para el grupo 1, un reintento que incluya el documento, la extracción fallida y el error de validación específico debería corregirlo",
+      B: "Para el grupo 3, reintentar no servirá: el valor existe solo en el contrato marco, que el modelo nunca recibe",
+      C: "Para el grupo 3, reintentar hasta cinco veces con una redacción más firme terminará por sacar la referencia de la propia orden",
+      D: "Para el grupo 2, el esquema estricto ya descarta los descuadres de sumas, así que esos casos deben venir de un bug en tu parser",
+    },
+    explanation:
+      "La opción A es correcta porque un error de formato es exactamente lo que corrige el reintento con retroalimentación del error. Enviar el documento original, la extracción fallida y el error de validación específico («delivery_date debe ser ISO 8601») le da al modelo lo que necesita para corregirse, y la fecha de emisión de la orden es la referencia que convierte «el próximo martes» en una fecha.\n\nLa opción B es correcta porque la guía es explícita sobre los límites del reintento: cuando la información no está en la fuente, por ejemplo porque vive en un documento externo que no se entregó, ningún número de reintentos la va a producir.\n\nLa opción C es incorrecta por la misma razón por la que B es correcta. Una redacción más firme sobre un documento que no tiene el valor solo puede empujar al modelo a inventar una referencia.\n\nLa opción D es incorrecta porque los esquemas estrictos eliminan los errores de sintaxis, no los semánticos. Que las partidas no sumen el total es un error semántico que el esquema no puede detectar; la guía recomienda controles como extraer un calculated_total junto al stated_total para marcar discrepancias.",
+    keyConcept: "El reintento con retroalimentación específica corrige errores de formato y estructura, no información que falta en la fuente; los esquemas estrictos evitan errores de sintaxis, no semánticos.",
+  },
+  "E5-013": {
+    question:
+      "Tu agente de soporte puede resolver por su cuenta devoluciones estándar, reembolsos y cambios de cuenta. ¿Cuáles dos de estas situaciones debe escalar a una persona con escalate_to_human? (Selecciona dos.)",
+    options: {
+      A: "Un cliente quiere una devolución estándar dentro de la política, y el modelo de sentimiento califica su mensaje como muy enojado",
+      B: "Un cliente pide que le reembolsen una noche de hotel perdida por una entrega tardía; la política cubre reembolsos, pero no esos costos",
+      C: "Tras varios intentos, el agente no encuentra el pedido con ningún identificador que da el cliente y no puede avanzar",
+      D: "El agente reporta una confianza de 0.55 en un cambio de dirección rutinario que el cliente ya confirmó por completo",
+    },
+    explanation:
+      "La opción B es correcta porque la guía cuenta las excepciones y los vacíos de política entre los motivos de escalamiento. Cuando la política no dice nada sobre lo que pide el cliente, en este caso el reembolso de un costo derivado, el agente no debe inventar una regla; debe decidir una persona.\n\nLa opción C es correcta porque no poder avanzar de forma significativa es otro motivo que nombra la guía. Seguir dando vueltas no ayuda a nadie; un traspaso con lo que se intentó, sí.\n\nLa opción A es incorrecta porque la guía dice que el sentimiento no es un indicador confiable de la complejidad del caso. La solicitud es sencilla y está dentro de la política, así que el agente debe reconocer la frustración y resolverla, y escalar solo si el cliente pide hablar con una persona.\n\nLa opción D es incorrecta porque la confianza autorreportada tampoco es un indicador confiable. Un cambio rutinario y ya confirmado está de lleno dentro de lo que el agente puede hacer.",
+    keyConcept: "Escala ante pedidos explícitos de una persona, vacíos de política y falta de avance, no por puntajes de sentimiento ni por la confianza autorreportada.",
+  },
+  "E5-014": {
+    question:
+      "Tu pipeline extrae campos de facturas, notas de crédito y declaraciones de aduana. La precisión por campo en los 40,000 documentos del mes pasado es de 98 % en total, y el equipo propone eliminar la revisión humana de toda extracción con confianza del modelo de 0.9 o más. Las declaraciones de aduana son solo el 4 % del volumen. ¿Qué dos pasos deben darse antes de reducir la revisión? (Selecciona dos.)",
+    options: {
+      A: "Desglosar la precisión por tipo de documento y por campo, para confirmar que las declaraciones de aduana y los campos poco comunes también cumplen",
+      B: "Adoptar el umbral de 0.9 tal como se propuso, porque los puntajes de confianza del propio modelo ya reflejan su precisión real",
+      C: "Calibrar los umbrales con un conjunto de validación etiquetado y luego mantener un muestreo aleatorio estratificado de la salida de alta confianza",
+      D: "Revisar de ahora en adelante solo las extracciones por debajo de 0.9, ya que el 98 % agregado muestra que las de alta confianza no necesitan control",
+    },
+    explanation:
+      "La opción A es correcta porque la guía advierte que las métricas agregadas pueden ocultar un mal desempeño en tipos de documento o campos específicos. Con el 4 % del volumen, las declaraciones de aduana podrían estar muy por debajo del 98 % sin mover la cifra total, así que la precisión debe validarse por segmento antes de automatizar.\n\nLa opción C es correcta porque la guía pide umbrales de confianza por campo calibrados con conjuntos de validación etiquetados, y un muestreo aleatorio estratificado continuo de las extracciones de alta confianza para medir la tasa de error y detectar patrones de error nuevos una vez reducida la revisión.\n\nLa opción B es incorrecta porque la confianza cruda del modelo no viene calibrada. Sin un conjunto etiquetado no sabes si 0.9 significa de verdad 90 % (o más) de aciertos.\n\nLa opción D es incorrecta porque se apoya en el agregado contra el que advierte la guía y deja de controlar por completo la salida de alta confianza, así que los patrones de error nuevos pasarían inadvertidos.",
+    keyConcept: "Valida la precisión por tipo de documento y por campo, calibra la confianza con datos etiquetados y sigue muestreando la salida de alta confianza antes de reducir la revisión.",
+  },
 };

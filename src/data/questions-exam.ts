@@ -317,11 +317,11 @@ const examDomain1Questions: Question[] = [
       { id: "A", text: "Stronger system prompt wording, \"CRITICAL: run tests before commenting\", copied into CLAUDE.md too" },
       { id: "B", text: "A lower effort level so the model follows the instruction more literally and improvises less often" },
       { id: "C", text: "A PreToolUse hook that blocks the comment tool until the test tool has passed in this session" },
-      { id: "D", text: "One combined tool that runs the full test suite and posts the review comment in a single call" },
+      { id: "D", text: "A PostToolUse hook that deletes any review comment the agent posted before the tests ran" },
     ],
     correctAnswer: "C",
     explanation:
-      "When compliance has to be deterministic, the prompt is the wrong layer. A prompt is a probabilistic instruction: it has a non-zero failure rate, which is exactly the one in twenty being observed. A PreToolUse hook is application code that inspects the pending call and refuses it unless the prerequisite is met, so the failure rate is zero by construction.\n\nOption A changes the wording, not the mechanism. Option B confuses effort with obedience: effort tunes reasoning depth, not rule-following. Option D would work for this one pair of steps, but it removes the ability to run tests without commenting and hides failures: if tests fail, the combined tool still has to decide what to post.\n\nHow to implement:\n```typescript\nlet testsPassed = false;\nconst hooks = {\n  PreToolUse: [{ matcher: \"post_review_comment\", hooks: [async () => testsPassed ? {} : {\n    hookSpecificOutput: { hookEventName: \"PreToolUse\", permissionDecision: \"deny\",\n      permissionDecisionReason: \"Run the test suite first; commenting is gated on a green run.\" } }] }],\n  PostToolUse: [{ matcher: \"run_tests\", hooks: [async (input: any) => {\n    testsPassed = input.tool_response?.exitCode === 0; return {}; }] }],\n};\n```",
+      "When compliance has to be deterministic, the prompt is the wrong layer. A prompt is a probabilistic instruction: it has a non-zero failure rate, which is exactly the one in twenty being observed. A PreToolUse hook is application code that inspects the pending call and refuses it unless the prerequisite is met, so the failure rate is zero by construction.\n\nOption A changes the wording, not the mechanism. Option B confuses effort with obedience: effort tunes reasoning depth, not rule-following. Option D reacts after the fact: the comment has already been posted and its notifications sent, so the ordering still breaks one run in twenty. A PostToolUse hook runs after the tool; only PreToolUse can stop the call.\n\nHow to implement:\n```typescript\nlet testsPassed = false;\nconst hooks = {\n  PreToolUse: [{ matcher: \"post_review_comment\", hooks: [async () => testsPassed ? {} : {\n    hookSpecificOutput: { hookEventName: \"PreToolUse\", permissionDecision: \"deny\",\n      permissionDecisionReason: \"Run the test suite first; commenting is gated on a green run.\" } }] }],\n  PostToolUse: [{ matcher: \"run_tests\", hooks: [async (input: any) => {\n    testsPassed = input.tool_response?.exitCode === 0; return {}; }] }],\n};\n```",
     keyConcept: "Prompt for preferences, hooks for guarantees: a prerequisite gate belongs in code",
     sources: [
       { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
@@ -398,6 +398,53 @@ const examDomain1Questions: Question[] = [
     sources: [
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
       { title: "CCAR-F Exam Guide v1.0 — Task 1.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
+  },
+  {
+    id: "E1-017",
+    scenario: "Customer Support Resolution Agent",
+    domain: 1,
+    domainName: "Agentic Architecture & Orchestration",
+    taskStatement: "1.5",
+    difficulty: "advanced",
+    question:
+      "Policy says refunds above $500 need a human, and accounts flagged for fraud review must never be refunded. The system prompt states both rules, yet audits still find a few violations each week. Separately, `lookup_order` returns `refund_status` as numeric codes (0, 1, 2) that the agent sometimes misreads. Which two changes give deterministic guarantees? (Select two.)",
+    options: [
+      { id: "A", text: "A PostToolUse hook on process_refund that checks the amount after the refund runs and alerts a supervisor above $500" },
+      { id: "B", text: "A stronger system prompt section, written in capitals, that repeats both rules with three worked examples of refusals" },
+      { id: "C", text: "A PreToolUse hook on process_refund that blocks calls over $500 or on fraud-flagged accounts and routes them to escalation" },
+      { id: "D", text: "A PostToolUse hook on lookup_order that maps the numeric refund_status codes to labels before the model ever sees them" },
+    ],
+    correctAnswer: "CD",
+    explanation:
+      "Option C is right because a hook that intercepts the outgoing tool call runs before the refund happens and enforces the rule in code. The guide calls for blocking policy-violating actions (such as refunds over $500) and redirecting them to an alternative workflow such as human escalation, and for choosing hooks over prompts when compliance must be guaranteed.\n\nOption D is right because PostToolUse hooks can transform tool results before the model processes them. Normalizing numeric status codes into clear labels removes the misreading deterministically instead of hoping the model remembers what each code means.\n\nOption A is wrong because a PostToolUse hook on process_refund fires after the money has moved. Alerting afterwards detects the violation; it does not prevent it.\n\nOption B is wrong because prompt instructions are probabilistic: the rules are already in the prompt and still fail a few times a week. Louder wording lowers the rate at best; it cannot make it zero.",
+    keyConcept: "Use hooks that intercept outgoing tool calls to block policy violations, and PostToolUse hooks to normalize tool results; prompts alone give only probabilistic compliance.",
+    sources: [
+      { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
+    ],
+  },
+  {
+    id: "E1-018",
+    scenario: "Multi-Agent Research System",
+    domain: 1,
+    domainName: "Agentic Architecture & Orchestration",
+    taskStatement: "1.2",
+    difficulty: "intermediate",
+    question:
+      "A request to research \"how AI is changing the creative industries\" produces a report that covers only visual art. Traces show the coordinator split the topic into three subtasks: digital painting, graphic design and photography. Each subagent completed its subtask well, and the synthesis is accurate for what it received. Which two coordinator changes address the root cause? (Select two.)",
+    options: [
+      { id: "A", text: "Decompose broad topics into distinct subtopics that span the whole domain, such as music, writing, film and visual art" },
+      { id: "B", text: "Have the coordinator check the synthesis for coverage gaps and re-delegate targeted searches until coverage is sufficient" },
+      { id: "C", text: "Let the subagents message each other directly to agree on who covers what, so the coordinator no longer manages scope" },
+      { id: "D", text: "Raise the web search subagent's results limit per query, so it can collect more sources on each subtopic it is given" },
+    ],
+    correctAnswer: "AB",
+    explanation:
+      "Option A is right because the failure is in task decomposition: the coordinator chose three overlapping slices of one sub-area. The guide warns that overly narrow decomposition leaves broad topics incompletely covered, and recommends partitioning scope into distinct subtopics that minimize duplication.\n\nOption B is right because the guide describes iterative refinement: the coordinator evaluates the synthesis for gaps, re-delegates targeted queries to the search and analysis subagents, and re-runs synthesis until coverage is sufficient. That loop would catch missing areas like music or film.\n\nOption C is wrong because it breaks the hub-and-spoke pattern. The coordinator should route all inter-subagent communication for observability and controlled information flow; peer negotiation also does nothing to widen the scope.\n\nOption D is wrong because the subagents already did their assigned work well. More results on the same narrow subtopics still leave the rest of the domain uncovered.",
+    keyConcept: "The coordinator owns decomposition: partition broad topics into distinct subtopics, and loop on synthesis gaps with targeted re-delegation.",
+    sources: [
+      { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
+      { title: "Effective context engineering for AI agents", url: "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents" },
     ],
   },
 ];
@@ -695,6 +742,29 @@ const examDomain2Questions: Question[] = [
     sources: [
       { title: "CCAR-F Exam Guide v1.0 — Task 2.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Claude Code tools reference", url: "https://code.claude.com/docs/en/tools-reference" },
+    ],
+  },
+  {
+    id: "E2-013",
+    scenario: "Developer Productivity with Claude",
+    domain: 2,
+    domainName: "Tool Design & MCP Integration",
+    taskStatement: "2.4",
+    difficulty: "intermediate",
+    question:
+      "Your team wants Claude Code to work with Jira and with an internal service catalog that lists 400 services and their owners. One engineer also wants to try an experimental vector-search MCP server. Today, engineers see the agent make dozens of exploratory calls just to learn which services exist before it can answer. Which two choices are right? (Select two.)",
+    options: [
+      { id: "A", text: "Build a custom Jira MCP server in-house, because community servers cannot be configured in a project's .mcp.json file" },
+      { id: "B", text: "Expose the service catalog as an MCP resource, so the agent can see which services exist without exploratory tool calls" },
+      { id: "C", text: "Add the experimental vector-search server to the project .mcp.json, so the whole team can help test it right away" },
+      { id: "D", text: "Use an existing community Jira MCP server in the project .mcp.json, with its API token referenced as ${JIRA_TOKEN}" },
+    ],
+    correctAnswer: "BD",
+    explanation:
+      "Option B is right because the guide describes MCP resources as the way to expose content catalogs, such as issue summaries, documentation hierarchies or database schemas, so the agent sees what data exists without exploratory tool calls.\n\nOption D is right because the guide recommends existing community MCP servers for standard integrations like Jira, reserving custom servers for team-specific workflows. A shared server belongs in the project-scoped .mcp.json, and environment variable expansion keeps the token out of version control.\n\nOption A is wrong because its premise is false: any MCP server, community or custom, can be configured in .mcp.json. Building a custom Jira server adds maintenance with no benefit for a standard integration.\n\nOption C is wrong because personal or experimental servers belong in user scope (~/.claude.json). Putting one in the committed project file pushes an untested server onto every teammate.",
+    keyConcept: "Use community servers for standard integrations in project .mcp.json with ${VAR} credentials, keep experiments in user scope, and expose catalogs as MCP resources.",
+    sources: [
+      { title: "Connect Claude Code to tools via MCP", url: "https://code.claude.com/docs/en/mcp" },
     ],
   },
 ];
@@ -995,6 +1065,77 @@ const examDomain3Questions: Question[] = [
       { title: "CCAR-F Exam Guide v1.0 — Task 3.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
+  {
+    id: "E3-013",
+    scenario: "Code Generation with Claude Code",
+    domain: 3,
+    domainName: "Claude Code Configuration & Workflows",
+    taskStatement: "3.2",
+    difficulty: "intermediate",
+    question:
+      "You are writing a `/release-notes` skill for your team. It must be available to everyone who clones the repository; it reads hundreds of commits, producing verbose output you do not want in the main conversation; and it must not run shell commands, only read files and write NOTES.md. Which two configuration choices meet these requirements? (Select two.)",
+    options: [
+      { id: "A", text: "Commit it as .claude/skills/release-notes/SKILL.md in the repository, with context: fork in its frontmatter" },
+      { id: "B", text: "Save it in ~/.claude/skills/release-notes/ so that every teammate picks it up when they open the project" },
+      { id: "C", text: "Write the procedure into the root CLAUDE.md so it is always loaded and ready whenever someone asks for notes" },
+      { id: "D", text: "Set allowed-tools in the skill frontmatter to Read, Grep, Glob and Write, leaving Bash out of the allowed set" },
+    ],
+    correctAnswer: "AD",
+    explanation:
+      "Option A is right on two counts. Project skills in .claude/skills/ are shared through version control, so every clone gets the skill. The context: fork frontmatter runs the skill in an isolated sub-agent context, so the verbose commit analysis does not pollute the main conversation.\n\nOption D is right because the guide describes allowed-tools in skill frontmatter as the way to restrict tool access while the skill runs, for example limiting it to read and write operations so it cannot run destructive commands.\n\nOption B is wrong because ~/.claude/skills/ is personal scope. It exists only on the author's machine; teammates never receive it.\n\nOption C is wrong because CLAUDE.md is for always-loaded, universal standards. An on-demand, task-specific workflow belongs in a skill; putting it in CLAUDE.md spends context in every session and still gives neither isolation nor tool restrictions.\n\nProduct note: in current Claude Code, `allowed-tools` pre-approves the listed tools so they run without a permission prompt; to block a tool outright, use permission deny rules. The exam guide treats it as a restriction, and this item follows the guide.",
+    keyConcept: "Project skills in .claude/skills/ are shared via git; context: fork isolates verbose output and allowed-tools restricts what the skill can use.",
+    sources: [
+      { title: "Claude Code docs — Skills", url: "https://code.claude.com/docs/en/skills" },
+    ],
+  },
+  {
+    id: "E3-014",
+    scenario: "Developer Productivity with Claude",
+    domain: 3,
+    domainName: "Claude Code Configuration & Workflows",
+    taskStatement: "3.4",
+    difficulty: "intermediate",
+    question:
+      "Engineers on your team have four Claude Code tasks queued this week. Which two should start in plan mode rather than direct execution? (Select two.)",
+    options: [
+      { id: "A", text: "Add a null check to formatDate(), where a stack trace shows it throws when the input value is missing" },
+      { id: "B", text: "Replace the in-house logging library with OpenTelemetry across about 60 files spread over three services" },
+      { id: "C", text: "Choose between a message queue and scheduled polling for inventory sync, each with different infrastructure" },
+      { id: "D", text: "Rename a misspelled local variable inside one function and update its three references in that same file" },
+    ],
+    correctAnswer: "BC",
+    explanation:
+      "Option B is right because a library migration touching about 60 files across three services is a large-scale, multi-file change. The guide names migrations affecting 45+ files as a case for plan mode, so the approach is explored and agreed before edits begin.\n\nOption C is right because it is an architectural decision between valid approaches with different infrastructure requirements, which is exactly what plan mode is designed for: explore and design before committing to changes.\n\nOption A is wrong because it is a well-scoped fix with a clear stack trace pointing to one function. The guide lists this kind of single-file bug fix as a case for direct execution.\n\nOption D is wrong because it is a trivial, single-file change with an obvious scope. Planning it adds overhead and no safety.",
+    keyConcept: "Plan mode suits large multi-file changes and architectural choices between approaches; direct execution suits clear, well-scoped changes.",
+    sources: [
+      { title: "Claude Code docs — Common workflows (plan mode, subagents)", url: "https://code.claude.com/docs/en/common-workflows" },
+      { title: "Claude Code docs — Best practices", url: "https://code.claude.com/docs/en/best-practices" },
+    ],
+  },
+  {
+    id: "E3-015",
+    scenario: "Claude Code for Continuous Integration",
+    domain: 3,
+    domainName: "Claude Code Configuration & Workflows",
+    taskStatement: "3.6",
+    difficulty: "intermediate",
+    question:
+      "Your GitHub Actions job runs `claude \"Review this PR and list the issues\"`. In CI the job hangs until it times out. When a developer runs the same command locally it finishes, but the posting script cannot reliably turn the prose output into inline PR comments. Which two changes fix the pipeline? (Select two.)",
+    options: [
+      { id: "A", text: "Run Claude Code with the -p flag, so it works non-interactively, prints its result and exits instead of awaiting input" },
+      { id: "B", text: "Pipe the yes command into claude, so any interactive prompt that appears is answered automatically and the job goes on" },
+      { id: "C", text: "Add --output-format json with a --json-schema that defines file, line, severity and message for each of the findings" },
+      { id: "D", text: "Ask in the prompt for \"valid JSON only, no prose\" and strip any text before the first brace before parsing the output" },
+    ],
+    correctAnswer: "AC",
+    explanation:
+      "Option A is right because without -p (--print) Claude Code starts an interactive session and waits for input that never arrives in CI. The guide names -p as the way to run Claude Code in automated pipelines and prevent interactive hangs.\n\nOption C is right because the guide pairs --output-format json with --json-schema to produce machine-parseable structured findings that a script can post as inline PR comments.\n\nOption B is wrong because it does not make Claude Code non-interactive; it feeds arbitrary text into an interactive session. The session still has no defined end and no structured output.\n\nOption D is wrong because a prompt request is not enforcement, and stripping text before the first brace is fragile. The CLI flags give structure the script can rely on; prose instructions do not.",
+    keyConcept: "In CI, run Claude Code with -p and enforce machine-parseable output with --output-format json plus --json-schema.",
+    sources: [
+      { title: "Claude Code docs — Run Claude Code programmatically (-p)", url: "https://code.claude.com/docs/en/headless" },
+      { title: "Claude Code CLI reference", url: "https://code.claude.com/docs/en/cli-reference" },
+    ],
+  },
 ];
 
 // ============================================================
@@ -1285,6 +1426,101 @@ const examDomain4Questions: Question[] = [
     keyConcept: "detected_pattern field enables systematic analysis of dismissals",
     sources: [
       { title: "CCAR-F Exam Guide v1.0 — Task 4.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
+  },
+  {
+    id: "E4-013",
+    scenario: "Code Generation with Claude Code",
+    domain: 4,
+    domainName: "Prompt Engineering & Structured Output",
+    taskStatement: "4.6",
+    difficulty: "advanced",
+    question:
+      "A developer used one long Claude Code session to write a 14-file payment reconciliation feature. Before merging, they want the review most likely to catch subtle issues, including a mismatch between how the importer and the ledger module handle currency rounding. Which two approaches should they use? (Select two.)",
+    options: [
+      { id: "A", text: "In the same session, ask Claude to re-read its code with extended thinking on and list anything it would now change" },
+      { id: "B", text: "Start a new, independent Claude instance given only the diff and the requirements, without the session's reasoning" },
+      { id: "C", text: "Review all 14 files in one single pass, so the reviewer sees everything together and can relate any file to any other" },
+      { id: "D", text: "Run focused per-file passes for local issues, plus a separate integration pass that traces data flow across the files" },
+    ],
+    correctAnswer: "BD",
+    explanation:
+      "Option B is right because a model that generated the code retains its reasoning context and is less likely to question its own decisions. The guide says an independent instance without that context is more effective at catching subtle issues than self-review instructions or extended thinking.\n\nOption D is right because the guide recommends splitting large multi-file reviews into per-file passes for local issues and a separate integration pass for cross-file data flow. The rounding mismatch between the importer and the ledger is a cross-file issue that the integration pass is designed to find.\n\nOption A is wrong because it is self-review in the same session. Extended thinking gives the same reasoning more room; it does not remove the bias toward the decisions already made.\n\nOption C is wrong because a single pass over 14 files dilutes attention, which leads to missed issues and contradictory findings. Seeing everything at once is not the same as analyzing it carefully.",
+    keyConcept: "Review generated code with an independent instance, and split large reviews into per-file passes plus a cross-file integration pass.",
+    sources: [
+      { title: "Claude Code docs — Best practices", url: "https://code.claude.com/docs/en/best-practices" },
+      { title: "Define success criteria and build evaluations", url: "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests" },
+    ],
+  },
+  {
+    id: "E4-014",
+    scenario: "Multi-Agent Research System",
+    domain: 4,
+    domainName: "Prompt Engineering & Structured Output",
+    taskStatement: "4.2",
+    difficulty: "intermediate",
+    question:
+      "Your document-analysis subagent extracts a `citations` list of {author, year, title} from each paper. It works well on papers with a bibliography section but returns an empty list for papers that cite inline (\"as Smith (2021) showed\") or in footnotes. A paragraph of instructions describing these styles did not help. Which two prompt changes are most effective? (Select two.)",
+    options: [
+      { id: "A", text: "Add longer prose rules for each citation style, explaining in more detail how footnotes differ from inline citations" },
+      { id: "B", text: "Make citations a required field with minItems: 1, so the model can no longer return an empty list for any paper" },
+      { id: "C", text: "Add 2-4 few-shot examples showing correct extraction from a bibliography paper, an inline-cite paper and a footnote paper" },
+      { id: "D", text: "Have each example include a short note on why an inline mention counts as a citation, so the model generalizes" },
+    ],
+    correctAnswer: "CD",
+    explanation:
+      "Option C is right because the guide names few-shot examples as the most effective fix when detailed instructions alone produce inconsistent results, and specifically for handling varied document structures (inline citations versus bibliographies) and empty extractions of required fields.\n\nOption D is right because the guide recommends examples that show the reasoning for a choice. Explaining why an inline mention is a citation helps the model generalize to styles the examples do not cover, instead of matching only the exact patterns shown.\n\nOption A is wrong because prose instructions were already tried and did not work. More of the same kind of instruction does not address the problem.\n\nOption B is wrong because forcing a non-empty list pushes the model to fabricate citations for papers it cannot parse, and some papers legitimately cite nothing. It hides the failure instead of fixing it.",
+    keyConcept: "When instructions fail on varied document structures, add 2-4 targeted few-shot examples that show the correct extraction and the reasoning behind it.",
+    sources: [
+      { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
+      { title: "Reduce hallucinations", url: "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations" },
+    ],
+  },
+  {
+    id: "E4-015",
+    scenario: "Claude Code for Continuous Integration",
+    domain: 4,
+    domainName: "Prompt Engineering & Structured Output",
+    taskStatement: "4.5",
+    difficulty: "intermediate",
+    question:
+      "Your CI runs three Claude workloads: (1) a blocking pre-merge review that developers wait on, (2) nightly test generation for files changed that day, and (3) a weekly license-header audit of 3,000 files. Finance asks you to cut API costs without hurting developers. Which two decisions are right? (Select two.)",
+    options: [
+      { id: "A", text: "Move the nightly test generation and the weekly audit to the Message Batches API; keep the pre-merge review synchronous" },
+      { id: "B", text: "Move the pre-merge review to the Message Batches API too, since most batches finish well within the 24-hour window" },
+      { id: "C", text: "Send the weekly audit as one batch whose requests call a read_file tool mid-request to load each file when needed" },
+      { id: "D", text: "Give each batch request a custom_id derived from its file, like src-auth-login, then resubmit only failed ones" },
+    ],
+    correctAnswer: "AD",
+    explanation:
+      "Option A is right because the Message Batches API cuts cost by 50% and suits latency-tolerant, non-blocking work like nightly generation and weekly audits. It has no latency guarantee, so the blocking pre-merge review stays on the synchronous API.\n\nOption D is right because custom_id correlates each request with its result. It accepts only letters, digits, hyphens and underscores (up to 64 characters), so derive it from the path instead of using the raw path. After a run you can identify exactly which files failed and resubmit only those, with changes if needed, instead of reprocessing the whole batch.\n\nOption B is wrong because a batch can take up to 24 hours with no latency SLA. \"Most finish quickly\" is not a guarantee a blocking check can rely on; developers would sometimes wait for hours.\n\nOption C is wrong because the batch API does not support multi-turn tool calling within a request: your code cannot run a tool mid-request and return its result. Each request must already contain the file content it needs.",
+    keyConcept: "Use batches for latency-tolerant work and the synchronous API for blocking checks; correlate results with custom_id and resubmit only failures.",
+    sources: [
+      { title: "Batch processing", url: "https://platform.claude.com/docs/en/build-with-claude/batch-processing" },
+    ],
+  },
+  {
+    id: "E4-016",
+    scenario: "Structured Data Extraction",
+    domain: 4,
+    domainName: "Prompt Engineering & Structured Output",
+    taskStatement: "4.4",
+    difficulty: "advanced",
+    question:
+      "Your purchase-order extractor uses a strict tool schema and validates every result. Three failure groups appear: (1) `delivery_date` returned as \"next Tuesday\" instead of ISO 8601, although the PO's issue date is printed on it; (2) line items that do not add up to the stated total; (3) `contract_reference` empty because the PO only says \"per master agreement,\" a document the pipeline never receives. Which two statements about retries are correct? (Select two.)",
+    options: [
+      { id: "A", text: "For group 1, a retry that includes the document, the failed extraction and the specific validation error should fix it" },
+      { id: "B", text: "For group 3, retrying will not help: the value exists only in the master agreement, which the model never receives" },
+      { id: "C", text: "For group 3, retrying up to five times with firmer wording will eventually surface the reference from the PO itself" },
+      { id: "D", text: "For group 2, the strict schema already rules out sum mismatches, so these cases must come from a bug in your parser" },
+    ],
+    correctAnswer: "AB",
+    explanation:
+      "Option A is right because a format error is exactly what retry-with-error-feedback fixes. Sending the original document, the failed extraction and the specific validation error (\"delivery_date must be ISO 8601\") gives the model what it needs to correct itself, and the PO's issue date is the reference that turns \"next Tuesday\" into a date.\n\nOption B is right because the guide is explicit about the limits of retry: when the information is absent from the source, for example because it lives in an external document not provided, no number of retries will produce it.\n\nOption C is wrong for the same reason B is right. Firmer wording on a document that lacks the value can only push the model toward fabricating a reference.\n\nOption D is wrong because strict schemas eliminate syntax errors, not semantic ones. Line items that do not sum to the total are a semantic error the schema cannot catch; the guide recommends checks such as extracting a calculated_total alongside the stated_total to flag discrepancies.",
+    keyConcept: "Retry with specific error feedback fixes format and structure errors, not information missing from the source; strict schemas stop syntax errors, not semantic ones.",
+    sources: [
+      { title: "Structured outputs", url: "https://platform.claude.com/docs/en/build-with-claude/structured-outputs" },
+      { title: "Reduce hallucinations", url: "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations" },
     ],
   },
 ];
@@ -1585,6 +1821,53 @@ const examDomain5Questions: Question[] = [
     sources: [
       { title: "CCAR-F Exam Guide v1.0 — Task 5.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
+    ],
+  },
+  {
+    id: "E5-013",
+    scenario: "Customer Support Resolution Agent",
+    domain: 5,
+    domainName: "Context Management & Reliability",
+    taskStatement: "5.2",
+    difficulty: "intermediate",
+    question:
+      "Your support agent can resolve standard returns, refunds and account changes on its own. Which two of these situations should it escalate to a human with escalate_to_human? (Select two.)",
+    options: [
+      { id: "A", text: "A customer wants a standard return that is within policy, and the sentiment model scores the message as very angry" },
+      { id: "B", text: "A customer asks to be reimbursed for a hotel night lost to a late delivery; the policy covers refunds but not such costs" },
+      { id: "C", text: "After several attempts, the agent cannot find the order with any identifier the customer gives and cannot progress" },
+      { id: "D", text: "The agent reports confidence of 0.55 on a routine address change that the customer has already fully confirmed" },
+    ],
+    correctAnswer: "BC",
+    explanation:
+      "Option B is right because the guide lists policy exceptions and gaps as escalation triggers. When the policy is silent on what the customer asks for, here reimbursement of a consequential cost, the agent should not invent a rule; a human should decide.\n\nOption C is right because inability to make meaningful progress is another trigger the guide names. Continuing to loop helps no one; a handoff with what was tried does.\n\nOption A is wrong because the guide says sentiment is an unreliable proxy for case complexity. The request is straightforward and within policy, so the agent should acknowledge the frustration and resolve it, escalating only if the customer asks for a human.\n\nOption D is wrong because self-reported confidence is also an unreliable proxy. A fully confirmed, routine change is squarely within the agent's capability.",
+    keyConcept: "Escalate on explicit human requests, policy gaps and lack of progress, not on sentiment scores or self-reported confidence.",
+    sources: [
+      { title: "Customer support agent guide", url: "https://platform.claude.com/docs/en/about-claude/use-case-guides/customer-support-chat" },
+    ],
+  },
+  {
+    id: "E5-014",
+    scenario: "Structured Data Extraction",
+    domain: 5,
+    domainName: "Context Management & Reliability",
+    taskStatement: "5.5",
+    difficulty: "advanced",
+    question:
+      "Your pipeline extracts fields from invoices, credit notes and customs declarations. Field accuracy on last month's 40,000 documents is 98% overall, and the team proposes ending human review for every extraction with model confidence of 0.9 or higher. Customs declarations are only 4% of volume. Which two steps should come before review is reduced? (Select two.)",
+    options: [
+      { id: "A", text: "Break accuracy down by document type and by field, to confirm customs declarations and rare fields also meet the bar" },
+      { id: "B", text: "Adopt the 0.9 threshold as proposed, because the model's own confidence scores already reflect its real accuracy" },
+      { id: "C", text: "Calibrate the thresholds on a labeled validation set, then keep stratified random sampling of high-confidence output" },
+      { id: "D", text: "Review only extractions below 0.9 from now on, since the 98% aggregate shows high-confidence items need no checks" },
+    ],
+    correctAnswer: "AC",
+    explanation:
+      "Option A is right because the guide warns that aggregate metrics can mask poor performance on specific document types or fields. At 4% of volume, customs declarations could be far below 98% without moving the overall number, so accuracy must be validated by segment before automating.\n\nOption C is right because the guide calls for field-level confidence thresholds calibrated on labeled validation sets, and for ongoing stratified random sampling of high-confidence extractions to measure error rates and detect novel error patterns after review is reduced.\n\nOption B is wrong because raw model confidence is not calibrated by default. Without a labeled set you do not know whether 0.9 actually means 90% (or more) correct.\n\nOption D is wrong because it relies on the aggregate the guide warns about and stops all checking of high-confidence output, so new error patterns would go unnoticed.",
+    keyConcept: "Validate accuracy per document type and field, calibrate confidence on labeled data, and keep sampling high-confidence output before cutting review.",
+    sources: [
+      { title: "Define success criteria and build evaluations", url: "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests" },
+      { title: "Reduce hallucinations", url: "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations" },
     ],
   },
 ];
