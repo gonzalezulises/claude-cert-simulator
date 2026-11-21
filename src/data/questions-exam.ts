@@ -12,131 +12,101 @@ import { Question } from "./questions";
 const examDomain1Questions: Question[] = [
   {
     id: "E1-001",
-    scenario: "Multi-Agent Research System",
+    scenario: "Customer Support Resolution Agent",
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
     taskStatement: "1.1",
     difficulty: "intermediate",
     question:
-      "A Claude Code non-interactive run completes but the output object has `stop_reason: \"error_max_turns\"`. What does this indicate, and what is the correct next action?",
+      "To decide when to stop, your support loop scans each Claude reply for phrases like \"Is there anything else I can help with?\" After a prompt update changed the agent's wording, some conversations end before the refund is processed and others keep looping after the customer has been helped. What should drive loop termination?",
     options: [
-      {
-        id: "A",
-        text: "The model hit its token limit — increase max_tokens and rerun",
-      },
-      {
-        id: "B",
-        text: "The agent reached the maximum allowed turn count without finishing the task — inspect the transcript, raise the turn limit or redesign the workflow to require fewer steps",
-      },
-      {
-        id: "C",
-        text: "The session was interrupted by a network error — simply retry the same request",
-      },
-      {
-        id: "D",
-        text: "The model refused to continue due to a safety violation — review the system prompt for policy issues",
-      },
+      { id: "A", text: "A longer list of closing phrases, kept in a config file the team updates after each prompt change" },
+      { id: "B", text: "The stop_reason field: keep looping while it is \"tool_use\" and finish when it is \"end_turn\"" },
+      { id: "C", text: "Whether the latest reply contains any text at all, since tool-calling turns never include text" },
+      { id: "D", text: "A separate classifier model that reads every reply and judges whether the issue looks resolved" },
     ],
     correctAnswer: "B",
     explanation:
-      "`error_max_turns` is a ResultMessage subtype indicating the agentic run hit the configured maximum turn count (not a token limit or network failure). The task did not complete. The correct response is to inspect what was accomplished, potentially raise the turn limit, or redesign the workflow to complete in fewer steps. It is distinct from `error_max_budget_usd` (cost limit) and `error_during_execution` (runtime exception).\n\nHow to implement:\n```typescript\n// Handling error_max_turns in a Node.js orchestration loop\nimport Anthropic from \"@anthropic-ai/sdk\";\n\nconst client = new Anthropic();\n\nasync function runWithRetry(prompt: string, maxTurns = 20) {\n  const result = await client.beta.messages.create({\n    model: \"claude-opus-5\",\n    max_tokens: 4096,\n    // @ts-ignore – SDK typings may vary\n    max_turns: maxTurns,\n    messages: [{ role: \"user\", content: prompt }],\n  });\n\n  if (result.stop_reason === \"error_max_turns\") {\n    console.warn(`Agent hit turn limit (${maxTurns}). Inspecting transcript…`);\n    // Inspect last assistant message to find partial progress\n    const lastMsg = result.messages?.at(-1);\n    console.log(\"Last message:\", lastMsg?.content);\n    // Retry with a higher limit or redesigned workflow\n    return runWithRetry(prompt, maxTurns * 2);\n  }\n\n  return result;\n}\n```\n\nTo raise the turn limit via the CLI:\n```bash\nclaude --max-turns 50 \"Analyze all 200 documents and produce a summary\"\n```",
-    keyConcept: "ResultMessage subtypes: error_max_turns vs other error subtypes",
+      "`stop_reason` is the structured signal built for this decision: `\"tool_use\"` means Claude wants a tool result and the loop must continue; `\"end_turn\"` means it has finished. It does not change when the wording does.\n\nOption A keeps parsing natural language, the anti-pattern that broke here, and makes it a maintenance chore. Option C rests on a false premise: a `tool_use` turn often contains text, so text presence is not a completion indicator. Option D adds a second model to guess at something the API already states exactly.",
+    keyConcept: "Terminate the loop on stop_reason, not on parsed natural language",
+    sources: [
+      { title: "Handling stop reasons", url: "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons" },
+      { title: "Handle tool calls", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-002",
-    scenario: "Multi-Agent Research System",
+    scenario: "Customer Support Resolution Agent",
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
-    taskStatement: "1.1",
-    difficulty: "advanced",
+    taskStatement: "1.4",
+    difficulty: "intermediate",
     question:
-      "A headless research pipeline returns a ResultMessage with `stop_reason: \"error_max_budget_usd\"` after processing 40 of 200 planned documents. The pipeline operator needs to know exactly how far it got before the budget was exhausted. Which approach best surfaces this information?",
+      "The business wants the agent to offer store credit before a cash refund, but calls it a preference: customers who decline must get the refund without friction, and skipping the offer now and then costs little. An engineer proposes a hook that blocks process_refund until offer_store_credit has run. What should you recommend?",
     options: [
-      {
-        id: "A",
-        text: "Catch the error and re-run from the beginning with a higher budget limit",
-      },
-      {
-        id: "B",
-        text: "Parse the full session transcript: tool calls and results are included, so the operator can determine the last successfully processed document before the budget was hit",
-      },
-      {
-        id: "C",
-        text: "Query Claude's `/sessions` endpoint for the cost breakdown per document",
-      },
-      {
-        id: "D",
-        text: "Set `stop_reason_detail: true` in the API request to get a cost breakdown",
-      },
+      { id: "A", text: "Ship the hook, because every ordering rule in a support workflow is safer when enforced in code" },
+      { id: "B", text: "Ship the hook and add a bypass flag that the agent can set when it judges the offer unnecessary" },
+      { id: "C", text: "Drop the requirement, since nothing the system cannot guarantee should be specified at all" },
+      { id: "D", text: "Put the preference in the prompt with examples, and keep hooks for rules that must always hold" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "D",
     explanation:
-      "`error_max_budget_usd` means the cumulative USD cost ceiling was reached. The session transcript (available in the ResultMessage or via --output-format stream-json) contains all tool calls and results, allowing the operator to identify the last document that was processed. There is no `/sessions` cost endpoint or `stop_reason_detail` flag. Rerunning from the beginning would waste the work already completed.\n\nHow to implement:\n```bash\n# Stream JSON events to a file for later inspection\nclaude --output-format stream-json \\\n  --max-budget-usd 2.00 \\\n  \"Process all 200 documents\" > session-transcript.jsonl\n\n# Parse transcript to find last successfully processed doc\nnode -e \"\nconst lines = require('fs').readFileSync('session-transcript.jsonl','utf8').trim().split('\\n');\nconst toolResults = lines\n  .map(l => JSON.parse(l))\n  .filter(e => e.type === 'tool_result');\nconsole.log('Last tool result:', toolResults.at(-1));\n\"\n```\n\n```typescript\n// Programmatic budget-aware pipeline with checkpoint resumption\nasync function processBatch(docs: string[], budgetUsd: number) {\n  const result = await runHeadless({ docs, maxBudgetUsd: budgetUsd });\n  if (result.stop_reason === \"error_max_budget_usd\") {\n    const lastProcessed = extractLastProcessedDoc(result.transcript);\n    console.log(`Processed up to doc: ${lastProcessed}. Resume from next.`);\n    await saveCheckpoint(lastProcessed);\n  }\n}\n```",
-    keyConcept: "ResultMessage subtype error_max_budget_usd and transcript inspection",
+      "Programmatic enforcement is for rules where a single miss is unacceptable, such as identity checks before money moves or hard refund limits. This rule is explicitly a preference with a cheap failure mode, so prompt guidance with clear criteria and a few examples is the proportionate tool. A hard gate here would add friction to exactly the customers the business wants to protect.\n\nOption A treats every ordering rule as a guarantee and over-engineers a preference. Option B builds the gate and then hands the model a way around it, so it guarantees nothing while adding complexity. Option C ignores a legitimate business goal that prompt guidance can serve well.",
+    keyConcept: "Prompt guidance for preferences, programmatic enforcement only where compliance must be deterministic",
+    sources: [
+      { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-003",
-    scenario: "Developer Productivity with Claude",
+    scenario: "Code Generation with Claude Code",
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
-    taskStatement: "1.2",
+    taskStatement: "1.7",
     difficulty: "intermediate",
     question:
-      "You are configuring Claude Code for a CI/CD pipeline that should autonomously apply linting fixes, run tests, and commit changes — all without any human confirmation prompts. Which permission mode should you set?",
+      "Yesterday's named session, \"checkout-refactor\", analyzed 30 files and produced a refactoring plan. Overnight a teammate edited only `cart.ts` and `pricing.ts`; the other 28 files are unchanged. You want to continue today with the least wasted work and no stale assumptions. What do you do?",
     options: [
-      {
-        id: "A",
-        text: "`acceptEdits` — the agent accepts file edits but still prompts for shell commands",
-      },
-      {
-        id: "B",
-        text: "`plan` — the agent plans all actions upfront and then executes them",
-      },
-      {
-        id: "C",
-        text: "`bypassPermissions` — the agent skips all permission checks and runs fully autonomously",
-      },
-      {
-        id: "D",
-        text: "`dontAsk` — the agent suppresses confirmation dialogs while preserving safety checks",
-      },
+      { id: "A", text: "Resume the session and tell it which two files changed, so it re-reads only those before going on" },
+      { id: "B", text: "Resume the session without comment; the agent will detect the changed files and adapt by itself" },
+      { id: "C", text: "Start a fresh session and have the agent re-explore all thirty files to rebuild the analysis" },
+      { id: "D", text: "Fork the session with fork_session, so that the edited files get picked up in the new branch" },
     ],
-    correctAnswer: "C",
+    correctAnswer: "A",
     explanation:
-      "`bypassPermissions` disables all permission checks, allowing the agent to perform file edits, shell commands, and other actions without any confirmation prompts. This is the appropriate mode for fully automated CI/CD pipelines running in trusted, sandboxed environments. `acceptEdits` only suppresses file-edit prompts. `plan` shows an upfront plan but still requires approval. `dontAsk` is not a standard Claude Code permission mode.\n\nHow to implement:\n```bash\n# CI/CD pipeline step — run fully autonomously inside a sandboxed runner\nclaude --permission-mode bypassPermissions \\\n  --output-format stream-json \\\n  \"Run eslint --fix on all TypeScript files, then run npm test, then commit changes\"\n```\n\n```typescript\n// SDK usage with bypassPermissions\nimport { query } from \"@anthropic-ai/claude-code\";\n\nconst result = await query({\n  prompt: \"Apply lint fixes and run tests\",\n  options: {\n    permissionMode: \"bypassPermissions\", // Only in sandboxed/trusted envs\n  },\n});\n```\n\n```yaml\n# GitHub Actions example\n- name: Claude Code Auto-Fix\n  run: |\n    claude --permission-mode bypassPermissions \\\n      \"Fix all eslint errors and run npm test\"\n  env:\n    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}\n```",
-    keyConcept: "Permission modes: bypassPermissions for fully autonomous operation",
+      "Most of yesterday's context is still valid, so resuming is the right base. But a resumed session still holds the old reads of `cart.ts` and `pricing.ts`, and nothing makes the agent re-read them on its own. Telling it exactly which files changed gives a targeted re-analysis: two files instead of thirty.\n\nOption B relies on the agent noticing a change it has no signal about. Option C discards valid analysis of 28 untouched files; starting fresh is for when most prior tool results are stale. Option D copies the same stale reads into a new branch, because forking branches the conversation, not its view of the files.",
+    keyConcept: "When resuming after code changes, tell the agent exactly what changed for targeted re-analysis",
+    sources: [
+      { title: "Work with sessions", url: "https://code.claude.com/docs/en/agent-sdk/sessions" },
+      { title: "CLI reference", url: "https://code.claude.com/docs/en/cli-reference" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.7", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-004",
     scenario: "Developer Productivity with Claude",
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
-    taskStatement: "1.2",
-    difficulty: "intermediate",
+    taskStatement: "1.6",
+    difficulty: "advanced",
     question:
-      "A developer wants Claude Code to propose a plan for a large refactoring task and show all intended tool calls before executing any of them, so the developer can review and cancel if needed. Which permission mode enables this workflow?",
+      "An incident-triage agent follows a fixed chain: read the error logs, check the last deploy, check database metrics, write a report. In one incident the logs pointed to an expired certificate on a third-party API, but the chain still checked the deploy and the database, and the report blamed a slow query. What decomposition fits this task?",
     options: [
-      {
-        id: "A",
-        text: "`default` — Claude asks for confirmation before each tool call",
-      },
-      {
-        id: "B",
-        text: "`plan` — Claude generates and displays all planned tool calls first, then waits for approval before executing",
-      },
-      {
-        id: "C",
-        text: "`acceptEdits` — Claude accepts all edits automatically and displays a summary at the end",
-      },
-      {
-        id: "D",
-        text: "`bypassPermissions` — Claude executes everything and provides a diff for review afterward",
-      },
+      { id: "A", text: "Keep the fixed chain but add a fifth step that checks external dependencies right after the database" },
+      { id: "B", text: "Run all four steps in parallel so that no single step's findings bias how the next one is read" },
+      { id: "C", text: "Adaptive decomposition: start from the evidence and derive each next subtask from what it shows" },
+      { id: "D", text: "Replace the chain with one long prompt that asks the agent to weigh every possible root cause" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "C",
     explanation:
-      "The `plan` permission mode is specifically designed for this workflow: Claude generates the full execution plan (all intended tool calls) and presents it to the user before executing any action. The user can review and cancel before anything is changed. `default` asks per-tool-call but does not give an upfront overview. `acceptEdits` auto-approves file changes without an upfront plan. `bypassPermissions` executes without any confirmation.\n\nHow to implement:\n```bash\n# Interactive session: show plan before executing refactor\nclaude --permission-mode plan \\\n  \"Refactor all React class components to functional components with hooks\"\n# Claude will print something like:\n# Plan:\n# 1. Read src/components/Header.tsx\n# 2. Edit src/components/Header.tsx (convert class → function)\n# 3. Read src/components/Footer.tsx\n# ...\n# Proceed? (y/n)\n```\n\n```typescript\n// SDK — plan mode returns the plan for programmatic review\nimport { query } from \"@anthropic-ai/claude-code\";\n\nconst result = await query({\n  prompt: \"Refactor class components\",\n  options: { permissionMode: \"plan\" },\n});\n// Inspect result.plan before approving\nconsole.log(result.plan);\n```",
-    keyConcept: "Permission mode: plan for upfront review before execution",
+      "Incident triage is open-ended: what to check next depends on what the last check revealed. Adaptive decomposition lets the logs' pointer to the certificate become the next subtask, instead of being ignored in favor of a fixed script. Prompt chaining suits predictable multi-step work; this task is not predictable.\n\nOption A patches this incident's path and will miss the next unexpected cause. Option B removes the ordering but keeps the fixed list of checks, so evidence still cannot redirect the investigation. Option D asks for everything at once, which dilutes attention and gives up the step-by-step investigation that found the clue in the first place.",
+    keyConcept: "Use dynamic decomposition for open-ended investigation; chaining for predictable work",
+    sources: [
+      { title: "Building effective agents", url: "https://www.anthropic.com/research/building-effective-agents" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-005",
@@ -146,29 +116,22 @@ const examDomain1Questions: Question[] = [
     taskStatement: "1.3",
     difficulty: "advanced",
     question:
-      "You are designing an AgentDefinition for a document-summarization subagent. A colleague proposes giving this subagent the `Agent` tool so it can delegate difficult sections to further sub-subagents. Why is this proposal architecturally invalid in Claude Code?",
+      "Your coordinator must research four independent subtopics. Traces show it emits one Task call, waits for that subagent's result, then emits the next, so total latency is the sum of all four runs. The subtopics have no dependencies on each other. What change lets them run concurrently?",
     options: [
-      {
-        id: "A",
-        text: "The `Agent` tool is only available in the paid tier of Claude Code",
-      },
-      {
-        id: "B",
-        text: "Subagents defined via AgentDefinition cannot include the `Agent` tool in their allowedTools — only top-level orchestrators can spawn subagents",
-      },
-      {
-        id: "C",
-        text: "The `Agent` tool was deprecated in v2.1.63 and replaced with `Task`",
-      },
-      {
-        id: "D",
-        text: "Subagents can use the `Agent` tool but only if the parent explicitly grants delegated permissions",
-      },
+      { id: "A", text: "Have the coordinator emit all four Task calls in a single response so the subagents run in parallel" },
+      { id: "B", text: "Tell each subagent to spawn the next one when it is done, so the coordinator no longer has to wait" },
+      { id: "C", text: "Merge the four subtopics into one Task call and ask that subagent to divide the work up internally" },
+      { id: "D", text: "Give the four subagents a shared memory store so that each can see the others' progress as it works" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "A",
     explanation:
-      "In Claude Code's agentic framework, subagents defined via AgentDefinition cannot create their own subagents — the `Agent` tool (or its predecessor `Task`) is not permitted in a subagent's allowedTools. This is a deliberate architectural constraint that prevents unbounded recursive spawning and keeps the orchestration graph manageable. Option C is misleading: in v2.1.63 the tool was renamed from `Task` to `Agent`, not deprecated. Option D describes a non-existent delegation mechanism.\n\nHow to implement:\n```typescript\n// Correct AgentDefinition — subagent tools must NOT include \"Agent\"\nconst summarizerAgent = {\n  name: \"summarizer\",\n  description: \"Summarizes a single document section\",\n  allowedTools: [\"Read\", \"Grep\"], // ✅ No \"Agent\" tool here\n  systemPrompt: \"You summarize text. You do not spawn subagents.\",\n};\n\n// Top-level orchestrator CAN include \"Agent\" tool\nconst orchestrator = {\n  name: \"orchestrator\",\n  allowedTools: [\"Agent\", \"Read\", \"Write\"], // ✅ Agent tool at top level only\n};\n```\n\n```jsonc\n// .claude/agents/summarizer.json\n{\n  \"name\": \"summarizer\",\n  \"allowedTools\": [\"Read\", \"Grep\"],\n  // \"Agent\" intentionally omitted — subagents cannot spawn subagents\n  \"systemPrompt\": \"Summarize the provided document section.\"\n}\n```",
-    keyConcept: "AgentDefinition constraint: subagents cannot spawn further subagents",
+      "Parallel spawning happens when the coordinator emits several Task calls in the same response. Independent subtasks then finish in roughly the time of the slowest one instead of the sum. (In current releases the tool is named `Agent`, and subagents run in the background by default.)\n\nOption B is still a chain: current Claude Code does let subagents spawn their own (up to three layers by default), but handing off one after another stays sequential and takes the coordinator out of the routing. Option C puts four topics back into one context, losing both parallelism and focus. Option D assumes a shared memory between subagents that does not exist; each runs with isolated context.",
+    keyConcept: "Spawn parallel subagents with multiple Task calls in one coordinator response",
+    sources: [
+      { title: "Subagents in the SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
+      { title: "Create custom subagents", url: "https://code.claude.com/docs/en/sub-agents" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-006",
@@ -176,211 +139,170 @@ const examDomain1Questions: Question[] = [
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
     taskStatement: "1.3",
-    difficulty: "basic",
+    difficulty: "intermediate",
     question:
-      "In Claude Code v2.1.63, the tool used to spawn subagents was renamed. A developer updating an existing AgentDefinition configuration written before this version sees that `allowedTools: [\"Task\"]` is no longer recognized. What is the correct replacement?",
+      "The coordinator's prompt to the search subagent is a 12-step procedure: run exactly these three search strings, open the top five results, extract two quotes from each, and so on. On topics where those strings return weak results, the subagent follows the steps anyway and returns thin findings. What should the prompt contain instead?",
     options: [
-      { id: "A", text: "Replace `\"Task\"` with `\"Spawn\"` — the new tool name for subagent creation" },
-      { id: "B", text: "Replace `\"Task\"` with `\"Agent\"` — the tool was renamed from Task to Agent in v2.1.63" },
-      { id: "C", text: "Remove the entry; subagent spawning is now automatic and does not require a tool" },
-      { id: "D", text: "Replace `\"Task\"` with `\"SubAgent\"` — the new canonical name" },
+      { id: "A", text: "The same twelve steps, plus extra branches that say what to do whenever a step returns weak results" },
+      { id: "B", text: "Nothing beyond the topic name, so the subagent is free to pick its own direction with no constraints" },
+      { id: "C", text: "Fewer steps, each made stricter, with exact query strings and a required minimum number of sources" },
+      { id: "D", text: "The research goal and the quality bar: what to cover, source standards and when coverage is enough" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "D",
     explanation:
-      "In Claude Code v2.1.63, the `Task` tool was renamed to `Agent`. Any AgentDefinition that previously listed `\"Task\"` in allowedTools to permit subagent spawning must be updated to `\"Agent\"`. The functionality is identical; only the name changed. There is no `Spawn` or `SubAgent` tool name, and subagent spawning is not automatic.\n\nHow to implement:\n```jsonc\n// Before v2.1.63 (old — broken after upgrade)\n{\n  \"allowedTools\": [\"Task\", \"Read\", \"Write\"]\n}\n\n// After v2.1.63 (correct)\n{\n  \"allowedTools\": [\"Agent\", \"Read\", \"Write\"]\n}\n```\n\n```bash\n# Quick migration: find all AgentDefinition configs using old \"Task\" name\ngrep -r '\"Task\"' .claude/agents/ --include=\"*.json\"\n\n# Replace in all agent config files\nsed -i 's/\"Task\"/\"Agent\"/g' .claude/agents/*.json\n\n# Verify\ngrep -r 'allowedTools' .claude/agents/\n```",
-    keyConcept: "Task tool renamed to Agent in Claude Code v2.1.63",
+      "A subagent can adapt only if it knows what it is trying to achieve. A prompt that states the goal and the quality criteria (what must be covered, which sources qualify, when to stop) lets it change queries when results are weak, while still giving the coordinator a predictable standard to check against.\n\nOption A tries to anticipate every failure with more procedure, which grows without end and still misses cases. Option B swings to the other extreme: with no criteria, the coordinator cannot judge whether the result is good enough. Option C makes the procedure even more rigid, which is the cause of the thin findings.",
+    keyConcept: "Coordinator prompts should state goals and quality criteria, not step-by-step procedures",
+    sources: [
+      { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
+      { title: "Subagents in the SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-007",
     scenario: "Multi-Agent Research System",
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
-    taskStatement: "1.4",
+    taskStatement: "1.2",
     difficulty: "advanced",
     question:
-      "A coordinator agent spawns a subagent to perform a 200-step analysis. When the subagent finishes, the coordinator receives a concise summary. A junior developer is surprised that the coordinator cannot see any of the 200 intermediate tool calls the subagent made. What is the correct explanation?",
+      "A coordinator delegates a 200-step code analysis to a subagent and gets back a concise summary. A junior developer wants the coordinator to double-check the intermediate steps and is surprised it cannot see any of the subagent's tool calls. What is true, and what should the developer do?",
     options: [
-      {
-        id: "A",
-        text: "The subagent's full transcript is available in the coordinator's context window under a `subagent_transcript` key",
-      },
-      {
-        id: "B",
-        text: "Subagents return only their final result to the parent — not the full intermediate transcript — to preserve context efficiency",
-      },
-      {
-        id: "C",
-        text: "The coordinator must explicitly request the transcript by calling `get_subagent_logs(subagent_id)`",
-      },
-      {
-        id: "D",
-        text: "The full transcript is available but only in the raw API response, not in the Claude Code interface",
-      },
+      { id: "A", text: "Its transcript sits in the coordinator's context under a subagent_transcript key; read it from there" },
+      { id: "B", text: "Only the final message returns; ask the subagent to put the evidence it needs in its final report" },
+      { id: "C", text: "The coordinator must call a get_subagent_logs tool to load the transcript into its own context" },
+      { id: "D", text: "The transcript is in the raw API response but hidden from the coordinator; parse it out of there" },
     ],
     correctAnswer: "B",
     explanation:
-      "By design, subagents return only their final result (a text summary or structured output) to the parent orchestrator. The intermediate tool calls, reasoning steps, and partial outputs within the subagent's execution are not propagated back. This is intentional: it keeps the coordinator's context window manageable and enforces clean boundaries between agents. There is no `get_subagent_logs` endpoint and no `subagent_transcript` key in the parent context.\n\nHow to implement:\n```typescript\n// Coordinator spawning a subagent — only receives final result\nimport { query } from \"@anthropic-ai/claude-code\";\n\nconst coordinatorResult = await query({\n  prompt: `\n    Use the Agent tool to analyze all 200 documents in /data/.\n    Return only: total count, top 3 themes, and any anomalies.\n  `,\n  // Coordinator receives a short summary — not the 200-step transcript\n});\n\nconsole.log(coordinatorResult.result); // Short final summary only\n```\n\n```typescript\n// If you need detailed logs from subagents, write them to disk inside the subagent\n// Subagent system prompt:\nconst subagentPrompt = `\nAnalyze the documents. After each document, append a JSON line to /tmp/agent-log.jsonl.\nAt the end, return a concise summary.\n`;\n// Coordinator can then Read /tmp/agent-log.jsonl if needed\n```",
-    keyConcept: "Subagents return only final result to parent, not full transcript",
+      "Context isolation works both ways. A subagent's intermediate tool calls and results stay inside its own context, and only its final message returns to the parent. That is what keeps a 200-step analysis from flooding the coordinator. If the coordinator needs to verify something, the subagent's prompt should ask for that evidence (file paths, line numbers, the checks it ran) in a structured final report. For auditing outside the model, transcripts are stored separately, and a SubagentStop hook receives their path.\n\nOptions A, C and D each invent a channel that would put the transcript back into the coordinator's context, which is exactly what the design avoids. None of them exists.",
+    keyConcept: "Subagents return only their final message; request needed evidence in that report",
+    sources: [
+      { title: "Subagents in the SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
+      { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-008",
     scenario: "Customer Support Resolution Agent",
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
-    taskStatement: "1.5",
+    taskStatement: "1.3",
     difficulty: "intermediate",
     question:
-      "A subagent is launched by a coordinator that has a 5,000-token system prompt containing brand voice guidelines and escalation rules. After launch, the subagent asks a question that violates the escalation rules. What is the most likely cause?",
+      "A coordinator has a 5,000-token system prompt with brand-voice guidelines and escalation rules. It delegates a refund question to a subagent with the task prompt \"Handle ticket #1234.\" The subagent's reply violates the escalation rules. What is the most likely cause?",
     options: [
-      {
-        id: "A",
-        text: "The subagent's model version is different from the coordinator's and processes instructions differently",
-      },
-      {
-        id: "B",
-        text: "Subagents do not inherit the parent's system prompt or conversation history — they start with a fresh context and only receive what is explicitly passed in their task prompt",
-      },
-      {
-        id: "C",
-        text: "The coordinator must use `share_context: true` in the AgentDefinition to pass its system prompt",
-      },
-      {
-        id: "D",
-        text: "Subagents inherit the system prompt automatically but ignore instructions added after the first user turn",
-      },
+      { id: "A", text: "Subagents start fresh: no parent system prompt or history, only their own prompt and the task given" },
+      { id: "B", text: "The subagent runs a different model version that reads the same inherited instructions differently" },
+      { id: "C", text: "The coordinator has to set share_context: true in the AgentDefinition to pass on its system prompt" },
+      { id: "D", text: "Subagents inherit the system prompt but ignore any instructions that arrive after the first turn" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "A",
     explanation:
-      "Subagents operate in independent context windows. They do NOT receive the parent orchestrator's system prompt or conversation history. They only receive whatever is explicitly included in the task description passed to the Agent tool. If escalation rules are critical for the subagent, they must be included explicitly in that task prompt. There is no `share_context` flag and no automatic system prompt inheritance.\n\nHow to implement:\n```typescript\n// BAD — subagent won't see coordinator's system prompt with escalation rules\nconst bad = await query({\n  prompt: \"Use Agent tool to handle ticket #1234\", // subagent gets no escalation rules!\n});\n\n// GOOD — explicitly include required rules in the subagent task description\nconst ESCALATION_RULES = `\nEscalation rules:\n- Billing issues over $500 must be escalated to billing-team@company.com\n- Security complaints must be escalated immediately to security@company.com\n- All other issues: attempt resolution, escalate after 2 failed attempts\n`;\n\nconst good = await query({\n  prompt: `\n    Use the Agent tool with this task:\n    \"Handle support ticket #1234. ${ESCALATION_RULES}\"\n  `,\n});\n```\n\n```markdown\n<!-- Alternative: put shared rules in .claude/CLAUDE.md so all subagents get them -->\n<!-- .claude/CLAUDE.md -->\n## Escalation Rules\n- Billing > $500 → billing-team@company.com\n- Security issues → security@company.com immediately\n```",
-    keyConcept: "Subagents do not inherit parent's system prompt or conversation history",
+      "A non-fork subagent's context starts without the parent's conversation history or system prompt. It receives its own system prompt (`AgentDefinition.prompt`), the Agent tool's prompt string, project CLAUDE.md and its tool definitions. The escalation rules lived only in the coordinator's system prompt, so the subagent never saw them. The fix is to put the rules it needs in the subagent's own prompt or in the delegated task.\n\nOption B blames the model when the instructions were simply absent. Option C describes a flag that does not exist. Option D invents a partial inheritance that also does not exist.",
+    keyConcept: "Subagents do not inherit the parent's system prompt or history; pass context explicitly",
+    sources: [
+      { title: "Subagents in the SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-009",
-    scenario: "Multi-Agent Research System",
+    scenario: "Customer Support Resolution Agent",
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
-    taskStatement: "1.6",
-    difficulty: "basic",
+    taskStatement: "1.4",
+    difficulty: "advanced",
     question:
-      "A subagent launched in a project directory with a `.claude/CLAUDE.md` file containing coding standards. The coordinator that spawned this subagent has no relationship to that project's CLAUDE.md. When the subagent starts, does it see the project's CLAUDE.md?",
+      "A customer writes: \"Order #8812 arrived damaged, I was billed twice this month, and I need to change my shipping address.\" The agent handles the damaged order, answers the billing question from general knowledge without checking the account, and never touches the address. How should the workflow handle messages like this?",
     options: [
-      {
-        id: "A",
-        text: "No — subagents only read CLAUDE.md files explicitly listed in their system prompt",
-      },
-      {
-        id: "B",
-        text: "No — CLAUDE.md is a per-session document and subagents run in separate sessions",
-      },
-      {
-        id: "C",
-        text: "Yes — subagents automatically receive the CLAUDE.md from the project directory they operate in, even though they do not inherit the parent's system prompt",
-      },
-      {
-        id: "D",
-        text: "Yes — but only if the parent explicitly passes `inject_claude_md: true` in the AgentDefinition",
-      },
+      { id: "A", text: "Handle only the first concern and invite the customer to open new tickets for the other two issues" },
+      { id: "B", text: "Escalate any message with more than one concern to a human, since mixed requests are too risky" },
+      { id: "C", text: "Split it into distinct items, investigate each in parallel with shared context, then reply once" },
+      { id: "D", text: "Take the concerns strictly one at a time, waiting for the customer to confirm each before moving on" },
     ],
     correctAnswer: "C",
     explanation:
-      "Subagents receive the CLAUDE.md from the project directory they are operating in — this is injected automatically from disk, just as it is for any Claude Code session in that directory. This is independent of the parent's conversation. What subagents do NOT receive is the parent's system prompt or conversation history. CLAUDE.md injection is directory-based, not parent-inherited, and does not require any explicit flag.\n\nHow to implement:\n```markdown\n<!-- .claude/CLAUDE.md (project root) -->\n<!-- This file is automatically injected into ALL subagents operating in this directory -->\n\n## Coding Standards\n- Use TypeScript strict mode\n- All functions must have explicit return types\n- No `any` types\n\n## Security Rules\n- Never log secrets or API keys\n- All SQL must use parameterized queries\n```\n\n```bash\n# Verify what a subagent will see by checking project CLAUDE.md\ncat .claude/CLAUDE.md\n\n# Check for subdirectory-specific rules (also auto-injected for that dir)\nfind . -name \"CLAUDE.md\" -not -path \"*/node_modules/*\"\n```\n\n```typescript\n// Subagent operating in /project/src/ will receive:\n// 1. /project/.claude/CLAUDE.md (project root)\n// 2. /project/src/.claude/CLAUDE.md (if it exists)\n// It will NOT receive the parent coordinator's system prompt\n```",
-    keyConcept: "Subagents receive project CLAUDE.md from disk but not parent system prompt",
+      "Multi-concern requests should be decomposed into explicit items first, so none is dropped. Each item is then investigated with the tools it needs (order lookup, billing records, address update), in parallel where possible and sharing the customer context already gathered, and the results are combined into one coherent resolution.\n\nOption A pushes work back onto the customer and lowers first-contact resolution. Option B escalates cases the agent can solve, which wastes human capacity and misses the 80% target. Option D avoids dropping items but turns one conversation into several round trips for no benefit, since the three concerns are independent.",
+    keyConcept: "Decompose multi-concern requests, investigate each item, then synthesize one resolution",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-010",
-    scenario: "Developer Productivity with Claude",
+    scenario: "Claude Code for Continuous Integration",
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
-    taskStatement: "1.7",
-    difficulty: "intermediate",
+    taskStatement: "1.5",
+    difficulty: "advanced",
     question:
-      "A long-running code migration task needs to process 500 files. After processing 200, the agent's context window is nearly full. A `SystemMessage` with `subtype: \"compact_boundary\"` is emitted. What does this event signal, and what is preserved after compaction?",
+      "In a CI agent, a hook is meant to stop any `git push --force` to main. It is registered on PostToolUse with a `Bash` matcher and returns a block decision when it sees that command. Last night a force push still rewrote main, and the logs show the hook fired. Why, and what is the fix?",
     options: [
-      {
-        id: "A",
-        text: "The session is about to be terminated; nothing is preserved and the agent must restart from file 1",
-      },
-      {
-        id: "B",
-        text: "Context compaction is about to occur: the conversation history will be summarized, but CLAUDE.md will be re-injected from disk and survive intact",
-      },
-      {
-        id: "C",
-        text: "The agent's tool permissions are being reset to default values after the boundary",
-      },
-      {
-        id: "D",
-        text: "A new context window has started; both the conversation history and CLAUDE.md are discarded",
-      },
+      { id: "A", text: "The matcher must be \"git\" rather than \"Bash\", and the rule should also be repeated in the prompt" },
+      { id: "B", text: "PostToolUse is right, but the matcher needs onFailure: \"block\" so the hook's decision is enforced" },
+      { id: "C", text: "PostToolUse runs after the command executes; the check belongs in a PreToolUse hook that denies it" },
+      { id: "D", text: "Hooks cannot read Bash arguments, so the rule has to live in CLAUDE.md as a project-wide team policy" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "C",
     explanation:
-      "A `SystemMessage` with `subtype: \"compact_boundary\"` signals that Claude Code is about to compact the context. After compaction, the conversation history is summarized (lossy compression), but CLAUDE.md is re-injected from disk and is fully preserved — it is never part of the compacted history. However, any instructions given only in the conversation (not in CLAUDE.md) may be lost after compaction. Tool permissions are not affected by compaction.\n\nHow to implement:\n```typescript\n// Listen for compact_boundary events in stream-json output\nimport { execSync } from \"child_process\";\n\n// Run with streaming and pipe through parser\n// $ claude --output-format stream-json \"Migrate 500 files\" | node parser.js\n\nprocess.stdin.setEncoding(\"utf8\");\nprocess.stdin.on(\"data\", (chunk: string) => {\n  for (const line of chunk.split(\"\\n\").filter(Boolean)) {\n    const event = JSON.parse(line);\n    if (event.type === \"system\" && event.subtype === \"compact_boundary\") {\n      console.log(\"Compaction imminent — saving critical state to CLAUDE.md...\");\n      // Write any critical state to CLAUDE.md before compaction completes\n    }\n  }\n});\n```\n\n```bash\n# Use PreCompact hook to save state before compaction\n# .claude/hooks/pre-compact.sh\n#!/bin/bash\necho \"## Current Progress (auto-saved before compaction)\" >> .claude/CLAUDE.md\necho \"Files processed: $(cat .progress/count.txt)\" >> .claude/CLAUDE.md\nexit 0\n```",
-    keyConcept: "compact_boundary SystemMessage: CLAUDE.md survives compaction, conversation may not",
+      "Timing is the whole difference. PostToolUse fires after the tool has run, so by the time the hook \"blocks\", the push has already rewritten main; at that point Claude only receives feedback. Enforcement of a rule that must prevent an action belongs in PreToolUse, which sees `tool_input.command` before execution and can return `permissionDecision: \"deny\"` with a reason.\n\nOption A is wrong twice: matchers match tool names, so `Bash` is the correct matcher, and adding prompt text does not make the rule deterministic. Option B misreads `onFailure`, which decides what happens when the hook callback itself fails; it cannot undo a command that already ran. Option D is false: hooks receive the full tool input, including the Bash command.\n\nHow to implement:\n```typescript\nconst noForcePush: HookCallback = async (input) => {\n  const cmd = String(((input as PreToolUseHookInput).tool_input as any).command ?? \"\");\n  if (/git\\s+push\\b.*(--force|-f\\b)/.test(cmd) && /\\bmain\\b/.test(cmd)) {\n    return { hookSpecificOutput: { hookEventName: \"PreToolUse\", permissionDecision: \"deny\",\n      permissionDecisionReason: \"Force-pushing to main is not allowed. Open a PR instead.\" } };\n  }\n  return {};\n};\n// options.hooks = { PreToolUse: [{ matcher: \"Bash\", hooks: [noForcePush] }] }\n```",
+    keyConcept: "Blocking hooks must run before execution (PreToolUse); PostToolUse is too late to prevent",
+    sources: [
+      { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
+      { title: "Hooks reference", url: "https://code.claude.com/docs/en/hooks" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-011",
-    scenario: "Customer Support Resolution Agent",
+    scenario: "Multi-Agent Research System",
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
     taskStatement: "1.1",
     difficulty: "advanced",
     question:
-      "An orchestration loop receives a ResultMessage with `stop_reason: \"error_during_execution\"`. The loop has retry logic, but the engineer wants to know whether retrying is safe. What does this stop reason indicate about retry safety?",
+      "A research agent's loop is hard-coded to stop after 8 iterations. Simple queries finish well inside that, but deep ones are cut off mid-investigation, and the report is assembled from partial findings with no sign that anything is missing. What is the better design?",
     options: [
-      {
-        id: "A",
-        text: "It is always safe to retry because the error occurred before any tool calls executed",
-      },
-      {
-        id: "B",
-        text: "It is never safe to retry; the task must be restarted from the beginning manually",
-      },
-      {
-        id: "C",
-        text: "`error_during_execution` indicates a runtime exception occurred mid-execution — some tool calls may have already succeeded, so naive retry may cause duplicate side effects; idempotency checks are required",
-      },
-      {
-        id: "D",
-        text: "Retrying is safe because Claude Code automatically rolls back all side effects when this error occurs",
-      },
+      { id: "A", text: "Raise the cap to 25 iterations so that the deep queries have room to finish inside the fixed limit" },
+      { id: "B", text: "Loop until stop_reason is \"end_turn\", keeping a high cap only as a safety net that flags the run" },
+      { id: "C", text: "Have the agent state in each reply how many more steps it expects, and stop when that reaches zero" },
+      { id: "D", text: "Remove the loop and request the whole report in one call, with every tool made available at once" },
     ],
-    correctAnswer: "C",
+    correctAnswer: "B",
     explanation:
-      "`error_during_execution` means an exception occurred while the agent was running — potentially after several tool calls had already succeeded. Blindly retrying may cause duplicate writes, double-sends, or other side effects. Safe retry requires either idempotency in the downstream tools, checkpoint-aware retry logic that resumes from the last successful step, or a full rollback mechanism. Claude Code does not automatically roll back side effects.\n\nHow to implement:\n```typescript\n// Idempotency-safe retry using a checkpoint file\nasync function runWithCheckpoint(items: string[]) {\n  const checkpointPath = \"./.checkpoint.json\";\n  let checkpoint = { lastIndex: -1 };\n\n  try {\n    checkpoint = JSON.parse(fs.readFileSync(checkpointPath, \"utf8\"));\n  } catch { /* no checkpoint yet */ }\n\n  const remaining = items.slice(checkpoint.lastIndex + 1);\n\n  const result = await query({\n    prompt: `Process these items (already processed up to index ${checkpoint.lastIndex}): ${remaining.join(\", \")}`,\n  });\n\n  if (result.stop_reason === \"error_during_execution\") {\n    // Save progress before retrying\n    const lastSuccess = extractLastSuccessIndex(result);\n    fs.writeFileSync(checkpointPath, JSON.stringify({ lastIndex: lastSuccess }));\n    console.log(`Saved checkpoint at index ${lastSuccess}. Safe to retry.`);\n  }\n}\n```\n\n```bash\n# Make downstream tools idempotent using upsert patterns\n# Instead of INSERT, use INSERT ... ON CONFLICT DO NOTHING\n# Instead of creating files, check existence first\nif [ ! -f \"output/$ID.json\" ]; then\n  process_item \"$ID\"\nfi\n```",
-    keyConcept: "error_during_execution: idempotency required for safe retry",
+      "The model signals completion through `stop_reason`; the loop should run until `\"end_turn\"`. A cap is still useful against runaway loops, but as a backstop: hitting it means the run is incomplete and must be surfaced as such, not silently treated as a finished report. In the Agent SDK this cap is `maxTurns`, and reaching it ends the run with a ResultMessage whose `subtype` is `error_max_turns`; that is a result subtype, not a `stop_reason` value.\n\nOption A moves the arbitrary cutoff instead of removing it as the primary stop. Option C parses natural language to decide termination, another anti-pattern. Option D removes the agentic loop entirely, so the model cannot act on what its tools return.",
+    keyConcept: "Iteration caps are a safety net, not the primary stopping mechanism",
+    sources: [
+      { title: "Handling stop reasons", url: "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons" },
+      { title: "How the agent loop works", url: "https://code.claude.com/docs/en/agent-sdk/agent-loop" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-012",
-    scenario: "Multi-Agent Research System",
+    scenario: "Developer Productivity with Claude",
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
     taskStatement: "1.6",
     difficulty: "intermediate",
     question:
-      "When configuring a non-interactive headless Claude Code run, an engineer needs to balance thoroughness with cost. The `effort` parameter can be set to `low`, `medium`, `high`, or `max`. For a quick, cost-sensitive summarization of 10 short documents, which level is most appropriate?",
+      "You ask an agent to \"add comprehensive tests to this legacy codebase\": 400 files, almost no existing tests, and unclear dependencies between modules. Which plan is most likely to produce useful coverage?",
     options: [
-      {
-        id: "A",
-        text: "`max` — always use maximum effort to ensure the highest quality output",
-      },
-      {
-        id: "B",
-        text: "`high` — a good balance between quality and cost for most production tasks",
-      },
-      {
-        id: "C",
-        text: "`low` — appropriate for simple, cost-sensitive tasks where speed and economy matter more than deep reasoning",
-      },
-      {
-        id: "D",
-        text: "`medium` — the default; should always be used when in doubt",
-      },
+      { id: "A", text: "Generate a test file for every source file in alphabetical order until the whole tree is covered" },
+      { id: "B", text: "Map the structure, rank the high-impact areas, then follow a prioritized plan that adapts as it goes" },
+      { id: "C", text: "Write a fixed list of twenty test tasks up front, then execute them in order without any changes" },
+      { id: "D", text: "Start with the files that are easiest to test so that the coverage number climbs as fast as possible" },
     ],
-    correctAnswer: "C",
+    correctAnswer: "B",
     explanation:
-      "The `effort` parameter controls how much internal reasoning and exploration the model performs. `low` is appropriate for straightforward tasks like summarizing short documents where the overhead of extended reasoning would waste tokens and money. `max` is for highly complex tasks requiring deep analysis. `high` is for production tasks needing thorough reasoning. `medium` is a sensible default but not optimal for explicitly simple, cost-sensitive work.\n\nHow to implement:\n```bash\n# CLI: set effort level for a non-interactive run\nclaude --effort low --output-format stream-json \\\n  \"Summarize each of these 10 documents in 2 sentences\"\n\n# For complex architectural analysis, use max\nclaude --effort max \\\n  \"Analyze this codebase for security vulnerabilities and suggest fixes\"\n```\n\n```typescript\n// SDK: effort parameter in API call\nconst result = await client.messages.create({\n  model: \"claude-opus-5\",\n  max_tokens: 1024,\n  thinking: { type: \"adaptive\" },\n  output_config: { effort: \"low\" }, // simple, cost-sensitive work\n  messages: [{ role: \"user\", content: \"Summarize this document: ...\" }],\n});\n\n// The same call at the other end of the scale\nconst complexResult = await client.messages.create({\n  model: \"claude-opus-5\",\n  max_tokens: 4096,\n  thinking: { type: \"adaptive\" },\n  output_config: { effort: \"max\" }, // correctness matters more than cost\n  messages: [{ role: \"user\", content: \"Deeply analyze this architecture...\" }],\n});\n\n// Note: a fixed thinking budget (thinking: { type: \"enabled\", budget_tokens: N })\n// is rejected with a 400 on current models. Effort replaced it.\n```",
-    keyConcept: "Effort levels: low for simple cost-sensitive tasks, max for complex deep reasoning",
+      "Open-ended tasks are decomposed by first understanding the territory. Mapping the structure shows what exists and how it connects; ranking high-impact areas (payment paths, shared utilities, code that changes often) points effort where tests matter most; and an adaptive plan absorbs the dependencies that only appear once you start writing tests.\n\nOption A spends effort evenly on code of very different importance and ignores dependencies. Option C commits to a plan before learning anything about the codebase. Option D optimizes the metric rather than the goal: easy-to-test code is often the least risky code.",
+    keyConcept: "Decompose open-ended work by mapping, prioritizing and adapting the plan as you learn",
+    sources: [
+      { title: "Building effective agents", url: "https://www.anthropic.com/research/building-effective-agents" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-013",
@@ -392,27 +314,19 @@ const examDomain1Questions: Question[] = [
     question:
       "A CI pipeline runs Claude Code to review pull requests. The system prompt says the agent must run the test suite before posting any review comment, but roughly one run in twenty posts the comment first. The team needs the ordering to hold every time. What should they implement?",
     options: [
-      {
-        id: "A",
-        text: "Rewrite the system prompt with stronger language — \"CRITICAL: you MUST run tests before commenting\" — and add the rule to CLAUDE.md as well",
-      },
-      {
-        id: "B",
-        text: "A PreToolUse hook that blocks the comment-posting tool until the test-run tool has completed successfully in this session",
-      },
-      {
-        id: "C",
-        text: "Lower the effort level so the model follows the instruction more literally and stops improvising",
-      },
-      {
-        id: "D",
-        text: "Give the agent a single combined tool that runs the tests and posts the comment in one call",
-      },
+      { id: "A", text: "Stronger system prompt wording, \"CRITICAL: run tests before commenting\", copied into CLAUDE.md too" },
+      { id: "B", text: "A lower effort level so the model follows the instruction more literally and improvises less often" },
+      { id: "C", text: "A PreToolUse hook that blocks the comment tool until the test tool has passed in this session" },
+      { id: "D", text: "One combined tool that runs the full test suite and posts the review comment in a single call" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "C",
     explanation:
-      "When compliance has to be deterministic, prompt instructions are the wrong layer. A prompt is a probabilistic instruction to the model: it has a non-zero failure rate, which is exactly the one-in-twenty being observed. A PreToolUse hook is application code — it inspects the pending tool call and refuses it unless the prerequisite is satisfied, so the failure rate is zero by construction.\n\nOption A escalates the wording but not the mechanism, and stronger language tends to overtrigger elsewhere without closing this gap. Option C confuses effort with obedience: effort tunes reasoning depth, not rule-following, and lowering it makes the agent scope work more narrowly, not follow ordering rules more faithfully. Option D would work but throws away the ability to run tests without commenting, and hides the failure — if the tests fail, the combined tool still has to decide what to post.\n\nThe rule of thumb: prompt-based guidance for preferences, programmatic gates for guarantees.\n\nHow to implement:\n```typescript\nconst estado = { pruebasVerdes: false };\n\nconst hooks = {\n  PreToolUse: async ({ toolName }) => {\n    if (toolName === \"post_review_comment\" && !estado.pruebasVerdes) {\n      return {\n        decision: \"deny\",\n        reason: \"Run the test suite first — post_review_comment is gated on a green run.\",\n      };\n    }\n  },\n  PostToolUse: async ({ toolName, result }) => {\n    if (toolName === \"run_tests\") estado.pruebasVerdes = result.exitCode === 0;\n  },\n};\n```",
+      "When compliance has to be deterministic, the prompt is the wrong layer. A prompt is a probabilistic instruction: it has a non-zero failure rate, which is exactly the one in twenty being observed. A PreToolUse hook is application code that inspects the pending call and refuses it unless the prerequisite is met, so the failure rate is zero by construction.\n\nOption A changes the wording, not the mechanism. Option B confuses effort with obedience: effort tunes reasoning depth, not rule-following. Option D would work for this one pair of steps, but it removes the ability to run tests without commenting and hides failures: if tests fail, the combined tool still has to decide what to post.\n\nHow to implement:\n```typescript\nlet testsPassed = false;\nconst hooks = {\n  PreToolUse: [{ matcher: \"post_review_comment\", hooks: [async () => testsPassed ? {} : {\n    hookSpecificOutput: { hookEventName: \"PreToolUse\", permissionDecision: \"deny\",\n      permissionDecisionReason: \"Run the test suite first; commenting is gated on a green run.\" } }] }],\n  PostToolUse: [{ matcher: \"run_tests\", hooks: [async (input: any) => {\n    testsPassed = input.tool_response?.exitCode === 0; return {}; }] }],\n};\n```",
     keyConcept: "Prompt for preferences, hooks for guarantees: a prerequisite gate belongs in code",
+    sources: [
+      { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-014",
@@ -422,29 +336,21 @@ const examDomain1Questions: Question[] = [
     taskStatement: "1.5",
     difficulty: "intermediate",
     question:
-      "An extraction agent pulls records from three MCP servers. One returns dates as Unix timestamps, another as ISO 8601 strings, and the third as DD/MM/YYYY. The agent keeps ordering records wrongly because it compares the three formats as if they were the same. What is the most reliable fix?",
+      "An extraction agent pulls records from three MCP servers. One returns dates as Unix timestamps, another as ISO 8601 strings and the third as DD/MM/YYYY. The agent keeps ordering records wrongly because it compares the three formats as if they were the same. What is the most reliable fix?",
     options: [
-      {
-        id: "A",
-        text: "A PostToolUse hook that normalizes every date field to ISO 8601 before the tool result reaches the model",
-      },
-      {
-        id: "B",
-        text: "Describe all three formats in the system prompt and instruct the model to convert them before comparing",
-      },
-      {
-        id: "C",
-        text: "Raise the effort level so the model reasons more carefully about each date",
-      },
-      {
-        id: "D",
-        text: "Ask the owners of the three MCP servers to agree on a single date format",
-      },
+      { id: "A", text: "Describe all three formats in the system prompt and tell the model to convert them before comparing" },
+      { id: "B", text: "Raise the effort level so the model reasons more carefully about each date before comparing them" },
+      { id: "C", text: "A PostToolUse hook that rewrites every date field to ISO 8601 before the model sees the tool result" },
+      { id: "D", text: "Ask the owners of the three MCP servers to agree on one shared date format for all their responses" },
     ],
-    correctAnswer: "A",
+    correctAnswer: "C",
     explanation:
-      "PostToolUse hooks intercept a tool result on its way back and can transform it before the model ever sees it. Normalizing the three formats there means the model receives one consistent shape and the comparison stops being a reasoning problem at all — it becomes a data problem, solved once, in code.\n\nOption B moves a mechanical conversion into the model's reasoning, where it costs tokens on every record and still fails sometimes. Option C is the same bet with a bigger budget: more reasoning does not make an unreliable step reliable. Option D is the cleanest solution in principle and the least available in practice — you rarely control three third-party servers, and even when you do, the change lands on their release schedule, not yours. Normalize at your boundary.\n\nHow to implement:\n```typescript\nconst aISO = (v: unknown): string | unknown => {\n  if (typeof v === \"number\") return new Date(v * 1000).toISOString();\n  if (typeof v === \"string\") {\n    const m = v.match(/^(\\d{2})\\/(\\d{2})\\/(\\d{4})$/);   // DD/MM/YYYY\n    if (m) return new Date(`${m[3]}-${m[2]}-${m[1]}`).toISOString();\n  }\n  return v;                                              // ya venía en ISO\n};\n\nconst hooks = {\n  PostToolUse: async ({ result }) => ({\n    ...result,\n    records: result.records.map((r) => ({ ...r, date: aISO(r.date) })),\n  }),\n};\n```",
-    keyConcept: "PostToolUse normaliza formatos heterogéneos antes de que el modelo los vea",
+      "PostToolUse hooks intercept a tool result on its way back and can transform it before the model sees it. Normalizing the three formats there means the model always receives one consistent shape, so the comparison stops being a reasoning problem and becomes a data problem solved once, in code. (In the current SDK the hook replaces the output with `updatedToolOutput`; the older `updatedMCPToolOutput` covers MCP tools only.)\n\nOption A moves a mechanical conversion into the model's reasoning, where it costs tokens on every record and still fails sometimes. Option B is the same bet with a bigger budget. Option D is clean in principle but rarely available: you seldom control three third-party servers, and a fourth source would bring the problem back.\n\nHow to implement:\n```typescript\nconst normalizeDates: HookCallback = async (input) => {\n  const out = (input as PostToolUseHookInput).tool_response as Record<string, unknown>;\n  return { hookSpecificOutput: { hookEventName: \"PostToolUse\", updatedToolOutput: toIsoDates(out) } };\n};\n// options.hooks = { PostToolUse: [{ matcher: \"^mcp__\", hooks: [normalizeDates] }] }\n```",
+    keyConcept: "PostToolUse hooks normalize heterogeneous formats before the model sees them",
+    sources: [
+      { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-015",
@@ -454,61 +360,45 @@ const examDomain1Questions: Question[] = [
     taskStatement: "1.7",
     difficulty: "intermediate",
     question:
-      "Yesterday an engineer used a named session to analyze the payments module and agreed on a refactoring plan with the agent. Overnight a colleague rewrote most of that module. The engineer wants to continue the work today. What is the more reliable way to pick it up?",
+      "Yesterday an engineer used a named session to analyze the payments module and agreed a refactoring plan with the agent. Overnight a colleague rewrote most of that module. The engineer wants to continue the work today. What is the more reliable way to pick it up?",
     options: [
-      {
-        id: "A",
-        text: "Resume the named session with --resume; the agent will notice the files changed and re-read them",
-      },
-      {
-        id: "B",
-        text: "Start a fresh session seeded with a structured summary of yesterday's conclusions, because the old session's tool results describe code that no longer exists",
-      },
-      {
-        id: "C",
-        text: "Use fork_session to branch from yesterday's session and work on the branch",
-      },
-      {
-        id: "D",
-        text: "Resume the session and raise the effort level so the agent double-checks every file before acting",
-      },
+      { id: "A", text: "Resume the named session with --resume; the agent will notice the files changed and re-read them" },
+      { id: "B", text: "Start fresh with a structured summary of yesterday's conclusions, since the old tool results are stale" },
+      { id: "C", text: "Use fork_session to branch from yesterday's session and continue all of the refactoring in the new branch" },
+      { id: "D", text: "Resume the session and raise the effort level so the agent double-checks every file before acting" },
     ],
     correctAnswer: "B",
     explanation:
-      "A resumed session carries its old tool results with it, and those results are file reads of code that has since been rewritten. The agent will reason over that stale content unless something forces it to re-read — and nothing does automatically. Starting fresh with a structured summary keeps the part that is still true (the conclusions and the plan) and drops the part that is not (the file contents).\n\nThe decision rule: resume when the prior context is mostly still valid; start fresh with an injected summary when the prior tool results have gone stale. Here the code changed underneath, so the tool results are exactly what you want to discard.\n\nOption A assumes a re-read that does not happen on its own. Option C is the right tool for a different job — fork_session branches from a shared baseline to explore divergent approaches, but a fork of a stale session is still stale. Option D pays for more reasoning over wrong inputs.\n\nHow to implement:\n```bash\n# Prior context still valid → resume\nclaude --resume analisis-pagos\n\n# Prior tool results stale → fresh session, conclusions carried over by hand\nclaude \"Retomamos el refactor de pagos. Contexto de la sesión anterior:\n- Conclusión: PaymentProcessor mezcla cobro y notificación.\n- Plan acordado: extraer NotificationService y dejar el cobro sin efectos.\n- Aviso: el módulo se reescribió anoche; léelo de nuevo antes de proponer nada.\"\n```",
-    keyConcept: "Reanudar arrastra resultados de herramienta viejos; con código cambiado, empezar de cero con un resumen",
+      "A resumed session carries its old tool results, and those are reads of code that has since been rewritten. The agent will reason over that stale content unless something forces a re-read, and nothing does automatically. Starting fresh with a structured summary keeps what is still true (the conclusions and the plan) and drops what is not (the file contents).\n\nThe decision rule: resume when prior context is mostly valid; start fresh with an injected summary when prior tool results have gone stale. Here most of the module changed. Option A assumes an automatic re-read that does not happen. Option C copies the same stale history into a branch. Option D spends more reasoning on outdated inputs, which does not make them current.",
+    keyConcept: "With most prior tool results stale, start fresh with a structured summary instead of resuming",
+    sources: [
+      { title: "Work with sessions", url: "https://code.claude.com/docs/en/agent-sdk/sessions" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.7", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E1-016",
-    scenario: "Structured Data Extraction",
+    scenario: "Multi-Agent Research System",
     domain: 1,
     domainName: "Agentic Architecture & Orchestration",
     taskStatement: "1.2",
     difficulty: "advanced",
     question:
-      "An extraction pipeline uses a coordinator with two subagents: one parses documents, one validates the parsed output against a schema. The team proposes letting the validator read the parser's results directly, arguing that routing everything through the coordinator is a pointless hop. What is the strongest argument for keeping the coordinator in the middle?",
+      "Your coordinator always runs the full pipeline (web search, document analysis, synthesis and report) for every query. For broad questions it works well, but \"What year was the transformer paper published?\" takes four minutes and returns a multi-page report. How should the coordinator change?",
     options: [
-      {
-        id: "A",
-        text: "Subagents cannot exchange information under any circumstances, so there is no alternative design",
-      },
-      {
-        id: "B",
-        text: "Subagents do not inherit each other's context, so the coordinator has to pass the parser's output explicitly anyway — and routing through it puts observability, error handling, and information flow in one place",
-      },
-      {
-        id: "C",
-        text: "The coordinator caches subagent results, so a direct hop would re-run the parser on every validation",
-      },
-      {
-        id: "D",
-        text: "The two subagents share one context window, so a direct exchange would double-count tokens",
-      },
+      { id: "A", text: "Split the system into two separate products, one for quick facts and another for full research reports" },
+      { id: "B", text: "Add a keyword router in front that sends any question shorter than 15 words to a single agent" },
+      { id: "C", text: "Keep the full pipeline and tell each subagent to finish faster whenever the question looks simple" },
+      { id: "D", text: "Have the coordinator assess what each query needs and invoke only the subagents it actually requires" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "D",
     explanation:
-      "Hub-and-spoke is not ceremony. Each subagent runs with isolated context — it does not automatically inherit the coordinator's conversation history or any sibling's output — so whatever the validator needs has to be placed in its prompt by whoever invokes it. That is already the coordinator's job. Once it is doing that, routing the rest through it too is free, and it buys a single place to see what was passed, to catch and classify failures, and to decide what information is allowed to flow where.\n\nOption A overstates the constraint: you can design direct handoffs, they are just harder to observe and to recover from. Options C and D invent mechanics — the coordinator is not a cache, and subagents do not share a context window; the isolation is the whole point of the pattern.\n\nHow to implement:\n```typescript\n// El coordinador pasa explícitamente lo que el validador necesita:\n// el subagente no ve nada de la conversación anterior.\nconst analizado = await Task({\n  subagent_type: \"parser\",\n  prompt: `Extrae los campos de este documento y devuélvelos como JSON.\\n\\n${documento}`,\n});\n\nconst validado = await Task({\n  subagent_type: \"validator\",\n  prompt: `Valida este JSON contra el esquema.\\n\\nJSON:\\n${analizado}\\n\\nEsquema:\\n${esquema}`,\n});\n```",
-    keyConcept: "Los subagentes no heredan contexto: el coordinador ya tiene que pasarlo, y de paso centraliza observabilidad y errores",
+      "Deciding which subagents to invoke, based on the query's complexity, is part of the coordinator's job. A simple factual question may need one search call; a broad topic needs the whole pipeline with iterative refinement. Putting that judgment in the coordinator keeps one system that scales effort to the question.\n\nOption A duplicates the system and pushes the routing decision onto users. Option B replaces judgment with a brittle proxy: a short question can be deep and a long one trivial. Option C still pays for every stage on every query and only asks each stage to hurry.",
+    keyConcept: "The coordinator dynamically selects subagents instead of always running the full pipeline",
+    sources: [
+      { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 1.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
 ];
 
@@ -519,67 +409,51 @@ const examDomain1Questions: Question[] = [
 const examDomain2Questions: Question[] = [
   {
     id: "E2-001",
-    scenario: "Developer Productivity with Claude",
+    scenario: "Customer Support Resolution Agent",
     domain: 2,
     domainName: "Tool Design & MCP Integration",
     taskStatement: "2.2",
-    difficulty: "advanced",
+    difficulty: "intermediate",
     question:
-      "An MCP server's `query_database` tool encounters a SQL timeout. The server returns `{ \"isError\": true, \"content\": [...] }`. A separate scenario has the MCP transport layer itself failing to deliver the request. What is the critical architectural distinction between these two cases?",
+      "Company policy forbids refunds above $500 without manager approval. When `process_refund` is called for $720, your MCP server returns `isError: true` with the text \"Error 4012\". The agent retries the call, then tries $719, and finally tells the customer that \"something went wrong.\" What should the tool return so the agent handles this case correctly?",
     options: [
-      {
-        id: "A",
-        text: "Both cases are equivalent — the client should retry in both scenarios",
-      },
-      {
-        id: "B",
-        text: "`isError: true` in the tool result is an LLM-visible error — Claude sees it and can reason about it. A JSON-RPC transport failure is invisible to Claude and must be handled by the MCP client layer before reaching the model",
-      },
-      {
-        id: "C",
-        text: "`isError: true` is only for HTTP errors; JSON-RPC errors handle all application logic failures",
-      },
-      {
-        id: "D",
-        text: "JSON-RPC errors propagate directly to the model's context window, while `isError` is only for logging",
-      },
+      { id: "A", text: "`isError: true` with `errorCategory: \"transient\"` and `isRetryable: true`, so the agent waits and resubmits once the refund service recovers." },
+      { id: "B", text: "A JSON-RPC protocol error, so the MCP client blocks the request and the agent never sees a policy violation it can't resolve by itself." },
+      { id: "C", text: "`isError: true`, `errorCategory: \"business\"`, `isRetryable: false`, and a customer-friendly note that refunds over $500 need a manager." },
+      { id: "D", text: "A successful result that quietly caps the refund at $500, so the customer still gets most of the money and the conversation can continue." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "C",
     explanation:
-      "The MCP protocol distinguishes two error layers: `isError: true` in a tool result is a semantic, LLM-visible error — Claude receives it in its context and can reason about it, decide to retry, or take corrective action. A JSON-RPC error at the transport layer (e.g., the server is unreachable, malformed JSON) is a transport failure that the MCP client handles before the model sees anything. Conflating these leads to poor error handling: transport errors require infrastructure-level retry, while `isError` results require model-level reasoning.\n\nHow to implement:\n```typescript\n// MCP server: return isError:true for LLM-visible application errors\nimport { Server } from \"@modelcontextprotocol/sdk/server/index.js\";\n\nserver.setRequestHandler(CallToolRequestSchema, async (request) => {\n  if (request.params.name === \"query_database\") {\n    try {\n      const rows = await db.query(request.params.arguments.sql);\n      return { content: [{ type: \"text\", text: JSON.stringify(rows) }] };\n    } catch (err) {\n      // SQL timeout — LLM-visible: Claude can reason about this\n      return {\n        isError: true,\n        content: [{ type: \"text\", text: `SQL timeout: ${err.message}` }],\n      };\n    }\n  }\n});\n\n// MCP client: handle JSON-RPC transport errors separately\ntry {\n  const result = await mcpClient.callTool(\"query_database\", { sql: \"SELECT...\" });\n  if (result.isError) {\n    // Forward to model — let Claude decide what to do\n    return result;\n  }\n} catch (transportErr) {\n  // JSON-RPC transport failure — handle at infra level, don't forward to model\n  await retryWithBackoff(() => mcpClient.callTool(...));\n}\n```",
-    keyConcept: "MCP isError (LLM-visible) vs JSON-RPC error (transport failure) distinction",
+      "C is correct. This is a business rule violation: no retry will succeed, and the agent needs to know why so it can explain the rule and escalate (for example with `escalate_to_human`). A non-retryable business error with a customer-friendly explanation gives it exactly that. The opaque \"Error 4012\" is why the agent probed with $719.\n\nA mislabels a permanent policy limit as a temporary outage and invites more wasted retries. B uses the wrong channel: protocol errors are for malformed requests, and the agent loses the information it needs to talk to the customer. D silently changes a financial action without the customer's agreement.\n\nHow to implement:\n```typescript\nif (amount > 500 && !managerApproved) {\n  return { isError: true, content: [{ type: \"text\", text: JSON.stringify({\n    errorCategory: \"business\", isRetryable: false,\n    customerMessage: \"Refunds over $500 need a manager's approval. I can request it for you now.\",\n    suggestedAction: \"escalate_to_human\",\n  }) }] };\n}\n```",
+    keyConcept: "Non-retryable business errors with customer-friendly explanations",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "MCP specification — Tools (error handling)", url: "https://modelcontextprotocol.io/specification/2026-07-28/server/tools" },
+    ],
   },
   {
     id: "E2-002",
-    scenario: "Developer Productivity with Claude",
+    scenario: "Code Generation with Claude Code",
     domain: 2,
     domainName: "Tool Design & MCP Integration",
-    taskStatement: "2.4",
-    difficulty: "intermediate",
+    taskStatement: "2.5",
+    difficulty: "advanced",
     question:
-      "Your team is deploying a new MCP server for a production application. The server will be accessed by Claude Code over a network. The technical lead says SSE transport is now legacy. What should you use instead, and why?",
+      "Claude Code must change the timeout in one of four retry blocks in `client.ts`. The blocks were generated from a template and are byte-for-byte identical, and the nearest unique text, the name of the enclosing function `uploadFile`, is 60 lines above the third block. The Edit call fails because its `old_string` matches four locations. Only the block inside `uploadFile` should change. What is the reliable way to make this change?",
     options: [
-      {
-        id: "A",
-        text: "stdio — it is the most performant transport for network-deployed servers",
-      },
-      {
-        id: "B",
-        text: "HTTP (Streamable HTTP) — it is the current recommended transport for network-deployed MCP servers, replacing the deprecated SSE transport",
-      },
-      {
-        id: "C",
-        text: "WebSocket — it is the replacement for SSE in the MCP specification",
-      },
-      {
-        id: "D",
-        text: "gRPC — the newest MCP transport for high-throughput production use",
-      },
+      { id: "A", text: "Retry Edit with `replace_all: true`, which applies the new timeout wherever the string appears and clears the uniqueness error." },
+      { id: "B", text: "Grep for the timeout line with `output_mode: \"content\"`, then pass the line number it returns to Edit as the location to change." },
+      { id: "C", text: "Use Write to overwrite `client.ts` from what Claude remembers of it, with the new timeout, without reading the file again first." },
+      { id: "D", text: "Read the full file, change the timeout only in the third block of the loaded content, and Write the complete updated file back." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "D",
     explanation:
-      "The MCP specification identifies three transport types: HTTP (Streamable HTTP, recommended for network-deployed servers), SSE (deprecated, being phased out), and stdio (for local process-based servers). SSE has been superseded by Streamable HTTP, which supports both streaming and standard request/response patterns. stdio is for locally spawned processes, not network servers. WebSocket and gRPC are not MCP transport types.\n\nHow to implement:\n```bash\n# Add an HTTP (Streamable HTTP) MCP server\nclaude mcp add --transport http my-production-api https://api.example.com/mcp\n\n# Add a local stdio MCP server\nclaude mcp add --transport stdio local-tool -- node /path/to/server.js\n\n# List all configured servers and their transports\nclaude mcp list\n```\n\n```json\n// .mcp.json — HTTP transport for network server\n{\n  \"mcpServers\": {\n    \"my-api\": {\n      \"transport\": \"http\",\n      \"url\": \"https://api.example.com/mcp\",\n      \"headers\": {\n        \"Authorization\": \"Bearer ${API_TOKEN}\"\n      }\n    },\n    \"local-tool\": {\n      \"command\": \"node\",\n      \"args\": [\"/path/to/mcp-server.js\"]\n    }\n  }\n}\n```",
-    keyConcept: "MCP transport types: HTTP (recommended), SSE (deprecated), stdio (local)",
+      "D is correct. When Edit can't find unique anchor text, Read followed by Write is the reliable fallback: Claude loads the current content, changes exactly the block inside `uploadFile`, and writes the whole file back.\n\nA changes all four blocks, three of them wrongly. B assumes Edit accepts a line number, but Edit only does exact string replacement with `old_string` and `new_string`. C overwrites the file from memory, which can silently drop changes made since it was last read. Product note: the current Edit tool can also pin one occurrence with a longer `old_string` that includes enough surrounding context; when the nearest unique text is 60 lines away, as here, that anchor is fragile, which is why the guide's Read + Write fallback applies.\n\nHow to implement:\n```text\n1. Read  client.ts                       (full current content)\n2. In the loaded text, change timeoutMs: 5000 -> 15000 only inside uploadFile()\n3. Write client.ts  <complete updated content>\n```",
+    keyConcept: "Read + Write as the fallback when Edit has no unique anchor",
+    sources: [
+      { title: "Claude Code tools reference", url: "https://code.claude.com/docs/en/tools-reference" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 2.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E2-003",
@@ -589,125 +463,94 @@ const examDomain2Questions: Question[] = [
     taskStatement: "2.4",
     difficulty: "intermediate",
     question:
-      "A developer has an MCP server defined at the user level in `~/.claude.json`, the same server also configured at the project level in `.mcp.json`, and a third, local override in a `.claude/` local config. When all three configurations conflict on a setting for that server, which one wins?",
+      "Your agent uses an internal MCP server whose `query_docs(path)` tool reads one page of a 1,200-page documentation set organized in a deep hierarchy. Traces show that before every answer the agent makes 10–15 exploratory `query_docs` calls with guessed paths, and many return \"not found\". What should the MCP server add?",
     options: [
-      {
-        id: "A",
-        text: "User level (`~/.claude.json`) — user preferences always take precedence",
-      },
-      {
-        id: "B",
-        text: "Project level (`.mcp.json`) — project configuration overrides personal settings",
-      },
-      {
-        id: "C",
-        text: "Local level (`.claude/` local config) — local scope takes highest precedence, then project, then user",
-      },
-      {
-        id: "D",
-        text: "The last-loaded configuration wins, which depends on the file system ordering",
-      },
+      { id: "A", text: "Expose the documentation hierarchy as MCP resources, so the agent can see which pages exist and read the right one directly." },
+      { id: "B", text: "Raise the server's timeout and rate limit, so the exploratory calls finish faster and the agent can afford more guesses per answer." },
+      { id: "C", text: "Add a `list_everything` tool that returns the full text of all 1,200 pages at once, so the agent never needs to guess a path again." },
+      { id: "D", text: "Add a system prompt rule capping the agent at three `query_docs` calls per answer, and tell it to answer from whatever it finds." },
     ],
-    correctAnswer: "C",
+    correctAnswer: "A",
     explanation:
-      "MCP scope precedence follows a strict hierarchy: local > project > user. A local configuration (stored in the `.claude/` directory's local settings) overrides both the project-level `.mcp.json` and the user-level `~/.claude.json`. This mirrors how most configuration layering systems work — more specific, closer-to-code configs take precedence over broader defaults. The ordering is deterministic, not file-system-dependent.\n\nHow to implement:\n```bash\n# User-level config (~/.claude.json) — applies to all projects\nclaude mcp add --scope user shared-tool -- node ~/tools/shared-mcp.js\n\n# Project-level config (.mcp.json in repo root) — applies to all team members\nclaude mcp add --scope project team-db -- node ./scripts/db-mcp.js\n\n# Local override (.claude/ local settings) — overrides project & user for this machine\nclaude mcp add --scope local my-override -- node ./local-dev-server.js\n```\n\n```jsonc\n// Precedence example: same server \"analytics\" defined in multiple scopes\n// ~/.claude.json (user scope) — lowest priority\n{ \"mcpServers\": { \"analytics\": { \"url\": \"https://prod.analytics.com/mcp\" } } }\n\n// .mcp.json (project scope) — overrides user\n{ \"mcpServers\": { \"analytics\": { \"url\": \"https://staging.analytics.com/mcp\" } } }\n\n// .claude/settings.local.json (local scope) — wins\n{ \"mcpServers\": { \"analytics\": { \"url\": \"http://localhost:3001/mcp\" } } }\n```",
-    keyConcept: "MCP scope precedence: local > project > user",
+      "A is correct. MCP resources are the mechanism for exposing a content catalog, such as a documentation hierarchy, an issue list or database schemas, so the agent can see what data exists without exploratory tool calls. In Claude Code, resources appear in `@` mentions and can be listed and read through built-in resource tools.\n\nB makes the waste faster instead of removing it. C replaces a catalog with the full content: it floods the context, and very large outputs trigger Claude Code's MCP output warnings and limits. D caps the guessing, so the agent answers from worse evidence.\n\nHow to implement:\n```typescript\nserver.registerResource(\n  \"docs-index\",\n  \"docs://index\",\n  { title: \"Documentation index\", mimeType: \"application/json\" },\n  async () => ({ contents: [{ uri: \"docs://index\", text: JSON.stringify(buildTree()) }] }),\n);\n```",
+    keyConcept: "MCP resources expose content catalogs and reduce exploratory tool calls",
+    sources: [
+      { title: "MCP specification — Resources", url: "https://modelcontextprotocol.io/specification/2026-07-28/server/resources" },
+      { title: "Connect Claude Code to tools via MCP", url: "https://code.claude.com/docs/en/mcp" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 2.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E2-004",
-    scenario: "Multi-Agent Research System",
+    scenario: "Customer Support Resolution Agent",
     domain: 2,
     domainName: "Tool Design & MCP Integration",
-    taskStatement: "2.4",
-    difficulty: "advanced",
+    taskStatement: "2.1",
+    difficulty: "intermediate",
     question:
-      "A context window usage alert fires when a research agent with 12 active MCP servers begins a task. The agent has not yet processed any documents. What is the most likely architectural cause of the high initial context usage?",
+      "`get_customer` has the description \"Returns customer information.\" It returns name, email, tier and account status, but no order history. Traces show that when a customer asks \"what did I order last month?\", the agent calls `get_customer` repeatedly with different arguments and then tells the customer they have no recent orders, although `lookup_order` would have answered. What is the best fix?",
     options: [
-      {
-        id: "A",
-        text: "The system prompt is too long and should be shortened",
-      },
-      {
-        id: "B",
-        text: "Each MCP server adds ALL of its tool schemas to EVERY request — with 12 servers each having multiple tools, the combined schema overhead consumes significant context before any task content is processed",
-      },
-      {
-        id: "C",
-        text: "The agent's conversation history from a previous session is being re-injected",
-      },
-      {
-        id: "D",
-        text: "The model's tokenizer is inefficient at encoding JSON tool schemas",
-      },
+      { id: "A", text: "Raise the agent's maximum number of turns, so it has room to keep exploring after `get_customer` and eventually try `lookup_order`." },
+      { id: "B", text: "Extend `get_customer` so it also returns the full order history, making it the single place to look for any question about a customer." },
+      { id: "C", text: "Add a system prompt rule: \"if get_customer does not answer the question, try the other tools before you reply to the customer.\"" },
+      { id: "D", text: "Rewrite the `get_customer` description to list its fields, say it has no order data, and point to `lookup_order` for purchases." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "D",
     explanation:
-      "MCP tool schemas are injected into every request for every connected server. With 12 MCP servers, each potentially defining 5–20 tools with parameter schemas, descriptions, and type definitions, the cumulative token overhead before any user content is processed can be thousands of tokens. This is a critical architectural consideration: reduce the number of active MCP servers, use ToolSearch activation, or limit active servers to those needed for the current task.\n\nHow to implement:\n```bash\n# Check how many tools are loaded (and their approximate token footprint)\nclaude mcp list\n\n# Disable servers not needed for current task\nclaude mcp disable analytics-server\nclaude mcp disable legacy-crm-server\n\n# Force-enable ToolSearch to reduce per-request schema overhead\nexport ENABLE_TOOL_SEARCH=1\nclaude \"Research the codebase and summarize architecture\"\n\n# Or disable specific servers inline via --disabledMcpServers flag\nclaude --disabledMcpServers \"server1,server2\" \"Your task here\"\n```\n\n```json\n// .mcp.json — only include servers needed for this project role\n{\n  \"mcpServers\": {\n    \"file-ops\": { \"command\": \"node\", \"args\": [\"./mcp/file-ops.js\"] },\n    \"git-tools\": { \"command\": \"node\", \"args\": [\"./mcp/git.js\"] }\n    // Intentionally excluded: analytics, crm, reporting, etc.\n  }\n}\n```",
-    keyConcept: "MCP tool schemas consume context per request; each server adds ALL its schemas",
+      "D is correct. Descriptions are the main signal the model uses to choose tools, and a good description also states what the tool returns and what it doesn't. Saying explicitly that `get_customer` has no order data and naming `lookup_order` for purchases removes the false expectation that drives the repeated calls.\n\nA gives a misinformed agent more room to wander. B creates overlap between two tools and bloats every customer lookup. C is a generic fallback rule that still leaves the agent guessing which tool covers what.\n\nHow to implement:\n```typescript\n{\n  name: \"get_customer\",\n  description: \"Returns the profile of one verified customer: name, email, tier and account status. \" +\n    \"Does NOT return orders, purchases or shipments; for those, use lookup_order. \" +\n    \"Input: customer_id (CUS-######) or the email on the account.\",\n  input_schema: { /* ... */ },\n}\n```",
+    keyConcept: "Tool descriptions should state outputs and limits, and point to the alternative tool",
+    sources: [
+      { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E2-005",
-    scenario: "Developer Productivity with Claude",
+    scenario: "Structured Data Extraction",
     domain: 2,
     domainName: "Tool Design & MCP Integration",
-    taskStatement: "2.4",
-    difficulty: "advanced",
-    question:
-      "An agent is running with 15 MCP servers active. A senior engineer says ToolSearch should activate automatically to manage the tool overload. At what context window utilization does ToolSearch typically activate, and how can it be force-enabled?",
-    options: [
-      {
-        id: "A",
-        text: "ToolSearch activates at 50% context utilization; set `TOOL_SEARCH_THRESHOLD=0.5` to configure it",
-      },
-      {
-        id: "B",
-        text: "ToolSearch activates at >10% context window usage and can be force-enabled via the `ENABLE_TOOL_SEARCH` environment variable",
-      },
-      {
-        id: "C",
-        text: "ToolSearch activates only when explicitly called with `tool_search: true` in the API request",
-      },
-      {
-        id: "D",
-        text: "ToolSearch is always active and cannot be configured — it automatically selects the top 5 tools",
-      },
-    ],
-    correctAnswer: "B",
-    explanation:
-      "ToolSearch is a context management mechanism that activates when context window utilization exceeds approximately 10%, helping the model prioritize which tools to include in the working set. It can be force-enabled regardless of utilization using the `ENABLE_TOOL_SEARCH` environment variable. This is important when you have many MCP servers and want to reduce per-request token consumption from schema injection. It does not have a configurable threshold via `TOOL_SEARCH_THRESHOLD`.\n\nHow to implement:\n```bash\n# Force-enable ToolSearch regardless of context utilization\nexport ENABLE_TOOL_SEARCH=1\n\n# Then run Claude Code normally — it will use ToolSearch from the start\nclaude \"Analyze the database schema and suggest optimizations\"\n\n# In a CI environment\nENABLE_TOOL_SEARCH=1 claude --output-format stream-json \"Process documents\"\n```\n\n```yaml\n# GitHub Actions — enable ToolSearch for high-MCP-server-count runs\njobs:\n  claude-analysis:\n    steps:\n      - name: Run Claude with ToolSearch\n        env:\n          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}\n          ENABLE_TOOL_SEARCH: \"1\"\n        run: claude --output-format stream-json \"Analyze codebase\"\n```\n\n```typescript\n// SDK equivalent: pass tools selectively instead of all at once\n// ToolSearch handles this automatically when ENABLE_TOOL_SEARCH=1\n// Manually, you can filter tools before the API call:\nconst relevantTools = allTools.filter(t =>\n  t.name.includes(\"database\") || t.name.includes(\"schema\")\n);\n```",
-    keyConcept: "ToolSearch activates at >10% context window, configurable via ENABLE_TOOL_SEARCH",
-  },
-  {
-    id: "E2-006",
-    scenario: "Developer Productivity with Claude",
-    domain: 2,
-    domainName: "Tool Design & MCP Integration",
-    taskStatement: "2.4",
+    taskStatement: "2.3",
     difficulty: "intermediate",
     question:
-      "A `.mcp.json` file configures an MCP server that requires an API key. The team wants a fallback value of `dev-key-local` when the environment variable `API_KEY` is not set, for local development convenience. Which variable expansion syntax achieves this?",
+      "Your pipeline defines one extraction tool per document type: `extract_invoice`, `extract_receipt` and `extract_purchase_order`, each with a strict schema. Documents arrive unlabeled. In about 6% of calls Claude replies with a prose summary instead of calling any tool, and the downstream parser fails. Which `tool_choice` setting fixes this without hard-coding the document type?",
     options: [
-      {
-        id: "A",
-        text: "`${API_KEY || dev-key-local}` — JavaScript-style OR operator",
-      },
-      {
-        id: "B",
-        text: "`${API_KEY ?? dev-key-local}` — nullish coalescing operator",
-      },
-      {
-        id: "C",
-        text: "`${API_KEY:-dev-key-local}` — shell-style default value expansion",
-      },
-      {
-        id: "D",
-        text: "`$API_KEY?dev-key-local` — ternary expansion syntax",
-      },
+      { id: "A", text: "`{\"type\": \"auto\"}`, plus a system prompt instruction saying \"always answer by calling one of the extraction tools, never with text.\"" },
+      { id: "B", text: "`{\"type\": \"tool\", \"name\": \"extract_invoice\"}`, since invoices are the most common type and the schema can absorb the other types." },
+      { id: "C", text: "`{\"type\": \"any\"}`, so Claude must call one of the provided tools but still decides which extraction schema fits the document." },
+      { id: "D", text: "`{\"type\": \"none\"}`, and then parse the prose reply with regular expressions that map each document type onto its expected fields." },
     ],
     correctAnswer: "C",
     explanation:
-      ".mcp.json supports two variable expansion syntaxes: `${VAR}` for simple substitution and `${VAR:-default}` for substitution with a fallback value when the variable is unset or empty. The `:-` notation is borrowed from POSIX shell parameter expansion. JavaScript-style operators (`||`, `??`) are not supported. There is no ternary `?` syntax in .mcp.json variable expansion.\n\nHow to implement:\n```json\n{\n  \"mcpServers\": {\n    \"my-service\": {\n      \"command\": \"node\",\n      \"args\": [\"./mcp-server.js\"],\n      \"env\": {\n        \"API_KEY\": \"${API_KEY:-dev-key-local}\",\n        \"DB_URL\": \"${DATABASE_URL:-postgres://localhost:5432/devdb}\",\n        \"LOG_LEVEL\": \"${LOG_LEVEL:-info}\"\n      }\n    }\n  }\n}\n```\n\n```bash\n# With API_KEY set: uses the real key\nexport API_KEY=sk-prod-abc123\nclaude \"Query the database\"\n\n# Without API_KEY: falls back to dev-key-local\nunset API_KEY\nclaude \"Query the database\"\n# → server starts with API_KEY=dev-key-local\n\n# Simple substitution (no default — fails if unset):\n# \"API_KEY\": \"${REQUIRED_KEY}\"  ← will be empty string if unset\n```",
-    keyConcept: "Variable expansion syntax: ${VAR} and ${VAR:-default} in .mcp.json",
+      "C is correct. `any` guarantees that Claude calls one of the provided tools instead of returning text, and it still lets the model pick the schema that matches each unlabeled document.\n\nA is the default behavior plus a probabilistic instruction, which is what produces the 6% of prose today. B forces a single schema onto receipts and purchase orders. D gives up structured output altogether and replaces it with brittle parsing. Product note: current docs say Claude Opus 5.5 and Sonnet 5.5 reject `any` and forced `tool` with a 400 error; on those models, use `auto` with strict tool use or structured outputs.\n\nHow to implement:\n```python\nresponse = client.messages.create(\n    model=\"claude-haiku-5-5\",\n    max_tokens=2048,\n    tools=[extract_invoice, extract_receipt, extract_purchase_order],\n    tool_choice={\"type\": \"any\"},\n    messages=[{\"role\": \"user\", \"content\": document_text}],\n)\n```",
+    keyConcept: "tool_choice \"any\" guarantees a tool call while the model chooses which tool",
+    sources: [
+      { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
+  },
+  {
+    id: "E2-006",
+    scenario: "Multi-Agent Research System",
+    domain: 2,
+    domainName: "Tool Design & MCP Integration",
+    taskStatement: "2.1",
+    difficulty: "advanced",
+    question:
+      "A teammate added \"Always check the source for every statistic\" to the synthesis agent's system prompt. Since then the agent calls `fetch_source_document` (description: \"Downloads the full text of a source by URL; use only when a finding lacks a citation or a quote must be checked against the original\") for every number in the findings, although each finding already carries its citation and quote. Latency has tripled. What should you change?",
+    options: [
+      { id: "A", text: "Rename `fetch_source_document` to `download_full_text`, so the word \"source\" in the prompt no longer matches the tool's name." },
+      { id: "B", text: "Remove `fetch_source_document` from the synthesis agent and send every source check back through the coordinator and search agent." },
+      { id: "C", text: "Set `tool_choice: {\"type\": \"none\"}` on the synthesis agent's requests, so it can't call any tool while it combines the findings." },
+      { id: "D", text: "Reword the prompt line so each statistic keeps the citation from its finding, and fetch only when a finding has no citation." },
+    ],
+    correctAnswer: "D",
+    explanation:
+      "D is correct. The tool description already states when to fetch; the new system prompt line is a keyword-sensitive instruction (\"check the source\") that overrides it. Rewriting the instruction around the actual requirement, that every statistic keeps its citation, removes the unintended association with the fetch tool.\n\nA treats a matching word as the cause and hides it, leaving a vague instruction that can attach to some other tool. B removes a tool the agent legitimately needs for findings without citations and adds coordinator round trips. C blocks the legitimate fetches as well.\n\nHow to implement:\n```text\n# BEFORE\nAlways check the source for every statistic.\n\n# AFTER\nEvery statistic in the report must keep the citation and quote from its finding.\nCall fetch_source_document only if a finding has no citation or its quote\nlooks inconsistent with the claim.\n```",
+    keyConcept: "Reviewing system prompts for keyword-sensitive instructions that override tool descriptions",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
+    ],
   },
   {
     id: "E2-007",
@@ -717,93 +560,69 @@ const examDomain2Questions: Question[] = [
     taskStatement: "2.4",
     difficulty: "intermediate",
     question:
-      "A developer writes the following `.mcp.json` snippet:\n```json\n{\n  \"mcpServers\": {\n    \"my-api\": {\n      \"url\": \"${API_BASE_URL}/v2\",\n      \"headers\": {\n        \"Authorization\": \"Bearer ${AUTH_TOKEN}\"\n      }\n    }\n  }\n}\n```\nWhich fields support variable expansion in this configuration?",
+      "Your team connected a `code_intel` MCP server whose `find_references` tool resolves a symbol across 40 repositories using a prebuilt call graph, including calls made through dependency injection. Its description is \"Finds references.\" Traces show the agent almost always uses Grep instead and misses callers in the other repositories. What change makes the agent use the MCP tool when it should?",
     options: [
-      {
-        id: "A",
-        text: "Only the `url` field supports variable expansion; headers must use literal values",
-      },
-      {
-        id: "B",
-        text: "Variable expansion works in `url`, `headers`, `command`, `args`, and `env` fields of .mcp.json",
-      },
-      {
-        id: "C",
-        text: "Variable expansion is only supported in the `env` field; use env vars indirectly for other fields",
-      },
-      {
-        id: "D",
-        text: "Variable expansion works everywhere in .mcp.json including in server names and root keys",
-      },
+      { id: "A", text: "Remove Grep from the agent's tool list, so that `find_references` becomes the only search option for every kind of code lookup." },
+      { id: "B", text: "Expand the description to explain that it resolves symbols across all 40 repos, including injected calls, and what it returns." },
+      { id: "C", text: "Add a system prompt sentence telling the agent to \"prefer MCP tools over built-in tools whenever both of them might be able to help.\"" },
+      { id: "D", text: "Rename the tool to `grep_all_repos`, so the agent links it with the familiar Grep behavior it already prefers for code lookups." },
     ],
     correctAnswer: "B",
     explanation:
-      "The `.mcp.json` variable expansion feature supports `${VAR}` and `${VAR:-default}` syntax in the following specific fields: `command`, `args`, `env`, `url`, and `headers`. This covers both stdio-based servers (command/args/env) and HTTP-based servers (url/headers). Variable expansion does not apply to the server name keys or other structural fields in the JSON. The example correctly uses expansion in both `url` and `headers`.\n\nHow to implement:\n```json\n{\n  \"mcpServers\": {\n    \"api-server\": {\n      \"url\": \"${API_BASE_URL:-https://staging.api.com}/v2\",\n      \"headers\": {\n        \"Authorization\": \"Bearer ${AUTH_TOKEN}\",\n        \"X-Environment\": \"${APP_ENV:-development}\"\n      }\n    },\n    \"local-tool\": {\n      \"command\": \"${NODE_PATH:-node}\",\n      \"args\": [\"${MCP_SERVER_SCRIPT:-./mcp/server.js}\"],\n      \"env\": {\n        \"DB_HOST\": \"${DB_HOST:-localhost}\",\n        \"DB_PORT\": \"${DB_PORT:-5432}\"\n      }\n    }\n  }\n}\n```\n\n```bash\n# Verify expansion by checking which env vars are set\nenv | grep -E 'API_BASE_URL|AUTH_TOKEN|APP_ENV'\n\n# Set for current session\nexport API_BASE_URL=https://prod.api.com\nexport AUTH_TOKEN=$(cat ~/.secrets/api-token)\nclaude \"Use the API to fetch user data\"\n```",
-    keyConcept: "Variable expansion supported in: command, args, env, url, headers in .mcp.json",
+      "B is correct. With a two-word description, the agent has no reason to think the MCP tool can do more than Grep. Describing its capabilities and outputs in detail (cross-repository resolution, injected calls, what each result contains) lets the agent see when it is the better tool.\n\nA removes the right tool for plain text searches, such as error messages or config keys. C is a blanket rule that will pick MCP tools even where a built-in is better. D gives the tool a misleading name: it doesn't do text matching, so the agent would use it for the wrong jobs.\n\nHow to implement:\n```typescript\n{\n  name: \"find_references\",\n  description: \"Finds every caller of a function, class or method across all 40 company \" +\n    \"repositories using a prebuilt call graph, including calls through dependency \" +\n    \"injection and re-exports that text search misses. Input: a fully qualified symbol. \" +\n    \"Returns repo, file, line and the calling symbol for each reference. Use Grep instead \" +\n    \"for plain text such as log messages or config keys.\",\n}\n```",
+    keyConcept: "Detailed MCP tool descriptions keep the agent from defaulting to built-in tools",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 2.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Connect Claude Code to tools via MCP", url: "https://code.claude.com/docs/en/mcp" },
+    ],
   },
   {
     id: "E2-008",
-    scenario: "Customer Support Resolution Agent",
-    domain: 2,
-    domainName: "Tool Design & MCP Integration",
-    taskStatement: "2.3",
-    difficulty: "advanced",
-    question:
-      "You define a tool with `strict: true` in its schema definition. A colleague asks what guarantee this provides and what limitations it introduces. Which answer is most accurate?",
-    options: [
-      {
-        id: "A",
-        text: "`strict: true` guarantees the model always calls this tool and ignores other tools",
-      },
-      {
-        id: "B",
-        text: "`strict: true` enables constrained decoding, guaranteeing the tool call output conforms exactly to the schema — but the schema must follow strict mode limitations: all properties required, no additionalProperties, and no use of patterns like `allOf`/`anyOf`",
-      },
-      {
-        id: "C",
-        text: "`strict: true` validates the schema at definition time but provides no runtime guarantees",
-      },
-      {
-        id: "D",
-        text: "`strict: true` enables schema validation on both input and output, doubling the latency",
-      },
-    ],
-    correctAnswer: "B",
-    explanation:
-      "`strict: true` on a tool definition enables constrained decoding: the model's token generation is constrained to only produce outputs that are valid against the JSON schema. This is a strong runtime guarantee of schema compliance. However, it comes with schema limitations: all object properties must be listed in `required`, `additionalProperties` must be `false`, and combiners like `allOf`, `anyOf`, `oneOf` are not supported. Features like `minimum`/`maximum`, `minLength`, `maxLength`, `pattern`, and `const` are also unavailable in strict mode.\n\nHow to implement:\n```python\nimport anthropic\n\nclient = anthropic.Anthropic()\n\n# Tool with strict: True — constrained decoding guarantees schema compliance\nresponse = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    tools=[{\n        \"name\": \"extract_order\",\n        \"description\": \"Extract order details from text\",\n        \"strict\": True,  # Enable constrained decoding\n        \"input_schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"order_id\": {\"type\": \"string\"},\n                \"total\": {\"type\": \"number\"},\n                \"status\": {\"type\": \"string\", \"enum\": [\"pending\", \"shipped\", \"delivered\"]}\n            },\n            \"required\": [\"order_id\", \"total\", \"status\"],  # ALL properties must be required\n            \"additionalProperties\": False  # REQUIRED in strict mode\n        }\n    }],\n    messages=[{\"role\": \"user\", \"content\": \"Extract: Order #1234, $59.99, shipped\"}]\n)\n```\n\n```typescript\n// TypeScript equivalent\nconst response = await client.messages.create({\n  model: \"claude-opus-5\",\n  max_tokens: 1024,\n  tools: [{\n    name: \"extract_order\",\n    strict: true,\n    input_schema: {\n      type: \"object\" as const,\n      properties: {\n        order_id: { type: \"string\" },\n        total: { type: \"number\" },\n        status: { type: \"string\", enum: [\"pending\", \"shipped\", \"delivered\"] },\n      },\n      required: [\"order_id\", \"total\", \"status\"],\n      additionalProperties: false,\n    },\n  }],\n  messages: [{ role: \"user\", content: \"Extract order details...\" }],\n});\n```",
-    keyConcept: "strict: true enables constrained decoding with specific schema limitations",
-  },
-  {
-    id: "E2-009",
-    scenario: "Customer Support Resolution Agent",
+    scenario: "Multi-Agent Research System",
     domain: 2,
     domainName: "Tool Design & MCP Integration",
     taskStatement: "2.3",
     difficulty: "intermediate",
     question:
-      "A developer tries to add a `pattern` constraint to a JSON tool schema with `strict: true` to enforce that a phone number field matches `^\\+[1-9]\\d{1,14}$`. The tool definition is rejected. What is the correct approach?",
+      "The document-analysis subagent has a generic `fetch_url(url)` tool so it can load the papers the search agent found. Audits show it sometimes fetches arbitrary web pages mentioned inside those papers, pulling unvetted content into the analysis, and once it tried to fetch an internal admin URL that appeared in a document. What is the best change to the subagent's tooling?",
     options: [
-      {
-        id: "A",
-        text: "Use `minLength` and `maxLength` instead of `pattern` to constrain the phone number field",
-      },
-      {
-        id: "B",
-        text: "Switch to `strict: false` to allow `pattern`, then use server-side validation in the tool handler to enforce the format",
-      },
-      {
-        id: "C",
-        text: "Nest the pattern inside a `oneOf` schema combiner, which is allowed in strict mode",
-      },
-      {
-        id: "D",
-        text: "Add the regex pattern to the field description — the model will follow it via instruction following rather than constrained decoding",
-      },
+      { id: "A", text: "Keep `fetch_url`, and add a system prompt rule telling the subagent to fetch only documents that the coordinator explicitly assigned." },
+      { id: "B", text: "Remove all fetching from the subagent and have the coordinator paste the full text of every assigned paper into the subagent's prompt." },
+      { id: "C", text: "Replace `fetch_url` with a `load_document` tool that accepts only document IDs or URLs from approved sources and rejects the rest." },
+      { id: "D", text: "Keep `fetch_url` but log every request, then review the logs each week to find misuse and adjust the subagent's instructions." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "C",
     explanation:
-      "In `strict: true` mode, `pattern`, `minLength`, `maxLength`, `minimum`, `maximum`, `const`, and schema combiners (`allOf`, `anyOf`, `oneOf`) are not supported. If you need regex-level validation, the options are: (1) use `strict: false` and implement the validation in the tool handler server-side, or (2) use `strict: false` and rely on the model's instruction following. Option A is wrong because `minLength`/`maxLength` are also unavailable in strict mode. Option C is wrong because `oneOf` is not allowed in strict mode either.\n\nHow to implement:\n```python\n# WRONG — strict: True rejects pattern, minLength, maxLength\ntools_broken = [{\n    \"name\": \"validate_phone\",\n    \"strict\": True,\n    \"input_schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n            \"phone\": {\n                \"type\": \"string\",\n                \"pattern\": \"^\\\\+[1-9]\\\\d{1,14}$\"  # NOT allowed in strict mode\n            }\n        },\n        \"required\": [\"phone\"],\n        \"additionalProperties\": False\n    }\n}]\n\n# CORRECT — strict: False, validate server-side\ntools_correct = [{\n    \"name\": \"validate_phone\",\n    \"strict\": False,  # Allow pattern in schema (for documentation)\n    \"input_schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n            \"phone\": {\n                \"type\": \"string\",\n                \"description\": \"E.164 format: +[country][number], e.g. +14155552671\"\n            }\n        },\n        \"required\": [\"phone\"]\n    }\n}]\n\n# Server-side validation in tool handler\nimport re\ndef handle_validate_phone(phone: str):\n    if not re.match(r'^\\+[1-9]\\d{1,14}$', phone):\n        raise ValueError(f\"Invalid phone format: {phone}\")\n    return {\"valid\": True, \"phone\": phone}\n```",
-    keyConcept: "Strict mode schema limitations: no pattern, minLength, maxLength, combiners",
+      "C is correct. Replacing a generic tool with a constrained one that validates its input enforces the subagent's role in code: it can load the documents it is meant to analyze and nothing else, which also blocks the internal URL.\n\nA depends on prompt compliance, and the content being read (URLs inside papers) is exactly what pulls the model off course. B overloads the coordinator and the subagent's context with full texts, and loses on-demand loading. D detects misuse a week after it has already happened.\n\nHow to implement:\n```typescript\nconst APPROVED = [/^https:\\/\\/arxiv\\.org\\//, /^https:\\/\\/doi\\.org\\//, /^archive:\\/\\//];\n\nasync function loadDocument({ ref }: { ref: string }) {\n  if (!APPROVED.some(rx => rx.test(ref))) {\n    return { isError: true, content: [{ type: \"text\", text: JSON.stringify({\n      errorCategory: \"validation\", isRetryable: false,\n      message: \"Only approved document sources can be loaded.\" }) }] };\n  }\n  return { content: [{ type: \"text\", text: await fetchDocument(ref) }] };\n}\n```",
+    keyConcept: "Replacing generic tools with constrained alternatives",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Writing effective tools for agents (Anthropic Engineering)", url: "https://www.anthropic.com/research/writing-tools-for-agents" },
+    ],
+  },
+  {
+    id: "E2-009",
+    scenario: "Code Generation with Claude Code",
+    domain: 2,
+    domainName: "Tool Design & MCP Integration",
+    taskStatement: "2.3",
+    difficulty: "intermediate",
+    question:
+      "You defined a Claude Code subagent in `.claude/agents/security-reviewer.md` to review diffs and report findings, and you left out the `tools` field. In two sessions the reviewer \"fixed\" the issues it found by editing files, and once it ran a migration script through Bash. Its job is only to read and search code. What is the right fix?",
+    options: [
+      { id: "A", text: "Add `tools: Read, Grep, Glob` to its frontmatter so it can only read and search, and no longer inherits edit or shell tools." },
+      { id: "B", text: "Add a sentence to the subagent's prompt saying \"You are a reviewer; never edit files or run commands\", and keep inheriting all tools." },
+      { id: "C", text: "Add `disallowedTools: Write` to the subagent's frontmatter, so the reviewer can no longer create or overwrite files during a review." },
+      { id: "D", text: "Move the reviewer's instructions into the main CLAUDE.md, so the main agent does reviews itself and the subagent is no longer needed." },
+    ],
+    correctAnswer: "A",
+    explanation:
+      "A is correct. When `tools` is omitted, a subagent inherits every tool available to subagents, including Edit, Write and Bash. Listing only Read, Grep and Glob restricts it to what its role needs and prevents the misuse in the first place.\n\nB relies on prompt compliance, which is the mechanism that already failed. C removes Write but leaves Edit and Bash, the two tools it actually misused. D gives up the subagent's isolated context and specialization, and the main agent has every tool anyway.\n\nHow to implement:\n```markdown\n---\nname: security-reviewer\ndescription: Reviews diffs for security issues and reports findings. Never modifies code.\ntools: Read, Grep, Glob\n---\nYou review the changes you are given and report each finding with file, line and severity.\n```",
+    keyConcept: "Restricting a subagent's tool set to its role",
+    sources: [
+      { title: "Create custom subagents (Claude Code)", url: "https://code.claude.com/docs/en/sub-agents" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E2-010",
@@ -811,86 +630,72 @@ const examDomain2Questions: Question[] = [
     domain: 2,
     domainName: "Tool Design & MCP Integration",
     taskStatement: "2.4",
-    difficulty: "basic",
+    difficulty: "intermediate",
     question:
-      "A developer at a company wants to enforce a mandatory MCP security-scanning server for all Claude Code users on company macOS machines, without relying on each developer to configure it themselves. Where should this managed policy server be configured?",
+      "Security requires every developer's Claude Code to connect to exactly the company-approved set of MCP servers, including a mandatory secrets-scanning server, and developers must not be able to add others. All machines are managed macOS laptops. A colleague proposes writing this requirement into the managed CLAUDE.md at `/Library/Application Support/ClaudeCode/CLAUDE.md`. What should you do instead?",
     options: [
-      {
-        id: "A",
-        text: "In the project's `.mcp.json` — it will be committed to every repo and automatically applied",
-      },
-      {
-        id: "B",
-        text: "In `~/.claude.json` on each developer's machine using an onboarding script",
-      },
-      {
-        id: "C",
-        text: "In `/Library/Application Support/ClaudeCode/CLAUDE.md` — the managed policy location on macOS that is controlled by IT and cannot be overridden by users",
-      },
-      {
-        id: "D",
-        text: "In `/etc/claude/policy.json` — the system-wide policy file for Claude Code",
-      },
+      { id: "A", text: "Deploy `/Library/Application Support/ClaudeCode/managed-mcp.json` with the approved servers, giving that file exclusive control of MCP." },
+      { id: "B", text: "Keep the managed CLAUDE.md but write the rule in capital letters, telling Claude to connect only to the approved servers listed there." },
+      { id: "C", text: "Commit the approved servers to each repository's `.mcp.json`, so they load automatically for every developer who clones a company repo." },
+      { id: "D", text: "Push the approved servers into each developer's `~/.claude.json` with an onboarding script that IT re-runs on every laptop each month." },
     ],
-    correctAnswer: "C",
+    correctAnswer: "A",
     explanation:
-      "On macOS, `/Library/Application Support/ClaudeCode/CLAUDE.md` is the managed policy location for Claude Code. IT departments can deploy configuration here (via MDM or similar tools), and this file takes precedence over user-level and project-level settings. Users cannot override managed policy. `.mcp.json` requires the file to be present in each repo. `~/.claude.json` is per-user and can be modified. `/etc/claude/policy.json` is not a real Claude Code path.\n\nHow to implement:\n```bash\n# IT/admin: create the managed policy file (requires admin/sudo)\nsudo mkdir -p \"/Library/Application Support/ClaudeCode\"\n\nsudo tee \"/Library/Application Support/ClaudeCode/CLAUDE.md\" << 'EOF'\n# Company Managed Policy — DO NOT MODIFY\n\n## Required MCP Servers\nAll Claude Code sessions must use the security scanning server.\n\n## Prohibited Actions\n- Never commit to main branch directly\n- Never disable the security-scanner MCP server\n- All file writes outside project directory require approval\nEOF\n```\n\n```bash\n# Deploy via Jamf Pro (MDM) — example payload\n# Use \"Files and Processes\" policy to write:\n# Path: /Library/Application Support/ClaudeCode/CLAUDE.md\n# Content: (your policy content)\n\n# Verify managed policy is in place on a user's machine\ncat \"/Library/Application Support/ClaudeCode/CLAUDE.md\"\n```\n\n```json\n// Managed .mcp.json can also be placed here to enforce MCP servers\n// /Library/Application Support/ClaudeCode/mcp.json\n{\n  \"mcpServers\": {\n    \"security-scanner\": {\n      \"command\": \"/usr/local/bin/claude-security-mcp\",\n      \"args\": [\"--policy\", \"strict\"]\n    }\n  }\n}\n```",
-    keyConcept: "Managed policy CLAUDE.md at /Library/Application Support/ClaudeCode/ on macOS",
+      "A is correct. `managed-mcp.json` deploys a fixed set of MCP servers with exclusive control: Claude Code loads the servers in that file, and `claude mcp add` fails with an enterprise-policy error. CLAUDE.md, managed or not, only provides instructions and context; it doesn't configure or block MCP connections.\n\nB is the same misconception with more emphasis. C works per repository, does nothing outside company repos, and doesn't stop developers from adding their own servers. D writes to a user-editable file, so developers can change it between runs. If developers should keep their own servers and receive the company ones in addition, the docs point to the `managedMcpServers` managed setting instead, with `allowedMcpServers` and `deniedMcpServers` for filtering.\n\nHow to implement:\n```text\n# Deployed by MDM to /Library/Application Support/ClaudeCode/managed-mcp.json\n{\n  \"mcpServers\": {\n    \"secrets-scanner\": { \"type\": \"http\", \"url\": \"https://scanner.internal.example.com/mcp\" },\n    \"tickets\": { \"type\": \"http\", \"url\": \"https://tickets.internal.example.com/mcp\" }\n  }\n}\n\n# Check on a developer machine\nclaude mcp list    # shows only the managed servers\n```",
+    keyConcept: "managed-mcp.json enforces MCP servers; CLAUDE.md only carries instructions",
+    sources: [
+      { title: "Control MCP server access for your organization", url: "https://code.claude.com/docs/en/managed-mcp" },
+      { title: "How Claude remembers your project (CLAUDE.md)", url: "https://code.claude.com/docs/en/memory" },
+      { title: "Connect Claude Code to tools via MCP", url: "https://code.claude.com/docs/en/mcp" },
+    ],
   },
   {
     id: "E2-011",
-    scenario: "Multi-Agent Research System",
+    scenario: "Developer Productivity with Claude",
     domain: 2,
     domainName: "Tool Design & MCP Integration",
-    taskStatement: "2.4",
-    difficulty: "advanced",
+    taskStatement: "2.2",
+    difficulty: "intermediate",
     question:
-      "Your team's MCP server registry grows to 8 servers, each with an average of 12 tools. Before any user prompt is processed, you observe the request already consumes a significant portion of the context window. You want to use ToolSearch to mitigate this but need to understand its limits. Which statement is accurate?",
+      "Your agent uses a `deploy_preview` MCP tool. When the service account lacks access to a repository, the tool returns `isError: true` with \"Request failed, please try again.\" The agent does as told and retries up to its limit of 8 attempts on each such repository, burning several minutes per task before it gives up. What should the tool return for this case?",
     options: [
-      {
-        id: "A",
-        text: "ToolSearch eliminates tool schema context consumption entirely — schemas are only loaded when a tool is actually called",
-      },
-      {
-        id: "B",
-        text: "ToolSearch reduces the active tool set to the most relevant tools for the current request, decreasing per-request schema overhead, but some baseline schema context is still consumed",
-      },
-      {
-        id: "C",
-        text: "ToolSearch replaces all tool schemas with a single universal tool that accepts any JSON input",
-      },
-      {
-        id: "D",
-        text: "ToolSearch only works with stdio-based MCP servers; HTTP servers must include all tool schemas always",
-      },
+      { id: "A", text: "The same message, plus a server-side retry loop with exponential backoff, so the agent only sees the failure once the retries run out." },
+      { id: "B", text: "`isError: false` with an empty list of deployments, so the agent treats the repository as having nothing to deploy and simply moves on." },
+      { id: "C", text: "`isError: true` with `errorCategory: \"transient\"` and a `retryAfterSeconds` hint, so that the agent's retries are at least spaced out." },
+      { id: "D", text: "`isError: true`, `errorCategory: \"permission\"`, `isRetryable: false`, and a description of the missing access and who can grant it." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "D",
     explanation:
-      "ToolSearch is a retrieval mechanism that selects the most contextually relevant tools from the full registry and includes only those schemas in a given request. This reduces (but does not eliminate) schema context consumption. A baseline set of tool descriptions is still needed to enable the search itself. ToolSearch works independently of transport type (stdio vs HTTP). There is no universal JSON input tool that replaces all schemas.\n\nHow to implement:\n```bash\n# Enable ToolSearch to reduce per-request tool schema overhead\nexport ENABLE_TOOL_SEARCH=1\n\n# With 8 servers × 12 tools = 96 tool schemas\n# Without ToolSearch: all 96 schemas in every request\n# With ToolSearch: only ~10 most relevant schemas per request\n\nclaude \"Query the user database for active accounts created this month\"\n# ToolSearch selects: query_database, list_tables, get_schema\n# Excludes: file_ops, git_tools, email_sender, etc.\n```\n\n```typescript\n// Monitor token usage with and without ToolSearch\nconst withoutToolSearch = await client.messages.create({\n  model: \"claude-opus-5\",\n  tools: allTools, // All 96 tools\n  messages: [{ role: \"user\", content: \"Query the database\" }],\n  max_tokens: 1024,\n});\nconsole.log(\"Input tokens without ToolSearch:\", withoutToolSearch.usage.input_tokens);\n\n// With ToolSearch (ENABLE_TOOL_SEARCH=1), Claude Code automatically\n// reduces the active tool set. The baseline overhead remains for the\n// search index itself, but full schemas are only sent for relevant tools.\n```",
-    keyConcept: "ToolSearch reduces but does not eliminate tool schema context consumption",
+      "D is correct. A missing permission won't fix itself, so retrying wastes time. Structured metadata that labels it a non-retryable permission error, with a human-readable description of what access is missing, lets the agent stop at once and report or escalate.\n\nA hides the same uninformative error behind slower server-side retries. B disguises a failure as a valid empty result, so the task silently skips the repository. C mislabels the error as transient, and the agent keeps retrying, just more slowly.\n\nHow to implement:\n```typescript\nif (res.status === 403) {\n  return { isError: true, content: [{ type: \"text\", text: JSON.stringify({\n    errorCategory: \"permission\", isRetryable: false,\n    message: `Service account lacks deploy access to ${repo}. A repo admin must grant the 'preview-deployer' role.`,\n  }) }] };\n}\n```",
+    keyConcept: "Retryable vs non-retryable errors: structured metadata prevents wasted retries",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "MCP specification — Tools (error handling)", url: "https://modelcontextprotocol.io/specification/2026-07-28/server/tools" },
+    ],
   },
   {
     id: "E2-012",
-    scenario: "Customer Support Resolution Agent",
+    scenario: "Developer Productivity with Claude",
     domain: 2,
     domainName: "Tool Design & MCP Integration",
-    taskStatement: "2.4",
-    difficulty: "basic",
+    taskStatement: "2.5",
+    difficulty: "advanced",
     question:
-      "A support agent's MCP server is deployed locally alongside Claude Code on the same machine (not over a network). Which transport type is most appropriate for this deployment?",
+      "Before changing the signature of `formatCurrency`, the agent must find every caller. A Grep for `formatCurrency(` returns only 3 call sites, but QA says the function is used on dozens of screens. Investigation shows that `utils/money.ts` re-exports it as `fmtMoney`, and `ui/index.ts` re-exports it inside a `Money` object as `Money.format`. How should the agent find all usages?",
     options: [
-      { id: "A", text: "HTTP — always use HTTP for production deployments regardless of topology" },
-      { id: "B", text: "SSE — the legacy transport is still required for local servers" },
-      {
-        id: "C",
-        text: "stdio — the appropriate transport for locally spawned process-based MCP servers",
-      },
-      { id: "D", text: "WebSocket — the lowest-latency option for local inter-process communication" },
+      { id: "A", text: "Read every file in the `ui/` and `utils/` directories from start to end, and list each place where currency formatting seems to happen." },
+      { id: "B", text: "Glob for `**/*money*` and `**/*currency*`, and treat every file whose name matches one of those patterns as a caller of the function." },
+      { id: "C", text: "Repeat the Grep for `formatCurrency(` with case-insensitive and multiline matching turned on, so that it also catches the other forms." },
+      { id: "D", text: "Find every name the function is exported under, including `fmtMoney` and `Money.format`, then Grep for each name across the codebase." },
     ],
-    correctAnswer: "C",
+    correctAnswer: "D",
     explanation:
-      "stdio transport is designed for MCP servers that run as local processes, spawned and managed by Claude Code on the same machine. Communication happens over standard input/output pipes. HTTP transport is for network-deployed servers. SSE is deprecated. WebSocket is not an MCP transport type. For co-located local servers, stdio is the correct and most efficient choice.\n\nHow to implement:\n```bash\n# Add a local stdio MCP server\nclaude mcp add --transport stdio support-tools -- node /path/to/support-mcp-server.js\n\n# Or with Python\nclaude mcp add support-tools -- python3 /path/to/support_mcp_server.py\n\n# Check it was added with stdio transport\nclaude mcp list\n# support-tools: stdio — node /path/to/support-mcp-server.js\n```\n\n```json\n// .mcp.json — stdio for local co-deployed server\n{\n  \"mcpServers\": {\n    \"support-tools\": {\n      \"command\": \"node\",\n      \"args\": [\"/opt/support-agent/mcp-server.js\"],\n      \"env\": {\n        \"DB_URL\": \"${SUPPORT_DB_URL:-postgres://localhost/support}\",\n        \"LOG_LEVEL\": \"info\"\n      }\n    }\n  }\n}\n```\n\n```typescript\n// MCP server skeleton using stdio transport\nimport { Server } from \"@modelcontextprotocol/sdk/server/index.js\";\nimport { StdioServerTransport } from \"@modelcontextprotocol/sdk/server/stdio.js\";\n\nconst server = new Server({ name: \"support-tools\", version: \"1.0.0\" });\nconst transport = new StdioServerTransport();\nawait server.connect(transport); // Listens on stdin/stdout\n```",
-    keyConcept: "MCP stdio transport for local process-based servers",
+      "D is correct. To trace a function through wrapper modules, first identify every exported name it travels under, then search the codebase for each of those names. That catches the callers that a search for the original name can't see.\n\nA reads whole directories upfront, spends context, and still misses callers outside those two folders. B finds files by name, which says nothing about whether they call the function. C still searches for the original name, which the aliased callers never use.\n\nHow to implement:\n```text\n1. Grep  \"formatCurrency\"  output_mode=content   -> find re-exports and aliases\n2. Read  utils/money.ts, ui/index.ts            -> confirm fmtMoney, Money.format\n3. Grep  \"formatCurrency\\(|fmtMoney\\(|Money\\.format\\(\"  output_mode=files_with_matches\n```",
+    keyConcept: "Tracing usage across wrapper modules: collect exported names, then Grep each",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 2.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Claude Code tools reference", url: "https://code.claude.com/docs/en/tools-reference" },
+    ],
   },
 ];
 
@@ -907,285 +712,216 @@ const examDomain3Questions: Question[] = [
     taskStatement: "3.1",
     difficulty: "intermediate",
     question:
-      "A developer adds detailed project guidelines to the project's `CLAUDE.md`. Mid-session, the context window fills and compaction occurs. After compaction, the agent no longer follows the project guidelines. What is the root cause?",
+      "Two developers on the same commit see different behavior: in Ana's sessions Claude always runs `make lint` before committing; in Ben's it never does. Both have clean working trees, and the repository's CLAUDE.md never mentions linting. Ben runs `/memory` and sees only the project CLAUDE.md and his own empty user file. What is the most likely cause, and the fix that works for the whole team?",
     options: [
-      {
-        id: "A",
-        text: "Compaction deletes the CLAUDE.md file from disk, requiring the developer to restore it from version control",
-      },
-      {
-        id: "B",
-        text: "The guidelines were not in CLAUDE.md but were given as a conversational instruction — compaction summarizes the conversation and those instructions are lost, while CLAUDE.md survives by being re-injected from disk",
-      },
-      {
-        id: "C",
-        text: "CLAUDE.md has a 200-line limit and the guidelines exceeded it, causing partial injection after compaction",
-      },
-      {
-        id: "D",
-        text: "Compaction only preserves the most recent 10 messages; any instructions given before that are lost",
-      },
+      { id: "A", text: "The lint rule is in Ana's `~/.claude/CLAUDE.md`; move it into the committed project CLAUDE.md" },
+      { id: "B", text: "Ben's session is using a cached copy of CLAUDE.md; clear the cache and restart so it reloads" },
+      { id: "C", text: "The rule is missing from Ben's user file; copy it into his `~/.claude/CLAUDE.md` so both match" },
+      { id: "D", text: "Ana's project CLAUDE.md differs from Ben's; Ben must pull so he receives the same project file" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "A",
     explanation:
-      "CLAUDE.md is re-injected from disk after every compaction event — it always survives. What is lost during compaction is conversation history, which is summarized (lossy). If the developer's guidelines were delivered as conversational messages rather than written into CLAUDE.md, they will not survive compaction. The fix is to put persistent instructions in CLAUDE.md. The 200-line guideline is a recommendation for keeping files manageable, not a hard limit that causes partial injection.\n\nHow to implement:\n```markdown\n<!-- .claude/CLAUDE.md — persistent instructions that survive compaction -->\n\n## Code Style\n- Use 2-space indentation (not tabs)\n- Prefer `const` over `let`; never use `var`\n- All async functions must have explicit error handling\n\n## Testing Requirements\n- Every new function needs a unit test in __tests__/\n- Use Jest with ts-jest for TypeScript files\n- Test file naming: `<module>.test.ts`\n\n## Architecture Decisions\n- Use Repository pattern for all DB access\n- No business logic in API route handlers\n```\n\n```bash\n# Bad: conversational instruction (won't survive compaction)\n# User says: \"Always use 2-space indentation\"\n# → This will be lost after context compaction\n\n# Good: write it to CLAUDE.md before starting a long session\necho \"\\n## Style: use 2-space indentation\" >> .claude/CLAUDE.md\n# → Now it survives compaction\n```",
-    keyConcept: "CLAUDE.md survives compaction (re-injected from disk); conversational instructions do not",
+      "A is correct: the repository file is identical for both developers, so the extra instruction must come from a level that only Ana loads. User-level instructions in `~/.claude/CLAUDE.md` are not shared through version control; running `/memory` in Ana's session would list that file. Moving the rule into the project CLAUDE.md gives it to everyone. B describes a cache that does not exist: CLAUDE.md is read from disk. C fixes Ben's machine only; the next teammate has the same problem. D is ruled out by the stem: both are on the same commit with clean working trees.\n\nHow to implement:\n```markdown\n<!-- CLAUDE.md at the repository root (committed) -->\n## Before committing\n- Run `make lint` and fix every error before creating a commit\n```",
+    keyConcept: "Diagnose hierarchy issues with /memory: user-level instructions are not shared with teammates",
+    sources: [
+      { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E3-002",
-    scenario: "Developer Productivity with Claude",
+    scenario: "Code Generation with Claude Code",
     domain: 3,
     domainName: "Claude Code Configuration & Workflows",
     taskStatement: "3.1",
     difficulty: "basic",
     question:
-      "A team's project has grown and the CLAUDE.md file is now 450 lines long, covering coding standards, architecture decisions, testing conventions, security rules, and deployment procedures. Performance is degrading and context usage is high. What is the recommended approach?",
+      "A 450-line project CLAUDE.md mixes testing, API, security and deployment guidance. Four different leads own those topics, and their edits collide in the same file nearly every release. They want each topic maintained in its own file while Claude keeps loading all of it as project instructions in every session. What is the recommended structure?",
     options: [
-      {
-        id: "A",
-        text: "Increase the max_tokens limit to accommodate the larger CLAUDE.md",
-      },
-      {
-        id: "B",
-        text: "Split the content into multiple topic-specific files in `.claude/rules/` subdirectories — Claude Code discovers them recursively and the main CLAUDE.md can use `@import` to reference them selectively",
-      },
-      {
-        id: "C",
-        text: "Compress the CLAUDE.md using a custom minifier to reduce token count while preserving meaning",
-      },
-      {
-        id: "D",
-        text: "Move half the content to the user-level `~/.claude/CLAUDE.md` so it is split between two files",
-      },
+      { id: "A", text: "Split it into four CLAUDE.md files placed in `tests/`, `api/`, `security/` and `deploy/`" },
+      { id: "B", text: "Split it into topic files in `.claude/rules/`, such as `testing.md` and `api-conventions.md`" },
+      { id: "C", text: "Move each lead's section into that lead's own `~/.claude/CLAUDE.md` so their edits never collide" },
+      { id: "D", text: "Keep one file and add a CODEOWNERS rule so only one lead at a time can edit the CLAUDE.md" },
     ],
     correctAnswer: "B",
     explanation:
-      "The recommended approach for large CLAUDE.md files is to split content into topic-specific files under `.claude/rules/` subdirectories. Claude Code discovers these recursively. The main CLAUDE.md should stay under 200 lines (the target) and can use `@import` directives to selectively load additional rule files when relevant. This reduces per-request context consumption because not all rules need to be loaded for every task. Compressing or splitting between user and project levels would lose scoping clarity.\n\nHow to implement:\n```bash\n# Create a well-organized rules directory structure\nmkdir -p .claude/rules\n\n# Split by topic\ncat > .claude/rules/coding-standards.md << 'EOF'\n## TypeScript Standards\n- strict mode enabled\n- explicit return types required\n- no `any` types\nEOF\n\ncat > .claude/rules/security.md << 'EOF'\n## Security Rules\n- parameterized SQL only\n- no hardcoded secrets\n- validate all inputs with Zod\nEOF\n\ncat > .claude/rules/testing.md << 'EOF'\n## Testing Requirements\n- 80% coverage minimum\n- unit tests for all utils\n- e2e tests for critical flows\nEOF\n```\n\n```markdown\n<!-- .claude/CLAUDE.md — keep under 200 lines, import selectively -->\n# Project: MyApp\n\n## Quick Reference\n- Tech: Next.js 15, TypeScript, Postgres\n- Deploy: Vercel\n\n@import .claude/rules/coding-standards.md\n@import .claude/rules/security.md\n<!-- Only import testing rules when needed: @import .claude/rules/testing.md -->\n```",
-    keyConcept: "CLAUDE.md target: <200 lines; use .claude/rules/ for overflow, discovered recursively",
+      "B is correct: `.claude/rules/` is the documented way to split a monolithic CLAUDE.md into focused topic files. Rule files without a `paths` field load at launch like CLAUDE.md, so Claude keeps all the guidance, and each lead edits a separate file. A changes behavior: subdirectory CLAUDE.md files load only when Claude works with files in those folders, so security or deployment rules would vanish from most sessions. C removes the guidance from the shared project; teammates would no longer receive it. D keeps the collisions, just serialized, and the file stays monolithic.\n\nHow to implement:\n```text\n.claude/\n  CLAUDE.md            # short: build commands, project overview\n  rules/\n    testing.md\n    api-conventions.md\n    security.md\n    deployment.md\n```",
+    keyConcept: "Split a large CLAUDE.md into topic files in .claude/rules/",
+    sources: [
+      { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E3-003",
-    scenario: "Developer Productivity with Claude",
+    scenario: "Code Generation with Claude Code",
     domain: 3,
     domainName: "Claude Code Configuration & Workflows",
     taskStatement: "3.2",
     difficulty: "intermediate",
     question:
-      "A skill file has the following frontmatter:\n```yaml\n---\ndisable-model-invocation: true\nuser-invocable: false\n---\n```\nWhat does this configuration specify about the skill's execution behavior?",
+      "Your team's `/scaffold-endpoint` skill needs a resource name and an HTTP method. Developers often type `/scaffold-endpoint` with nothing after it, and Claude then guesses a resource name from whatever file is open. You want developers to be shown which parameters the skill expects when they invoke it. What should you add?",
     options: [
-      {
-        id: "A",
-        text: "The skill runs without any Claude model calls and cannot be triggered by users via slash commands",
-      },
-      {
-        id: "B",
-        text: "The skill disables all tools but still uses the model for reasoning; users cannot invoke it",
-      },
-      {
-        id: "C",
-        text: "The skill is hidden from the UI but can be invoked by agents with `user-invocable: false` overridden at runtime",
-      },
-      {
-        id: "D",
-        text: "The skill is deprecated and will be removed; `user-invocable: false` is the deprecation flag",
-      },
+      { id: "A", text: "A `context: fork` line so the skill runs in a subagent that asks for the missing values" },
+      { id: "B", text: "An `argument-hint: [resource] [method]` line in the skill's SKILL.md frontmatter" },
+      { id: "C", text: "A line in the project CLAUDE.md listing the arguments that each skill expects to receive" },
+      { id: "D", text: "A `disable-model-invocation: true` line so only developers can start it, with arguments" },
     ],
-    correctAnswer: "A",
+    correctAnswer: "B",
     explanation:
-      "`disable-model-invocation: true` means the skill executes its defined actions (shell commands, file operations, etc.) without making any Claude model API calls — it runs as pure automation. `user-invocable: false` means the skill does not appear in the slash command menu and cannot be directly triggered by users typing `/skill-name`; it can only be invoked programmatically by the system or other agents. Together, these define a non-interactive, automated skill.\n\nHow to implement:\n```markdown\n---\ndisable-model-invocation: true\nuser-invocable: false\n---\n\n# sync-dependencies\n\nThis skill runs without any Claude model calls and is not user-facing.\n\n```bash\nnpm install\nnpm audit fix\ngit add package-lock.json\ngit commit -m \"chore: sync dependencies\"\n```\n```\n\n```markdown\n---\n# Contrast: user-invocable skill with model invocation\ndisable-model-invocation: false\nuser-invocable: true\ndescription: \"Review the current PR for issues\"\n---\n\n# review-pr\n\nUse the GitHub MCP server to fetch the PR diff, then analyze it for:\n- Security vulnerabilities\n- Performance issues  \n- Missing tests\nProvide a structured review with severity ratings.\n```\n\n```bash\n# User-invocable skill appears in slash commands\n# User types: /review-pr\n# Non-user-invocable skills are hidden from this menu\nclaude /review-pr  # ✅ works\nclaude /sync-dependencies  # ❌ not in menu — system-only\n```",
-    keyConcept: "Skill frontmatter: disable-model-invocation suppresses model calls; user-invocable controls slash command visibility",
+      "B is correct: `argument-hint` in SKILL.md frontmatter tells developers which parameters the skill expects when they invoke it. A isolates the skill's context but does not tell anyone what to pass. C loads a list into every session and does nothing at invocation time. D controls who can invoke the skill (only the user, not Claude on its own) but says nothing about its parameters. Product note: the current docs describe `argument-hint` as the hint shown during autocomplete, so also tell the skill to stop and ask when `$ARGUMENTS` is empty.\n\nHow to implement:\n```markdown\n---\nname: scaffold-endpoint\ndescription: Scaffold a REST endpoint with handler, schema and tests\nargument-hint: [resource] [method]\n---\nIf $ARGUMENTS is empty, ask for the resource name and HTTP method before doing anything.\nScaffold the endpoint for: $ARGUMENTS\n```",
+    keyConcept: "argument-hint frontmatter shows developers the parameters a skill needs",
+    sources: [
+      { title: "Claude Code docs — Skills", url: "https://code.claude.com/docs/en/skills" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E3-004",
     scenario: "Code Generation with Claude Code",
     domain: 3,
     domainName: "Claude Code Configuration & Workflows",
-    taskStatement: "3.2",
+    taskStatement: "3.4",
     difficulty: "advanced",
     question:
-      "A skill needs to include the current git branch name in its execution context. The skill prompt reads:\n```\nYou are reviewing code on branch: !`git branch --show-current`\n```\nWhat does the `!\\`` `` syntax do at skill execution time?",
+      "Product asks for real-time order updates in the mobile app. The backend could push them over WebSockets, which needs a new connection gateway and sticky sessions, or through a managed pub/sub service, which means a new vendor with different authentication. Either way the change touches the API layer, the mobile client and the deployment config. How should you start with Claude Code?",
     options: [
-      {
-        id: "A",
-        text: "It escapes the backtick to prevent shell injection and passes the literal string `git branch --show-current` to the model",
-      },
-      {
-        id: "B",
-        text: "It dynamically executes the shell command at skill load time and injects the command's stdout output into the skill context",
-      },
-      {
-        id: "C",
-        text: "It marks the command as a tool call that Claude will execute using the Bash tool during the conversation",
-      },
-      {
-        id: "D",
-        text: "It is a Markdown code span and has no special execution semantics",
-      },
+      { id: "A", text: "Use direct execution with WebSockets, since it is the more common choice, and adjust later" },
+      { id: "B", text: "Use direct execution, telling Claude to stop and ask whenever it reaches an infrastructure choice" },
+      { id: "C", text: "Have Claude prototype both options directly on the main branch and keep the faster one" },
+      { id: "D", text: "Use plan mode to explore the code and compare both approaches before any file is edited" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "D",
     explanation:
-      "The `!\\`command\\`` syntax in CLAUDE.md and skill files is the dynamic context injection syntax. When the skill is loaded, Claude Code executes the shell command and replaces the `!\\`...\\`` expression with the command's stdout output. This allows skills and CLAUDE.md files to inject dynamic runtime information (like the current git branch, environment name, or tool versions) into the context. It is not a Bash tool call during the conversation and does not escape shell injection — it runs the command at load time.\n\nHow to implement:\n```markdown\n<!-- .claude/CLAUDE.md — dynamic context injection examples -->\n\n# Project Context\n\nCurrent git branch: !`git branch --show-current`\nNode version: !`node --version`\nLast deploy: !`git log --oneline -1 origin/main`\nOpen PRs: !`gh pr list --limit 3 --json title,number | jq -r '.[] | \"#\\(.number): \\(.title)\"'`\n\n## Environment\nApp running: !`curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/health 2>/dev/null || echo \"not running\"`\n```\n\n```markdown\n<!-- .claude/skills/code-review.md -->\n---\nuser-invocable: true\ndescription: Review code on current branch\n---\n\nYou are reviewing code on branch: !`git branch --show-current`\nChanged files: !`git diff --name-only main`\nTest coverage: !`cat coverage/coverage-summary.json 2>/dev/null | jq '.total.lines.pct'`\n\nReview the changed files for issues.\n```",
-    keyConcept: "Dynamic context injection: !`command` syntax executes shell command at skill load time",
+      "D is correct: two valid approaches with different infrastructure requirements, across several layers, is exactly the kind of architectural decision plan mode is for. Claude explores the code read-only and lays out the trade-offs before anything changes. A commits to an approach before comparing them, risking a costly rewrite. B starts editing before the decision is made, so work already done may have to be discarded. C writes two half-built implementations into the main branch to settle a question that analysis can answer first.\n\nHow to implement:\n```bash\nclaude --permission-mode plan\n# > Compare a WebSocket gateway vs managed pub/sub for real-time order updates.\n# > For each: files and services touched, infra and auth changes, risks. Recommend one.\n```",
+    keyConcept: "Plan mode for choosing between approaches with different infrastructure requirements",
+    sources: [
+      { title: "Claude Code docs — Permission modes (plan mode)", url: "https://code.claude.com/docs/en/permission-modes" },
+      { title: "Claude Code docs — Common workflows (plan mode, subagents)", url: "https://code.claude.com/docs/en/common-workflows" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E3-005",
-    scenario: "Code Generation with Claude Code",
+    scenario: "Developer Productivity with Claude",
     domain: 3,
     domainName: "Claude Code Configuration & Workflows",
-    taskStatement: "3.2",
+    taskStatement: "3.5",
     difficulty: "intermediate",
     question:
-      "A skill is defined with the following invocation signature:\n```\n/deploy $ARGUMENTS[0] to $ARGUMENTS[1]\n```\nA user types `/deploy main production`. What are the values of `$ARGUMENTS[0]` and `$ARGUMENTS[1]`?",
+      "A developer new to caching must add a read-through cache in front of a slow pricing service. Their prompt is one line: 'add caching to getPrice'. You suspect there are decisions they have not considered, such as invalidation when prices change and what happens when the cache is down. What should they do before Claude writes any code?",
     options: [
-      {
-        id: "A",
-        text: "`$ARGUMENTS[0]` = `main production` (full arguments string), `$ARGUMENTS[1]` = undefined",
-      },
-      {
-        id: "B",
-        text: "`$ARGUMENTS[0]` = `main`, `$ARGUMENTS[1]` = `production`",
-      },
-      {
-        id: "C",
-        text: "`$ARGUMENTS[0]` = `/deploy`, `$ARGUMENTS[1]` = `main`",
-      },
-      {
-        id: "D",
-        text: "Indexed arguments like `$ARGUMENTS[N]` are not supported; only `$ARGUMENTS` as a whole is",
-      },
+      { id: "A", text: "Ask Claude to interview them about the design until it could write a spec, then build" },
+      { id: "B", text: "Ask Claude to implement the most common caching approach and review the diff afterward" },
+      { id: "C", text: "Add a CLAUDE.md line saying 'consider cache invalidation' so it applies in all sessions" },
+      { id: "D", text: "Have Claude write the code and a test suite at once, and treat passing tests as proof" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "A",
     explanation:
-      "In Claude Code skills, `$ARGUMENTS` contains the full arguments string passed after the skill name. `$ARGUMENTS[N]` provides positional access to space-separated tokens: `$ARGUMENTS[0]` is the first token (`main`), `$ARGUMENTS[1]` is the second (`production`), and so on. `$N` (e.g., `$1`, `$2`) is an equivalent shorthand. The skill name itself is not included in the arguments. Both `$ARGUMENTS` (full string) and `$ARGUMENTS[N]` (indexed) are supported.\n\nHow to implement:\n```markdown\n<!-- .claude/skills/deploy.md -->\n---\nuser-invocable: true\ndescription: Deploy a branch to an environment\nallowed-tools: [Bash]\n---\n\n# Deploy Skill\n\nDeploy branch `$ARGUMENTS[0]` (or `$1`) to environment `$ARGUMENTS[1]` (or `$2`).\n\nSteps:\n1. Verify branch `$1` exists: run `git branch -a | grep $1`\n2. Check environment `$2` is valid (staging/production/preview)\n3. Run the deployment: `./scripts/deploy.sh $1 $2`\n4. Confirm deployment succeeded\n\nFull arguments string: $ARGUMENTS\n```\n\n```bash\n# Usage examples:\n# /deploy main production\n#   → $ARGUMENTS[0] = \"main\", $ARGUMENTS[1] = \"production\"\n#   → $1 = \"main\", $2 = \"production\"\n\n# /deploy feature/auth staging\n#   → $ARGUMENTS[0] = \"feature/auth\", $ARGUMENTS[1] = \"staging\"\n\n# /deploy main\n#   → $ARGUMENTS[0] = \"main\", $ARGUMENTS[1] = undefined\n#   → $ARGUMENTS = \"main\" (full string)\n```",
-    keyConcept: "Skill string substitutions: $ARGUMENTS (full), $ARGUMENTS[N] or $N (indexed positional)",
+      "A is correct: the interview pattern has Claude ask questions that surface considerations the developer has not anticipated, such as invalidation strategy, TTLs and failure modes, before anything is implemented in an unfamiliar domain. B bakes in defaults the developer never chose, and a diff review cannot show the decisions that were silently made. C adds an always-loaded line for one task and names only one of the open questions. D cannot help: tests written from the same unexamined assumptions will pass and prove nothing about the missing decisions.\n\nHow to implement:\n```text\nI need a read-through cache in front of getPrice() but haven't designed it.\nInterview me until you could write the spec (invalidation, TTL, behavior when\nthe cache is down, consistency needs), then write it to SPEC.md. Don't write code yet.\n```",
+    keyConcept: "Interview pattern: have Claude ask design questions before implementing in an unfamiliar domain",
+    sources: [
+      { title: "Claude Code docs — Best practices", url: "https://code.claude.com/docs/en/best-practices" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E3-006",
     scenario: "Claude Code for Continuous Integration",
     domain: 3,
     domainName: "Claude Code Configuration & Workflows",
-    taskStatement: "3.3",
+    taskStatement: "3.6",
     difficulty: "intermediate",
     question:
-      "You need to run Claude Code non-interactively in a CI pipeline. The pipeline should receive real-time streaming output as JSON events. Which command-line flags enable this behavior?",
+      "Your pull request review job runs `claude -p \"Review this diff\" --output-format json`, and a script reads the `result` field to post inline comments. About one run in ten breaks the script because the review text changes shape, sometimes a list and sometimes paragraphs. Every run must yield findings with file, line, severity and message. What change fixes this?",
     options: [
-      {
-        id: "A",
-        text: "`--headless --json-output` — headless disables the UI and json-output enables JSON streaming",
-      },
-      {
-        id: "B",
-        text: "`--output-format stream-json` — enables streaming JSON output for non-interactive/headless use",
-      },
-      {
-        id: "C",
-        text: "`--ci-mode --stream` — the dedicated CI mode flag with streaming enabled",
-      },
-      {
-        id: "D",
-        text: "`--no-interactive --format json` — the standard flags for CI JSON output",
-      },
+      { id: "A", text: "Add 'always answer as a JSON array' to the prompt and parse `result` with a lenient parser" },
+      { id: "B", text: "Add `--json-schema` with a findings schema and read the `structured_output` field instead" },
+      { id: "C", text: "Switch to `--output-format stream-json` and assemble the findings from the event stream" },
+      { id: "D", text: "Run a regex over `result` for file:line patterns and drop every line that doesn't match" },
     ],
     correctAnswer: "B",
     explanation:
-      "`--output-format stream-json` is the flag that enables streaming JSON output in Claude Code's headless mode. Each event (assistant message, tool call, tool result, completion) is emitted as a JSON object on a new line, enabling the CI pipeline to process events in real time. There is no `--headless`, `--ci-mode`, `--stream`, or `--no-interactive` flag for this purpose. The `--continue` flag can be combined with `--output-format stream-json` to resume a previous session.\n\nHow to implement:\n```bash\n# Basic headless run with streaming JSON\nclaude --output-format stream-json \\\n  --permission-mode bypassPermissions \\\n  \"Run tests and fix any failures\" \\\n  2>&1 | tee ci-output.jsonl\n\n# Parse specific event types in CI\nclaude --output-format stream-json \"Analyze code\" | \\\n  node -e \"\n  const readline = require('readline');\n  const rl = readline.createInterface({ input: process.stdin });\n  rl.on('line', line => {\n    const event = JSON.parse(line);\n    if (event.type === 'result') {\n      console.log('Final result:', event.result);\n      process.exit(event.subtype === 'success' ? 0 : 1);\n    }\n  });\n  \"\n```\n\n```yaml\n# GitHub Actions CI step\n- name: Claude Code Analysis\n  run: |\n    claude \\\n      --output-format stream-json \\\n      --allowedTools Read,Grep,Glob \\\n      --max-turns 20 \\\n      \"Check for security vulnerabilities in changed files\" \\\n      | jq -r 'select(.type==\"result\") | .result'\n  env:\n    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}\n```",
-    keyConcept: "Headless mode: --output-format stream-json for real-time JSON event streaming",
+      "B is correct: `--output-format json` only wraps Claude's free text in a JSON envelope (`result`, session ID, metadata). Adding `--json-schema` makes Claude return output that conforms to the schema, in the `structured_output` field, which the script can post as inline comments. A still depends on the model following an instruction, so some runs will still break. C changes how output is delivered (newline-delimited events), not the shape of the review. D guesses structure from free text and silently loses findings. The docs add that `structured_output` is absent if the run ends without valid output, so check for it.\n\nHow to implement:\n```bash\ngh pr diff \"$PR\" | claude -p \"Review this diff for bugs and security issues\" \\\n  --output-format json \\\n  --json-schema '{\"type\":\"object\",\"properties\":{\"findings\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"file\":{\"type\":\"string\"},\"line\":{\"type\":\"integer\"},\"severity\":{\"type\":\"string\",\"enum\":[\"high\",\"medium\",\"low\"]},\"message\":{\"type\":\"string\"}},\"required\":[\"file\",\"line\",\"severity\",\"message\"]}}},\"required\":[\"findings\"]}' \\\n  | jq '.structured_output.findings'\n```",
+    keyConcept: "--output-format json with --json-schema yields machine-parseable findings in structured_output",
+    sources: [
+      { title: "Claude Code docs — Run Claude Code programmatically (-p)", url: "https://code.claude.com/docs/en/headless" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E3-007",
-    scenario: "Claude Code for Continuous Integration",
+    scenario: "Code Generation with Claude Code",
     domain: 3,
     domainName: "Claude Code Configuration & Workflows",
-    taskStatement: "3.3",
-    difficulty: "intermediate",
+    taskStatement: "3.5",
+    difficulty: "advanced",
     question:
-      "A CI pipeline runs Claude Code with `--allowedTools Read,Grep,Glob`. During execution, Claude attempts to call the `Bash` tool to run a test suite. What happens?",
+      "After Claude refactors a checkout module you find three problems: the new discount function rounds before tax is applied, the tax function now assumes its input is already rounded, and the order summary shows values from both. Fixing any one of them changes what the other two should do. How should you give Claude this feedback?",
     options: [
-      {
-        id: "A",
-        text: "The Bash tool call is queued and executed after the session ends as a post-run step",
-      },
-      {
-        id: "B",
-        text: "The Bash tool call is blocked — `--allowedTools` defines a whitelist and any tool not in the list is denied",
-      },
-      {
-        id: "C",
-        text: "The Bash tool call succeeds because `Bash` is a built-in tool that cannot be restricted",
-      },
-      {
-        id: "D",
-        text: "Claude is informed that Bash is unavailable and automatically substitutes with a `Read` call",
-      },
+      { id: "A", text: "Describe all three problems and how they interact in one message so they are fixed together" },
+      { id: "B", text: "Report the rounding problem first, wait for its fix, then report tax, then the order summary" },
+      { id: "C", text: "Open three new sessions, one per problem, so each fix gets a clean and focused context" },
+      { id: "D", text: "Revert the refactor and have Claude redo it from scratch using the same original prompt" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "A",
     explanation:
-      "`--allowedTools` creates an explicit whitelist of permitted tools for a Claude Code session. Any tool not listed — including built-in tools like Bash, Edit, and Write — is blocked. Claude will receive an error when attempting to use a denied tool and must reason about alternatives within the allowed set. There is no automatic substitution or bypass for built-in tools. This mechanism is used in CI to enforce the principle of least privilege.\n\nHow to implement:\n```bash\n# Read-only analysis — only allow read tools\nclaude --allowedTools Read,Grep,Glob \\\n  --output-format stream-json \\\n  \"Analyze code quality and report issues (no changes)\"\n\n# Allow specific operations needed for linting\nclaude --allowedTools Read,Grep,Glob,Edit,Bash \\\n  \"Run eslint --fix on all TypeScript files\"\n\n# Explicitly deny all tools except MCP server tools\nclaude --allowedTools \"mcp__my-server__query_db,mcp__my-server__list_tables\" \\\n  \"What tables exist and how many rows in each?\"\n```\n\n```typescript\n// SDK: specify allowed tools in the tools array directly\nconst result = await client.messages.create({\n  model: \"claude-opus-5\",\n  max_tokens: 2048,\n  // Only include tool definitions for tools you want to allow\n  tools: [\n    { name: \"Read\", description: \"Read file contents\", input_schema: {...} },\n    { name: \"Grep\", description: \"Search file contents\", input_schema: {...} },\n    // Bash, Edit, Write intentionally excluded\n  ],\n  messages: [{ role: \"user\", content: \"Analyze the codebase\" }],\n});\n```",
-    keyConcept: "--allowedTools whitelist blocks any tool not explicitly permitted, including built-ins",
+      "A is correct: when fixes interact, giving every issue and the relationship between them in one detailed message lets Claude design a consistent fix, for example deciding once where rounding happens. B is the right pattern for independent problems; here each sequential fix would be built on assumptions the next fix changes, causing churn. C is worse still: three isolated sessions cannot see each other's changes, so their fixes will conflict. D repeats the same prompt, which is likely to reproduce the same design and discards the useful parts of the refactor.\n\nHow to implement:\n```text\nThree linked problems in the checkout refactor; fix them together:\n1. applyDiscount() rounds before tax; rounding must happen once, after tax.\n2. computeTax() now assumes rounded input; it must accept unrounded amounts.\n3. OrderSummary shows both values; it should show only the final rounded total.\nAdd a test covering a discounted, taxed order with fractional cents.\n```",
+    keyConcept: "Send interacting issues in one detailed message; iterate sequentially only for independent issues",
+    sources: [
+      { title: "Claude Code docs — Best practices", url: "https://code.claude.com/docs/en/best-practices" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E3-008",
     scenario: "Claude Code for Continuous Integration",
     domain: 3,
     domainName: "Claude Code Configuration & Workflows",
-    taskStatement: "3.3",
-    difficulty: "advanced",
+    taskStatement: "3.6",
+    difficulty: "intermediate",
     question:
-      "A PreToolUse hook script exits with code 2 when it detects that Claude is about to delete a file outside the project directory. What is the effect of exit code 2 from a shell hook?",
+      "A CI step asks Claude Code to generate tests for each pull request. Reviewers reject most of them: they assert getters and constants, build their own database mocks even though the repository has shared fixtures in `tests/fixtures/`, and ignore the team rule that every bug fix needs a regression test. The prompt is 'write tests for the changed files'. What change most improves the output across all pull requests?",
     options: [
-      {
-        id: "A",
-        text: "Exit code 2 indicates success with warnings — the tool call proceeds but a warning is logged",
-      },
-      {
-        id: "B",
-        text: "Exit code 2 blocks the tool call and surfaces the hook's stderr output to Claude as the reason for denial",
-      },
-      {
-        id: "C",
-        text: "Exit code 2 terminates the entire Claude Code session immediately",
-      },
-      {
-        id: "D",
-        text: "Exit code 2 is treated the same as exit code 0 — non-zero exit codes only differ in severity",
-      },
+      { id: "A", text: "Generate twice as many tests per pull request and let reviewers keep the useful ones" },
+      { id: "B", text: "Add a per-run instruction to the CI prompt saying 'write high-value tests only'" },
+      { id: "C", text: "Document the test standards, what makes a test valuable, and the fixtures in CLAUDE.md" },
+      { id: "D", text: "Run the test generator on a higher-tier model so it can infer the team's preferences" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "C",
     explanation:
-      "Claude Code shell hooks use a three-value exit code convention: exit code 0 means proceed (allow the tool call), exit code 2 means block (deny the tool call, and Claude receives the hook's stderr as the reason), and any other non-zero code means proceed but log the error. Exit code 2 is the specific value for programmatic blocking. This allows hooks to function as policy enforcement gates — the hook can explain exactly why a tool call was denied by writing to stderr.\n\nHow to implement:\n```bash\n#!/bin/bash\n# .claude/hooks/pre-tool-use.sh\n# Blocks writes/deletes to files outside the project directory\n\nTOOL_NAME=\"$1\"\nTOOL_INPUT=\"$2\"  # JSON string of tool arguments\n\n# Block file operations outside project dir\nif echo \"$TOOL_INPUT\" | grep -qE '\"path\":\\s*\"/etc|\"path\":\\s*\"/usr|\"path\":\\s*\"/home'; then\n  echo \"Blocked: Cannot modify system files outside project directory\" >&2\n  exit 2  # Block the action — stderr message goes to Claude\nfi\n\n# Block production env file modifications\nif echo \"$TOOL_INPUT\" | grep -q 'production.env\\|.env.prod'; then\n  echo \"Blocked: Direct modification of production env files is prohibited. Use secrets manager.\" >&2\n  exit 2\nfi\n\nexit 0  # Allow the action\n```\n\n```json\n// .claude/settings.json — register the hook\n{\n  \"hooks\": {\n    \"PreToolUse\": [\n      {\n        \"type\": \"command\",\n        \"command\": \".claude/hooks/pre-tool-use.sh\"\n      }\n    ]\n  }\n}\n```",
-    keyConcept: "Hook exit codes: 0 (proceed), 2 (block with reason), other non-zero (proceed + log)",
+      "C is correct: CLAUDE.md is how CI-invoked Claude Code receives project context. Writing down the testing standards, which tests the team values (such as regression tests for bug fixes) and which fixtures exist gives every run the knowledge it was missing. A multiplies low-value output and the reviewers' workload. B is a vague instruction that does not say what 'high-value' means or that fixtures exist. D cannot infer conventions that are not written anywhere it can see. Product note: `claude -p` loads CLAUDE.md by default, but `--bare` skips it, so do not run this step in bare mode.\n\nHow to implement:\n```markdown\n<!-- CLAUDE.md -->\n## Testing standards\n- Every bug fix includes a regression test that fails before the fix\n- Do not test trivial getters, setters or constants\n- Use the shared fixtures in tests/fixtures/ (db.ts, users.ts); never hand-roll DB mocks\n- Test behavior through public APIs, including error paths\n```",
+    keyConcept: "CLAUDE.md gives CI-invoked Claude Code the testing standards and fixtures it needs",
+    sources: [
+      { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
+      { title: "Claude Code docs — Run Claude Code programmatically (-p)", url: "https://code.claude.com/docs/en/headless" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E3-009",
     scenario: "Developer Productivity with Claude",
     domain: 3,
     domainName: "Claude Code Configuration & Workflows",
-    taskStatement: "3.3",
+    taskStatement: "3.4",
     difficulty: "intermediate",
     question:
-      "A development team wants to run a custom context-building script before any long Claude Code session to inject relevant project state. Which hook event fires exactly once at the very beginning of a Claude Code session?",
+      "You are planning a change to how a legacy system handles user sessions. Discovery means reading dozens of files across three services. In an earlier attempt, raw file contents filled the session, and by the implementation phase Claude had lost track of decisions made at the start. How should you run the discovery phase this time?",
     options: [
-      {
-        id: "A",
-        text: "`UserPromptSubmit` — fires when the first user message is submitted",
-      },
-      {
-        id: "B",
-        text: "`PreToolUse` — fires before the first tool call in the session",
-      },
-      {
-        id: "C",
-        text: "`SessionStart` — fires once when the Claude Code session is initialized",
-      },
-      {
-        id: "D",
-        text: "`SubagentStart` — fires at the beginning of any agent execution, including the top-level session",
-      },
+      { id: "A", text: "Delegate discovery to the Explore subagent so only a summary comes back to the main session" },
+      { id: "B", text: "Paste the relevant files into the main session yourself so Claude reads them all in one place" },
+      { id: "C", text: "Run discovery in direct execution, then use `/compact` after it finishes reading everything" },
+      { id: "D", text: "Skip the discovery and rely on a CLAUDE.md architecture section to describe the services" },
     ],
-    correctAnswer: "C",
+    correctAnswer: "A",
     explanation:
-      "`SessionStart` fires exactly once when a Claude Code session initializes, before any user interaction. It is the correct hook for one-time setup actions like injecting environment context, initializing state files, or running pre-session scripts. `UserPromptSubmit` fires on each user message, not just the first. `PreToolUse` fires before tool calls, which have not yet occurred at session start. `SubagentStart` is specific to subagent lifecycle events, not the main session start.\n\nHow to implement:\n```bash\n#!/bin/bash\n# .claude/hooks/session-start.sh\n# Runs once when a Claude Code session starts\n\n# Build dynamic context for CLAUDE.md\ncat > .claude/SESSION_CONTEXT.md << EOF\n## Session Context (auto-generated at start)\nDate: $(date)\nBranch: $(git branch --show-current)\nUncommitted changes: $(git status --porcelain | wc -l | tr -d ' ') files\nFailing tests: $(npm test 2>/dev/null | grep -c 'FAIL' || echo 'unknown')\nEnvironment: ${APP_ENV:-development}\nEOF\n\necho \"Session context initialized\" >&2\nexit 0\n```\n\n```json\n// .claude/settings.json\n{\n  \"hooks\": {\n    \"SessionStart\": [\n      {\n        \"type\": \"command\",\n        \"command\": \".claude/hooks/session-start.sh\"\n      }\n    ],\n    \"PreToolUse\": [...],\n    \"PostToolUse\": [...]\n  }\n}\n```",
-    keyConcept: "Hook events: SessionStart fires once at session initialization",
+      "A is correct: the Explore subagent reads files in its own context and returns a summary, so the verbose discovery output never crowds out the decisions in the main conversation. B puts the same raw content into the main session, which is what failed before. C lets the context fill first and then relies on a lossy summary of everything, including the early decisions. D trusts a description that may be outdated for a legacy system and skips the investigation the change needs. Product note: the current docs say context exhaustion is rarer with 1M-token windows, but they still recommend subagents to keep noisy exploration out of the main conversation.\n\nHow to implement:\n```text\nUse the Explore subagent (very thorough) to find how sessions are created,\nrefreshed and invalidated across auth-service, gateway and web-app. Return\na summary: files involved, data flow, and anything surprising. No edits.\n```",
+    keyConcept: "Explore subagent isolates verbose discovery and returns a summary to the main conversation",
+    sources: [
+      { title: "Claude Code docs — Subagents (Explore, Plan)", url: "https://code.claude.com/docs/en/sub-agents" },
+      { title: "Claude Code docs — Common workflows (plan mode, subagents)", url: "https://code.claude.com/docs/en/common-workflows" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E3-010",
@@ -1195,29 +931,21 @@ const examDomain3Questions: Question[] = [
     taskStatement: "3.3",
     difficulty: "advanced",
     question:
-      "A security team wants to intercept all tool calls and make a real-time HTTP request to their audit service before each tool executes. Which hook type and event combination achieves this?",
+      "`.claude/rules/api.md` begins with the frontmatter `paths: [\"src/api/*.ts\"]`. Claude applies the rules when editing `src/api/router.ts` but ignores them when editing `src/api/v2/orders.ts` and `src/api/v2/users.ts`. What are the cause and the fix?",
     options: [
-      {
-        id: "A",
-        text: "Hook type: `command`; event: `PostToolUse` — runs a shell script after each tool call to log it",
-      },
-      {
-        id: "B",
-        text: "Hook type: `http`; event: `PreToolUse` — sends an HTTP request to the audit service before each tool call, and can block the call by returning a non-200 response",
-      },
-      {
-        id: "C",
-        text: "Hook type: `prompt`; event: `PermissionRequest` — adds audit context to the permission dialog",
-      },
-      {
-        id: "D",
-        text: "Hook type: `agent`; event: `PreToolUse` — spawns an audit subagent before each tool call",
-      },
+      { id: "A", text: "Path rules load only at startup; restart the session after opening a file under `src/api/v2/`" },
+      { id: "B", text: "`*` matches a single directory level; change the pattern to `src/api/**/*.ts` for subfolders" },
+      { id: "C", text: "Rules can't match nested folders; add a CLAUDE.md inside `src/api/v2/` with the same rules" },
+      { id: "D", text: "The glob must be absolute; change it to the full path of `src/api` on each developer machine" },
     ],
     correctAnswer: "B",
     explanation:
-      "Claude Code supports four hook types: `command` (shell script), `http` (HTTP request), `prompt` (prompt injection), and `agent` (subagent invocation). For real-time HTTP audit calls before each tool executes, the `http` hook type on the `PreToolUse` event is the correct combination. The HTTP hook sends a request to the specified URL and can block the tool call if the response indicates denial. Using `PostToolUse` would be post-hoc and cannot block the call.\n\nHow to implement:\n```json\n// .claude/settings.json — HTTP hook for real-time audit\n{\n  \"hooks\": {\n    \"PreToolUse\": [\n      {\n        \"type\": \"http\",\n        \"url\": \"https://audit.internal.company.com/claude/pre-tool\",\n        \"method\": \"POST\",\n        \"headers\": {\n          \"Authorization\": \"Bearer ${AUDIT_API_KEY}\",\n          \"Content-Type\": \"application/json\"\n        }\n      }\n    ],\n    \"PostToolUse\": [\n      {\n        \"type\": \"http\",\n        \"url\": \"https://audit.internal.company.com/claude/post-tool\",\n        \"method\": \"POST\"\n      }\n    ]\n  }\n}\n```\n\n```python\n# Audit service endpoint (FastAPI example)\nfrom fastapi import FastAPI, Request\nfrom fastapi.responses import JSONResponse\n\napp = FastAPI()\n\n@app.post(\"/claude/pre-tool\")\nasync def audit_pre_tool(request: Request):\n    body = await request.json()\n    tool_name = body.get(\"tool_name\")\n    tool_input = body.get(\"tool_input\")\n    \n    # Log the audit event\n    await log_audit(tool_name, tool_input)\n    \n    # Block dangerous operations\n    if tool_name == \"Bash\" and \"rm -rf\" in str(tool_input):\n        return JSONResponse(status_code=403, content={\"block\": True, \"reason\": \"Dangerous rm -rf blocked\"})\n    \n    # Allow everything else\n    return JSONResponse(status_code=200, content={\"allow\": True})\n```",
-    keyConcept: "Hook types: command, http, prompt, agent — http+PreToolUse for real-time audit blocking",
+      "B is correct: in a `paths` glob, `src/api/*.ts` matches only files directly inside `src/api/`; `**` is needed to match files in subfolders. A is wrong because path-scoped rules load during the session, when Claude reads or edits a matching file. C is wrong because globs with `**` match nested folders, which is the main advantage of rules over per-directory CLAUDE.md files. D is wrong because patterns are relative to the project directory that contains `.claude/`; absolute paths would break on every other machine.\n\nHow to implement:\n```markdown\n---\npaths:\n  - \"src/api/**/*.ts\"\n---\n# API rules\n- Validate every request body with the shared schema helper\n```",
+    keyConcept: "Glob patterns in paths: * stays in one directory, ** spans subdirectories",
+    sources: [
+      { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E3-011",
@@ -1227,29 +955,21 @@ const examDomain3Questions: Question[] = [
     taskStatement: "3.2",
     difficulty: "advanced",
     question:
-      "A skill needs to fork its execution into a new isolated context rather than continuing in the current conversation context. Which frontmatter key enables this behavior?",
+      "Your `/map-dependencies` skill walks the whole repository and prints hundreds of lines of import graphs before giving a ten-line summary. Developers run it in the middle of a task, and afterward their session is cluttered and harder to steer. They need only the summary in the main conversation. Which frontmatter change fits best?",
     options: [
-      {
-        id: "A",
-        text: "`model: claude-sonnet-5` — specifying a model causes the skill to run in a separate API call",
-      },
-      {
-        id: "B",
-        text: "`context: fork` — explicitly forks the execution into a new isolated context window",
-      },
-      {
-        id: "C",
-        text: "`agent: true` — marks the skill as an agent, which automatically receives a fresh context",
-      },
-      {
-        id: "D",
-        text: "`user-invocable: false` — non-user-invocable skills always run in isolated contexts",
-      },
+      { id: "A", text: "Set `disable-model-invocation: true` so the skill runs only when a developer types its name" },
+      { id: "B", text: "Set `allowed-tools: Read Grep Glob` so the skill cannot write anything while it runs" },
+      { id: "C", text: "Set `context: fork` so the skill runs in an isolated subagent and returns only its result" },
+      { id: "D", text: "Set `user-invocable: false` so Claude runs it on its own instead of the developer" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "C",
     explanation:
-      "`context: fork` in a skill's frontmatter causes the skill to execute in a new, isolated context window forked from the current session state. This is distinct from the default behavior of continuing in the same conversation context. It is useful for skills that need to do exploratory work without polluting the main conversation, or for skills that need a clean context for accurate reasoning. `model:` specifies which model to use, not whether to fork. `agent: true` marks the skill as an agent but does not imply context forking.\n\nHow to implement:\n```markdown\n---\ncontext: fork\nuser-invocable: true\nmodel: claude-sonnet-5\ndescription: \"Explore refactoring options without affecting main session\"\n---\n\n# explore-refactor\n\nYou are exploring (not implementing) a refactoring strategy for $ARGUMENTS.\n\n1. Read the target files\n2. Draft 3 different refactoring approaches with trade-offs\n3. Return your recommendation summary to the parent context\n\nDo NOT make any file edits — this is exploratory only.\n```\n\n```markdown\n---\ncontext: fork\nuser-invocable: true\ndescription: \"Run security audit in isolated context\"\nallowed-tools: [Read, Grep, Glob]\n---\n\n# security-audit\n\nAudit the codebase for security vulnerabilities.\nThis runs in a forked context so findings don't pollute the main conversation.\n\nScan for:\n- SQL injection patterns\n- Hardcoded secrets\n- Unsafe eval/exec usage\n- Missing input validation\n\nReturn a structured JSON report.\n```",
-    keyConcept: "Skill frontmatter: context: fork creates an isolated execution context",
+      "C is correct: `context: fork` runs the skill in an isolated subagent. The verbose graph output stays in that context, and only the result returns to the main conversation. A changes who can trigger the skill; the output would still land in the main session. B pre-approves read-only tools; it does nothing about where the output goes. D hides the skill from the `/` menu so only Claude can invoke it, and the output still enters the conversation. Product note: the docs point out that a forked skill does not see the conversation history, so its prompt must be self-contained.\n\nHow to implement:\n```markdown\n---\nname: map-dependencies\ndescription: Map module dependencies and summarize hotspots\ncontext: fork\nagent: Explore\n---\nBuild the import graph for the repository. Return only a summary of at most\n10 lines: cycles, most-imported modules, and suspicious cross-layer imports.\n```",
+    keyConcept: "context: fork runs verbose skills in an isolated subagent so only the result reaches the main session",
+    sources: [
+      { title: "Claude Code docs — Skills", url: "https://code.claude.com/docs/en/skills" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E3-012",
@@ -1259,29 +979,21 @@ const examDomain3Questions: Question[] = [
     taskStatement: "3.3",
     difficulty: "intermediate",
     question:
-      "A headless Claude Code pipeline needs to continue a previous session by ID. The pipeline has the session ID from the previous run stored in a variable `$SESSION_ID`. Which flag resumes the session?",
+      "A teammate added `.claude/rules/graphql.yaml`, which starts with frontmatter between `---` markers containing `paths: [\"**/*.graphql\"]`, followed by the schema conventions. Weeks later, Claude still ignores those conventions when editing `.graphql` files anywhere in the repository, and the file never appears among the loaded rules. What is the fix?",
     options: [
-      {
-        id: "A",
-        text: "`--resume $SESSION_ID` — restores the exact conversation state of the specified session",
-      },
-      {
-        id: "B",
-        text: "`--session-id $SESSION_ID` — attaches to an existing session",
-      },
-      {
-        id: "C",
-        text: "`--continue $SESSION_ID` — the only flag that supports session resumption by ID in headless mode",
-      },
-      {
-        id: "D",
-        text: "`--restore $SESSION_ID` — the headless-specific resumption flag",
-      },
+      { id: "A", text: "Rename the `paths` key to `globs`, because `paths` only accepts directories, not file types" },
+      { id: "B", text: "Import the file with `@.claude/rules/graphql.yaml` from the root CLAUDE.md so it is loaded" },
+      { id: "C", text: "Rename it to `graphql.md`, keeping its frontmatter, because rule files must be Markdown" },
+      { id: "D", text: "Place a CLAUDE.md beside each `.graphql` file, since rules cannot match by file extension" },
     ],
-    correctAnswer: "A",
+    correctAnswer: "C",
     explanation:
-      "`--resume` accepts a session ID to restore the conversation history of a previously saved session. In headless mode combined with `--output-format stream-json`, this allows a pipeline to continue a long-running task across multiple invocations. The `--continue` flag continues the most recent session without needing a specific ID. `--session-id`, `--restore`, and `--attach` are not valid Claude Code flags.\n\nHow to implement:\n```bash\n# First run — capture the session ID from the output\nSESSION_ID=$(claude \\\n  --output-format stream-json \\\n  --permission-mode bypassPermissions \\\n  \"Process files 1-100 in /data/batch\" \\\n  | jq -r 'select(.type==\"result\") | .session_id' \\\n  | tail -1)\n\necho \"Session ID: $SESSION_ID\"\necho \"$SESSION_ID\" > .session-id\n\n# Resume the session later (e.g., next CI run)\nSESSION_ID=$(cat .session-id)\nclaude \\\n  --resume \"$SESSION_ID\" \\\n  --output-format stream-json \\\n  \"Continue processing — files 1-100 are done, now do 101-200\"\n```\n\n```bash\n# --continue (no ID needed) — resumes most recent session\nclaude --continue \"What was the last file you processed?\"\n\n# --resume [id] — resumes a specific named session\nclaude --resume abc123def \"Continue the migration from where you left off\"\n```",
-    keyConcept: "Session resumption: --resume [session_id] restores a specific previous session",
+      "C is correct: Claude Code discovers only `.md` files in `.claude/rules/`. The frontmatter and the `**/*.graphql` glob are already right; the file is simply never read because of its extension. A is wrong: `paths` is the field rules use, and it accepts extension globs such as `**/*.ts`. B would load the text at launch in every session, whatever file is being edited, so the conventions would no longer be path-scoped. D is wrong on the facts and would scatter copies across the repository.\n\nHow to implement:\n```bash\ngit mv .claude/rules/graphql.yaml .claude/rules/graphql.md\n```\n```markdown\n---\npaths:\n  - \"**/*.graphql\"\n---\n# GraphQL schema conventions\n- Types are PascalCase; fields are camelCase\n```",
+    keyConcept: "Rules in .claude/rules/ are Markdown files with YAML frontmatter; paths globs scope them",
+    sources: [
+      { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
+      { title: "CCAR-F Exam Guide v1.0 — Task 3.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
 ];
 
@@ -1292,387 +1004,288 @@ const examDomain3Questions: Question[] = [
 const examDomain4Questions: Question[] = [
   {
     id: "E4-001",
-    scenario: "Structured Data Extraction",
+    scenario: "Claude Code for Continuous Integration",
     domain: 4,
     domainName: "Prompt Engineering & Structured Output",
     taskStatement: "4.1",
     difficulty: "intermediate",
     question:
-      "Your application was built on Claude 3.5 and relied on prefilled assistant responses (starting the assistant turn with partial JSON) to force structured output. You upgrade to Claude 5. What should you change in your integration?",
+      "Your CI reviewer labels each finding critical, major or minor. Audits show the same issue type gets different labels across PRs: an unparameterized SQL query was \"critical\" in one PR and \"minor\" in another, so teams cannot use severity to gate merges. The prompt currently says: \"Assign severity based on impact.\" What change most improves consistency?",
     options: [
-      {
-        id: "A",
-        text: "Nothing — prefilled responses are fully supported in Claude 5 and remain the recommended approach",
-      },
-      {
-        id: "B",
-        text: "Prefilled responses are deprecated in Claude 5 — replace them with the `output_config.format` structured output feature or explicit instructions in the prompt",
-      },
-      {
-        id: "C",
-        text: "Increase the `max_tokens` limit; the deprecation only affects responses under 50 tokens",
-      },
-      {
-        id: "D",
-        text: "Move the prefilled content from the assistant turn to a tool result to maintain the same behavior",
-      },
+      { id: "A", text: "Have the model output a numeric confidence with each finding and derive the severity label from it in post-processing." },
+      { id: "B", text: "Replace the three labels with a 1–10 severity scale so the model has finer granularity and fewer borderline decisions." },
+      { id: "C", text: "Define each severity level with explicit criteria and a short code example, e.g. critical: injectable SQL or leaked secrets." },
+      { id: "D", text: "Add \"be consistent with severity labels across reviews\" and remind the model that severity is used to gate merges." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "C",
     explanation:
-      "Prefilled assistant responses (injecting partial text at the start of the assistant turn to guide output format) are deprecated in Claude 5 and later. The replacement approaches are: (1) use `output_config.format` with `type: \"json_schema\"` for guaranteed structured JSON output via constrained decoding, or (2) rely on Claude 5's improved instruction following with explicit format instructions in the prompt. The deprecation applies to all response sizes.\n\nHow to implement:\n```python\n# OLD — prefilled response (deprecated in Claude 5)\nresponse_old = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    messages=[\n        {\"role\": \"user\", \"content\": \"Extract the name and age\"},\n        {\"role\": \"assistant\", \"content\": '{\"name\":'}, # ← DEPRECATED prefill\n    ]\n)\n\n# NEW — Option 1: structured output with json_schema\nresponse_new = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    output_config={\n        \"format\": {\n            \"type\": \"json_schema\",\n            \"json_schema\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"name\": {\"type\": \"string\"},\n                    \"age\": {\"type\": \"integer\"}\n                },\n                \"required\": [\"name\", \"age\"],\n                \"additionalProperties\": False\n            }\n        }\n    },\n    messages=[{\"role\": \"user\", \"content\": \"Extract the name and age from: John, 34 years old\"}]\n)\n\n# NEW — Option 2: instruction following (Claude 5 handles well)\nresponse_instruct = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    system=\"Always respond with valid JSON only. No explanation.\",\n    messages=[{\"role\": \"user\", \"content\": \"Extract {name, age} from: John, 34 years old\"}]\n)\n```",
-    keyConcept: "Prefilled responses deprecated in Claude 5 — use structured outputs or instructions",
+      "\"Based on impact\" leaves every PR to a fresh judgment call. Explicit criteria for each level, each anchored by a concrete code example, give the model a fixed reference, which is how the guide says to achieve consistent classification. Option A confuses confidence (how sure the model is) with severity (how bad the issue is). Option B adds more boundaries to place inconsistently. Option D asks for consistency without defining what consistent means.",
+    keyConcept: "Severity criteria with concrete code examples for consistent classification",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
+    ],
   },
   {
     id: "E4-002",
     scenario: "Structured Data Extraction",
     domain: 4,
     domainName: "Prompt Engineering & Structured Output",
-    taskStatement: "4.2",
+    taskStatement: "4.3",
     difficulty: "intermediate",
     question:
-      "You need to extract structured order data from customer emails, guaranteed to match a specific JSON schema on every call. The schema includes `order_id`, `items`, `total`, and `shipping_address`. Which API configuration achieves a hard guarantee of schema compliance?",
+      "Your intake pipeline receives invoices, purchase orders and contracts without knowing each file's type. You defined three extraction tools (`extract_invoice`, `extract_po`, `extract_contract`) with JSON schemas and use `tool_choice: {\"type\": \"auto\"}`. In 4% of calls Claude replies with prose such as \"This looks like an invoice\" and calls no tool, which breaks the pipeline. What should you change?",
     options: [
-      {
-        id: "A",
-        text: "Add \"Respond only with valid JSON matching this schema: {...}\" to the system prompt",
-      },
-      {
-        id: "B",
-        text: "Use `output_config: { format: { type: \"json_schema\", schema: {...} } }` in the API request to enable constrained decoding",
-      },
-      {
-        id: "C",
-        text: "Set `response_format: { type: \"json_object\" }` to enable JSON mode",
-      },
-      {
-        id: "D",
-        text: "Use a tool with the schema defined as input parameters, then parse the tool call arguments as the structured output",
-      },
+      { id: "A", text: "Force `tool_choice: {\"type\": \"tool\", \"name\": \"extract_invoice\"}`, since invoices are the most common type in intake." },
+      { id: "B", text: "Set `tool_choice: {\"type\": \"any\"}` so that Claude must call one of the three tools but still chooses which one fits." },
+      { id: "C", text: "Keep `auto` and add \"always respond by calling a tool, never with text\" to the system prompt and each tool description." },
+      { id: "D", text: "Drop the tools and request raw JSON in the text reply, with a `document_type` field that the pipeline uses for routing." },
     ],
     correctAnswer: "B",
     explanation:
-      "`output_config.format.type = \"json_schema\"` with a provided schema enables constrained decoding — the model's token generation is constrained at the sampling layer to only produce tokens that are valid against the schema. This provides a hard, runtime guarantee of schema compliance, unlike prompt instructions (which rely on model behavior and can fail) or `json_object` mode (which guarantees valid JSON but not a specific schema shape). Tool calling with schema parameters is a valid alternative but adds roundtrip overhead.\n\nHow to implement:\n```python\nimport anthropic\nimport json\n\nclient = anthropic.Anthropic()\n\nORDER_SCHEMA = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"order_id\": {\"type\": \"string\"},\n        \"items\": {\n            \"type\": \"array\",\n            \"items\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"name\": {\"type\": \"string\"},\n                    \"qty\": {\"type\": \"integer\"}\n                },\n                \"required\": [\"name\", \"qty\"],\n                \"additionalProperties\": False\n            }\n        },\n        \"total\": {\"type\": \"number\"},\n        \"shipping_address\": {\"type\": \"string\"}\n    },\n    \"required\": [\"order_id\", \"items\", \"total\", \"shipping_address\"],\n    \"additionalProperties\": False\n}\n\nresponse = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    output_config={\n        \"format\": {\n            \"type\": \"json_schema\",\n            \"json_schema\": ORDER_SCHEMA\n        }\n    },\n    messages=[{\n        \"role\": \"user\",\n        \"content\": f\"Extract order from email: {email_text}\"\n    }]\n)\n\norder = json.loads(response.content[0].text)\nprint(order[\"order_id\"])  # Guaranteed to exist per schema\n```",
-    keyConcept: "output_config.format.type = json_schema enables constrained decoding for schema compliance",
+      "With `auto` the model may answer in text. `any` guarantees a tool call while letting the model pick the schema that matches the document, which is exactly the case of multiple schemas and an unknown document type. Option A guarantees a call but forces the invoice schema onto contracts and POs. Option C keeps the same optional behavior and only makes a text reply less likely. Option D gives up tool use, which the guide calls the most reliable route to schema-compliant output, and brings back JSON parsing errors. (The current API also offers `strict: true` on tools and `output_config.format`; they constrain the schema but do not replace choosing the right `tool_choice`.) Product note: Claude Opus 5.5 and Sonnet 5.5 reject forced `tool_choice` (`any` or `tool`) with a 400; the exam guide still tests forced selection, so the example uses `claude-haiku-5-5`, which accepts it. On the newer models, use `auto` with `strict: true` tools or structured outputs.\n\nHow to implement:\n```typescript\nconst res = await client.messages.create({\n  model: \"claude-haiku-5-5\",\n  max_tokens: 2048,\n  tools: [extractInvoice, extractPo, extractContract],\n  tool_choice: { type: \"any\" },\n  messages: [{ role: \"user\", content: fileText }],\n});\nconst call = res.content.find((b) => b.type === \"tool_use\");\n```",
+    keyConcept: "tool_choice \"any\" guarantees a tool call when the document type is unknown",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Define tools (tool_choice)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
+    ],
   },
   {
     id: "E4-003",
-    scenario: "Structured Data Extraction",
+    scenario: "Claude Code for Continuous Integration",
     domain: 4,
     domainName: "Prompt Engineering & Structured Output",
-    taskStatement: "4.2",
+    taskStatement: "4.6",
     difficulty: "advanced",
     question:
-      "A developer defines the following JSON schema for structured output:\n```json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"status\": { \"type\": \"string\", \"enum\": [\"active\", \"inactive\"] },\n    \"count\": { \"type\": \"integer\", \"minimum\": 0, \"maximum\": 100 }\n  },\n  \"required\": [\"status\", \"count\"]\n}\n```\nThis schema is rejected when used with `strict: true`. Why?",
+      "Your CI review produces about 40 findings per large PR, and the two senior reviewers can verify only about 10 by hand. Some findings are clearly right; others are borderline. You want human attention to go where it matters most, without silently discarding findings. Which design fits best?",
     options: [
-      {
-        id: "A",
-        text: "The `enum` constraint on `status` is not supported in strict mode",
-      },
-      {
-        id: "B",
-        text: "`minimum` and `maximum` constraints on `count` are not supported in strict mode, and `additionalProperties: false` is missing",
-      },
-      {
-        id: "C",
-        text: "The schema uses `integer` type which is not supported — only `number` is allowed",
-      },
-      {
-        id: "D",
-        text: "The `required` array must be empty in strict mode",
-      },
+      { id: "A", text: "Have the generating session double-check all 40 findings at the end and remove any it now doubts, then post the rest." },
+      { id: "B", text: "Add a verification pass that reports a confidence per finding; post high-confidence ones, queue the rest for humans." },
+      { id: "C", text: "Post only security findings automatically and drop every other category until the reviewers have time to check them." },
+      { id: "D", text: "Give the generation pass a larger extended-thinking budget so every finding is reliable enough to post without review." },
     ],
     correctAnswer: "B",
     explanation:
-      "Strict mode JSON schemas have specific limitations: `minimum`, `maximum`, `minLength`, `maxLength`, `pattern`, `const`, and schema combiners are not supported. Additionally, `additionalProperties: false` is required on all object types in strict mode. The schema fails for two reasons: (1) `count` uses `minimum` and `maximum` which are unsupported, and (2) the object is missing `additionalProperties: false`. `enum` is valid in strict mode. `integer` type is supported. All defined properties must be in `required`, which they are.\n\nHow to implement:\n```python\n# BROKEN schema — fails in strict mode\nbroken_schema = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"status\": {\"type\": \"string\", \"enum\": [\"active\", \"inactive\"]},\n        \"count\": {\"type\": \"integer\", \"minimum\": 0, \"maximum\": 100}  # ← not allowed\n    },\n    \"required\": [\"status\", \"count\"]\n    # Missing: \"additionalProperties\": False  ← required\n}\n\n# FIXED schema — works in strict mode\nfixed_schema = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"status\": {\"type\": \"string\", \"enum\": [\"active\", \"inactive\"]},  # enum ✅\n        \"count\": {\"type\": \"integer\"}  # removed min/max constraints\n    },\n    \"required\": [\"status\", \"count\"],\n    \"additionalProperties\": False  # ← required in strict mode\n}\n\n# For server-side validation of min/max:\ndef validate_output(data: dict):\n    if not 0 <= data[\"count\"] <= 100:\n        raise ValueError(f\"count {data['count']} out of range [0, 100]\")\n    return data\n\nresponse = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=512,\n    output_config={\"format\": {\"type\": \"json_schema\", \"json_schema\": fixed_schema}},\n    messages=[{\"role\": \"user\", \"content\": \"How many active users are there?\"}]\n)\nimport json\ndata = validate_output(json.loads(response.content[0].text))\n```",
-    keyConcept: "Strict mode limitations: no minimum/maximum, additionalProperties must be false",
+      "A verification pass in which the model self-reports confidence alongside each finding enables calibrated review routing: confident findings go straight to the PR and borderline ones go to the limited human time. Calibrate the threshold against past dismissal data; the confidence is used for routing, not as a substitute for explicit review criteria. Option A is same-session self-review, which tends to keep the model's own decisions and silently drops findings. Option C discards valid findings by category. Option D assumes extended thinking makes review unnecessary; the guide says it does not catch subtle issues as well as a separate review step.",
+    keyConcept: "Verification pass with per-finding confidence for calibrated routing",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E4-004",
     scenario: "Structured Data Extraction",
     domain: 4,
     domainName: "Prompt Engineering & Structured Output",
-    taskStatement: "4.2",
+    taskStatement: "4.4",
     difficulty: "advanced",
     question:
-      "A developer designs a structured output schema that includes a `Node` type which has a `children` field that is also an array of `Node` objects (a recursive tree structure). They attempt to use this with `strict: true`. What will happen?",
+      "Some receipts in your extraction pipeline print a total that does not match their own line items (supplier errors), while in other cases the model misreads a line item. Downstream accounting needs to tell these two situations apart instead of silently trusting either number. How should you design the extraction?",
     options: [
-      {
-        id: "A",
-        text: "It works correctly — constrained decoding handles recursive types with bounded depth automatically",
-      },
-      {
-        id: "B",
-        text: "The schema is rejected — circular/recursive references are not supported in strict mode constrained decoding",
-      },
-      {
-        id: "C",
-        text: "It works but only up to 3 levels of nesting; deeper trees are truncated",
-      },
-      {
-        id: "D",
-        text: "Recursive schemas require `circular: true` flag to be set in the schema definition",
-      },
+      { id: "A", text: "Extract only `stated_total` and have code reject any receipt whose line items don't add up, sending it for a fresh retry." },
+      { id: "B", text: "Extract only the line items and compute the total in code, ignoring the printed total since it may hold supplier errors." },
+      { id: "C", text: "Ask the model to correct the printed total whenever it disagrees with the items, so downstream gets a consistent record." },
+      { id: "D", text: "Extract `stated_total` and a `calculated_total` summed from the items, plus a `conflict_detected` flag when they differ." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "D",
     explanation:
-      "Strict mode constrained decoding builds a finite state machine from the JSON schema at request time to constrain token generation. Circular/recursive references (where a type references itself) would create infinite state machines, which cannot be built. Therefore, circular references are explicitly unsupported in strict mode schemas. For tree structures, you must either use a non-strict schema (with server-side validation) or limit the depth by inlining the type up to a fixed depth rather than using recursive references.\n\nHow to implement:\n```python\n# BROKEN — circular/recursive reference, rejected in strict mode\nbroken_node_schema = {\n    \"$defs\": {\n        \"Node\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"value\": {\"type\": \"string\"},\n                \"children\": {\n                    \"type\": \"array\",\n                    \"items\": {\"$ref\": \"#/$defs/Node\"}  # ← circular reference\n                }\n            },\n            \"required\": [\"value\", \"children\"],\n            \"additionalProperties\": False\n        }\n    },\n    \"$ref\": \"#/$defs/Node\"\n}\n\n# FIXED option 1 — inline to fixed depth (strict: True works)\nfixed_schema_depth2 = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"value\": {\"type\": \"string\"},\n        \"children\": {\n            \"type\": \"array\",\n            \"items\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"value\": {\"type\": \"string\"},\n                    \"children\": {\"type\": \"array\", \"items\": {\"type\": \"object\"}}\n                },\n                \"required\": [\"value\", \"children\"],\n                \"additionalProperties\": False\n            }\n        }\n    },\n    \"required\": [\"value\", \"children\"],\n    \"additionalProperties\": False\n}\n\n# FIXED option 2 — use strict: False and validate server-side\nflexible_schema = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"value\": {\"type\": \"string\"},\n        \"children\": {\"type\": \"array\"}\n    }\n    # No strict mode — allows recursive structures\n}\n```",
-    keyConcept: "Strict mode does not support circular/recursive schema references",
+      "Capturing both totals and a conflict flag turns a silent inconsistency into data: code can retry with specific feedback when a misread is likely, and route true supplier errors to accounting with the evidence intact. Option A retries every mismatch, but a receipt that is wrong at the source will never reconcile, so it loops or ends in a fabricated fix. Option B throws away the printed total, so supplier errors disappear. Option C asks the model to overwrite source data, hiding the conflict accounting needs to see.",
+    keyConcept: "calculated_total vs stated_total with conflict_detected for self-correction",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E4-005",
     scenario: "Customer Support Resolution Agent",
     domain: 4,
     domainName: "Prompt Engineering & Structured Output",
-    taskStatement: "4.3",
+    taskStatement: "4.5",
     difficulty: "intermediate",
     question:
-      "A support ticket classification system needs to process 50,000 tickets overnight. Each ticket requires a single Claude call for classification. Using synchronous API calls, this takes 14 hours. What is the most appropriate API feature for this use case?",
+      "Your support platform runs three Claude workloads: (1) a draft reply shown to a live agent while the customer waits in chat, (2) nightly tagging of the day's closed tickets for an analytics report reviewed the following week, and (3) a quarterly re-classification of 2 million historical tickets. Finance wants the 50% Message Batches API discount wherever it does not hurt the customer experience. Which assignment is correct?",
     options: [
-      {
-        id: "A",
-        text: "Increase the rate limit by contacting Anthropic support to allow faster synchronous throughput",
-      },
-      {
-        id: "B",
-        text: "Use the Batch API — submit all 50,000 requests in batches of up to 100,000, which processes asynchronously and typically completes within 1 hour at reduced cost",
-      },
-      {
-        id: "C",
-        text: "Use parallel synchronous API calls with 100 concurrent threads to achieve 100x throughput",
-      },
-      {
-        id: "D",
-        text: "Use streaming responses to reduce time-to-first-token for each ticket",
-      },
+      { id: "A", text: "Batch the nightly tagging and the quarterly re-classification; keep live-chat drafts on the synchronous Messages API." },
+      { id: "B", text: "Batch all three, polling the live-chat batch every few seconds, since most batches finish well within an hour anyway." },
+      { id: "C", text: "Batch only the quarterly job; nightly tagging must stay synchronous, since batches can take up to 24 hours to finish." },
+      { id: "D", text: "Batch the live-chat drafts to cut the largest cost, and run the two analytics workloads synchronously for reliability." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "A",
     explanation:
-      "The Batch API is designed exactly for high-volume, non-real-time workloads like overnight classification tasks. Key specifications: up to 100,000 requests or 256MB per batch, most batches complete within 1 hour (not 14 hours), results are available for 29 days, batches expire at 24 hours if not completed, and pricing is typically lower than synchronous calls. Parallel synchronous calls would hit rate limits. Streaming reduces latency but not throughput. Requesting rate limit increases is slow and expensive.\n\nHow to implement:\n```python\nimport anthropic\nimport json\n\nclient = anthropic.Anthropic()\n\n# Build batch requests for all 50,000 tickets\ndef build_batch_requests(tickets: list[dict]) -> list[dict]:\n    return [\n        {\n            \"custom_id\": f\"ticket-{t['id']}\",\n            \"params\": {\n                \"model\": \"claude-haiku-4-5\",  # Fast model for classification\n                \"max_tokens\": 100,\n                \"messages\": [{\n                    \"role\": \"user\",\n                    \"content\": f\"Classify this ticket as: billing/technical/shipping/other\\n\\n{t['text']}\"\n                }]\n            }\n        }\n        for t in tickets\n    ]\n\n# Submit batch (up to 100,000 requests per batch)\nrequests = build_batch_requests(all_tickets[:50000])\nbatch = client.messages.batches.create(requests=requests)\nprint(f\"Batch ID: {batch.id}, Status: {batch.processing_status}\")\n\n# Poll for completion (typically < 1 hour)\nimport time\nwhile batch.processing_status == \"in_progress\":\n    time.sleep(60)\n    batch = client.messages.batches.retrieve(batch.id)\n    print(f\"Progress: {batch.request_counts}\")\n\n# Retrieve results (available for 29 days)\nfor result in client.messages.batches.results(batch.id):\n    if result.result.type == \"succeeded\":\n        classification = result.result.message.content[0].text\n        print(f\"{result.custom_id}: {classification}\")\n```",
-    keyConcept: "Batch API: 100K requests/256MB per batch, <1 hour typical, results available 29 days",
+      "Batch processing fits non-blocking, latency-tolerant work and does not fit blocking flows. The live-chat draft blocks a waiting customer, so it needs the synchronous API. Nightly tagging read a week later and the quarterly job tolerate up to 24 hours easily. Option B ignores that batches have no latency SLA; \"usually within an hour\" is not acceptable for a waiting customer. Option C treats a 24-hour window as a problem for a report read a week later. Option D puts the only latency-critical workload on batch.",
+    keyConcept: "Batch for latency-tolerant work, synchronous for blocking workflows",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Batch processing", url: "https://platform.claude.com/docs/en/build-with-claude/batch-processing" },
+    ],
   },
   {
     id: "E4-006",
-    scenario: "Customer Support Resolution Agent",
+    scenario: "Structured Data Extraction",
     domain: 4,
     domainName: "Prompt Engineering & Structured Output",
-    taskStatement: "4.3",
+    taskStatement: "4.5",
     difficulty: "intermediate",
     question:
-      "A Batch API job is submitted at 9:00 AM Monday with 80,000 requests. It has not completed by 9:00 AM Tuesday. What happens to the batch, and when do results expire?",
+      "A batch of 20,000 contract extractions ends with 19,640 `succeeded` and 360 `errored` results; the errors say those requests exceeded the model's context window. Your result-handling code currently pairs each result with its input by its position in the results file. What should you do?",
     options: [
-      {
-        id: "A",
-        text: "The batch continues indefinitely; there is no expiration",
-      },
-      {
-        id: "B",
-        text: "The batch expires and is cancelled at the 24-hour mark (9:00 AM Tuesday); any completed results are available for retrieval for 29 days from submission",
-      },
-      {
-        id: "C",
-        text: "The batch pauses after 12 hours and requires manual resumption; results expire 7 days after completion",
-      },
-      {
-        id: "D",
-        text: "The batch is automatically retried from scratch after 24 hours without user intervention",
-      },
-    ],
-    correctAnswer: "B",
-    explanation:
-      "Batch API jobs have a 24-hour processing window: if the batch has not completed within 24 hours of submission, it expires and is cancelled. Results for completed requests within an expired batch are still retrievable. The results themselves remain available for 29 days from the original submission date, after which they are deleted. There is no automatic retry or manual resumption mechanism — you must resubmit failed batches.\n\nHow to implement:\n```python\nimport anthropic\nfrom datetime import datetime, timedelta\n\nclient = anthropic.Anthropic()\n\ndef monitor_and_handle_batch(batch_id: str):\n    batch = client.messages.batches.retrieve(batch_id)\n    submitted_at = batch.created_at  # datetime object\n    expires_at = submitted_at + timedelta(hours=24)\n    results_expire_at = submitted_at + timedelta(days=29)\n\n    print(f\"Submitted: {submitted_at}\")\n    print(f\"Expires (cancelled if incomplete): {expires_at}\")\n    print(f\"Results available until: {results_expire_at}\")\n\n    if batch.processing_status == \"expired\":\n        print(\"Batch expired! Retrieving partial results...\")\n        completed_ids = set()\n        for result in client.messages.batches.results(batch_id):\n            if result.result.type == \"succeeded\":\n                completed_ids.add(result.custom_id)\n        print(f\"Completed before expiry: {len(completed_ids)} requests\")\n\n        # Identify which requests need resubmission\n        failed = [r for r in original_requests if r[\"custom_id\"] not in completed_ids]\n        print(f\"Need to resubmit: {len(failed)} requests\")\n        # Resubmit failed requests as a new batch\n        new_batch = client.messages.batches.create(requests=failed)\n        return new_batch.id\n\n    return batch_id\n```",
-    keyConcept: "Batch API: expires at 24h if incomplete, results available for 29 days from submission",
-  },
-  {
-    id: "E4-007",
-    scenario: "Multi-Agent Research System",
-    domain: 4,
-    domainName: "Prompt Engineering & Structured Output",
-    taskStatement: "4.4",
-    difficulty: "intermediate",
-    question:
-      "A research agent processes a 50-page technical document and then answers questions about it. Performance is poor and accuracy is low. A senior engineer suggests reordering the prompt. What is the recommended structure for long-document question answering?",
-    options: [
-      {
-        id: "A",
-        text: "Place the question first, followed by instructions, followed by the document",
-      },
-      {
-        id: "B",
-        text: "Interleave relevant document sections with each question for co-location of evidence and query",
-      },
-      {
-        id: "C",
-        text: "Place the long document at the top of the prompt, followed by instructions, with the specific query at the bottom",
-      },
-      {
-        id: "D",
-        text: "Place instructions at the top, document in the middle, and question at the bottom",
-      },
+      { id: "A", text: "Resubmit the full 20,000-request batch; a fresh batch keeps all results in one place and in the same order as inputs." },
+      { id: "B", text: "Resubmit the 360 failed requests unchanged in a new batch, since an `errored` result usually means a transient error." },
+      { id: "C", text: "Match results by `custom_id`, then resubmit only the 360 failed documents, split into chunks that fit the context." },
+      { id: "D", text: "Keep matching by position, but sort the results file by timestamp first so that it lines up with the input order." },
     ],
     correctAnswer: "C",
     explanation:
-      "Research on Claude's context handling shows that placing long documents at the top of the prompt, followed by task instructions, with the specific query at the very bottom can improve accuracy by up to 30% compared to other orderings. This structure mirrors how a human expert would work: absorb the full document context first, understand the task structure, then apply it to the specific question. Placing queries before the document means the model processes the question without the context it needs.\n\nHow to implement:\n```python\ndef build_document_qa_prompt(document: str, instructions: str, query: str) -> str:\n    # Optimal ordering: document → instructions → query\n    return f\"\"\"<document>\n{document}\n</document>\n\n<instructions>\n{instructions}\n</instructions>\n\n<query>\n{query}\n</query>\"\"\"\n\n# Usage\nprompt = build_document_qa_prompt(\n    document=fifty_page_technical_doc,  # Long document FIRST\n    instructions=\"\"\"\n        Answer based only on the document above.\n        Cite specific sections when possible.\n        If the answer is not in the document, say so.\n    \"\"\",\n    query=\"What are the performance benchmarks for the caching layer?\"  # Query LAST\n)\n\nresponse = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=2048,\n    messages=[{\"role\": \"user\", \"content\": prompt}]\n)\n```\n\n```python\n# BAD ordering — query before document (up to 30% worse accuracy)\nbad_prompt = f\"\"\"\nQuery: What are the performance benchmarks?\n\nInstructions: Answer from the document below.\n\n{fifty_page_document}  ← document at the end\n\"\"\"\n\n# GOOD ordering — document first, query last\ngood_prompt = f\"\"\"\n{fifty_page_document}  ← document at the top\n\nInstructions: Answer from the document above.\n\nQuery: What are the performance benchmarks?\n\"\"\"\n```",
-    keyConcept: "Long documents at top, query at bottom — up to 30% accuracy improvement",
+      "Batch results can come back in any order, so `custom_id` is the only reliable way to correlate a result with its request and to identify which documents failed. A context-window overflow is deterministic, so the failed documents must be modified (chunked) before resubmission, and only those should be resent. Option A pays again for 19,640 successes and still doesn't guarantee order. Option B resends requests that will fail the same way. Option D keeps relying on order, which the API does not guarantee. Testing the prompt on a sample before large batches reduces these resubmissions.\n\nHow to implement:\n```typescript\nconst failed: string[] = [];\nfor await (const r of await client.messages.batches.results(batchId)) {\n  if (r.result.type === \"succeeded\") save(r.custom_id, r.result.message);\n  else failed.push(r.custom_id);\n}\nconst retry = failed.flatMap((id) => chunk(docs[id]).map((part, i) => ({\n  custom_id: `${id}-part${i}`,\n  params: { model: \"claude-sonnet-5-5\", max_tokens: 2048, messages: [{ role: \"user\", content: part }] },\n})));\nawait client.messages.batches.create({ requests: retry });\n```",
+    keyConcept: "Use custom_id to resubmit only failed requests, modified as needed",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Batch processing", url: "https://platform.claude.com/docs/en/build-with-claude/batch-processing" },
+    ],
+  },
+  {
+    id: "E4-007",
+    scenario: "Claude Code for Continuous Integration",
+    domain: 4,
+    domainName: "Prompt Engineering & Structured Output",
+    taskStatement: "4.2",
+    difficulty: "intermediate",
+    question:
+      "Claude Code generates unit tests in your CI pipeline. The generated tests mostly cover the happy path: for functions with early returns, error branches or boundary checks, those branches stay untested. You already added \"cover all branches and edge cases\" to the prompt, with little effect. What is the most effective next change?",
+    options: [
+      { id: "A", text: "Fail the CI job whenever coverage drops and send the coverage percentage back to Claude, asking it for more tests." },
+      { id: "B", text: "Expand the instruction into a full paragraph defining branch coverage, boundary values and error paths precisely." },
+      { id: "C", text: "Require the model to list every function it tested in a JSON summary, so reviewers can spot skipped functions." },
+      { id: "D", text: "Add 2–3 examples pairing a function with its untested branch, why it matters, and the test that covers it." },
+    ],
+    correctAnswer: "D",
+    explanation:
+      "When instructions alone don't change behavior, few-shot examples show the judgment you want. Examples that walk from a function to the specific uncovered branch, explain why it matters and show the resulting test teach the model to find branch-level gaps in code it has not seen. Option A gives feedback too vague to act on: a percentage does not say which branch is missing. Option B is more of the instruction that already failed. Option C adds reporting but does not change which branches get tested.",
+    keyConcept: "Few-shot examples demonstrating branch-level coverage gaps",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
+    ],
   },
   {
     id: "E4-008",
-    scenario: "Customer Support Resolution Agent",
+    scenario: "Claude Code for Continuous Integration",
     domain: 4,
     domainName: "Prompt Engineering & Structured Output",
-    taskStatement: "4.4",
+    taskStatement: "4.1",
     difficulty: "intermediate",
     question:
-      "A support response generation prompt uses XML tags to structure its content:\n```xml\n<context>Customer has been a member since 2019...</context>\n<instructions>Draft a response that...</instructions>\n<input>Customer complaint: {{complaint}}</input>\n```\nWhy are XML tags preferred over plain delimiters for structuring complex prompts?",
+      "One CI check asks Claude to \"check that code comments are accurate.\" It flags outdated TODOs, informal wording and missing punctuation, and developers dismiss nearly all of it. The team cares about one thing: comments that would mislead a reader about what the code does. How should you rewrite the instruction?",
     options: [
-      {
-        id: "A",
-        text: "XML tags are required by the Anthropic API and plain text delimiters cause parsing errors",
-      },
-      {
-        id: "B",
-        text: "XML tags provide unambiguous, named semantic boundaries that Claude reliably parses — unlike markdown or plain delimiters which can appear naturally in content and cause boundary confusion",
-      },
-      {
-        id: "C",
-        text: "XML tags compress better and reduce token count compared to plain text delimiters",
-      },
-      {
-        id: "D",
-        text: "XML tags enable Claude to extract content programmatically via XPath in its internal processing",
-      },
+      { id: "A", text: "Keep the instruction, but add \"only report comment issues when you are highly confident they matter\" to cut the noise." },
+      { id: "B", text: "Have the model rate every comment from 1 to 5 for accuracy and post only the comments that score 2 or lower in review." },
+      { id: "C", text: "Keep the instruction and add few-shot examples of well-written comments so the model learns the team's preferred style." },
+      { id: "D", text: "Flag a comment only when its claimed behavior contradicts what the code does; explicitly skip style, wording and TODOs." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "D",
     explanation:
-      "XML tags are recommended for structuring complex prompts because they provide named, semantic boundaries (`<context>`, `<instructions>`, `<input>`) that clearly delineate sections even when the section content itself contains similar-looking text. Markdown headers (`##`) or plain delimiters (`---`) can appear naturally in content, causing ambiguity about where one section ends and another begins. Claude's training includes XML-structured prompts and it reliably parses them. XML tags are not required by the API and do not affect token count.\n\nHow to implement:\n```python\ndef build_support_prompt(customer_context: str, instructions: str, complaint: str) -> str:\n    return f\"\"\"<context>\n{customer_context}\n</context>\n\n<instructions>\n{instructions}\n</instructions>\n\n<input>\n{complaint}\n</input>\"\"\"\n\nprompt = build_support_prompt(\n    customer_context=\"Customer has been a member since 2019. Gold tier. Previous ticket: billing dispute resolved.\",\n    instructions=\"Draft a professional, empathetic response. Offer a resolution. Escalate billing issues > $500.\",\n    complaint=\"I was charged twice for my subscription this month. Order #12345.\"\n)\n```\n\n```python\n# XML tags also useful for few-shot examples\nexamples_prompt = \"\"\"\n<examples>\n<example>\n<input>My package hasn't arrived</input>\n<output>I'm sorry to hear your package is delayed. Let me look up tracking #...</output>\n</example>\n<example>\n<input>Wrong item sent</input>\n<output>I apologize for the mix-up. I'll arrange a replacement shipment immediately...</output>\n</example>\n</examples>\n\n<input>{{complaint}}</input>\n\"\"\"\n```",
-    keyConcept: "XML tags for unambiguous prompt structure: <example>, <instructions>, <context>, <input>",
+      "The vague goal \"accurate\" lets the model include style issues. An explicit criterion (claimed behavior contradicts actual behavior) plus an explicit skip list defines exactly what to report, which is what improves precision. Option A is a confidence instruction, which does not improve precision compared with categorical criteria. Option B is confidence-style filtering on a score that still has no definition. Option C pushes the model toward style, the very noise developers are dismissing.",
+    keyConcept: "Explicit report/skip criteria instead of vague goals",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
+    ],
   },
   {
     id: "E4-009",
     scenario: "Code Generation with Claude Code",
     domain: 4,
     domainName: "Prompt Engineering & Structured Output",
-    taskStatement: "4.4",
+    taskStatement: "4.6",
     difficulty: "advanced",
     question:
-      "A code generation prompt produces subtly incorrect outputs that are hard to catch. A prompt engineer proposes a 'self-check' pattern. What does this pattern involve, and why is it effective?",
+      "A team's Claude Code workflow generates a database migration and then, in the same session, prompts Claude to \"self-check the migration against our checklist before finishing.\" A migration that dropped a column still used by a reporting job passed this self-check and reached staging. What change gives the most effective review?",
     options: [
-      {
-        id: "A",
-        text: "The self-check pattern calls the model twice — once to generate, once to validate — doubling cost but eliminating errors",
-      },
-      {
-        id: "B",
-        text: "The self-check pattern instructs the model to review its own output against specified criteria before finalizing it, catching errors through explicit second-pass reasoning in a single call",
-      },
-      {
-        id: "C",
-        text: "The self-check pattern adds a validation JSON schema that the model checks its output against automatically",
-      },
-      {
-        id: "D",
-        text: "The self-check pattern uses a `verify: true` flag in the API to enable internal consistency checking",
-      },
+      { id: "A", text: "Run the checklist in a fresh Claude session given the migration, schema and checklist, but not the history." },
+      { id: "B", text: "Keep the same-session self-check but move the checklist to the end of the prompt so the model reads it last." },
+      { id: "C", text: "Enable extended thinking during generation so the model reasons through each dependent table before writing." },
+      { id: "D", text: "Have the generating session explain each change and approve the migration only if its explanation is consistent." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "A",
     explanation:
-      "The self-check pattern is a prompt engineering technique where, after generating an initial answer, the model is instructed (in the same prompt or as a follow-up turn) to re-read its output and check it against explicit criteria (e.g., 'Does this code handle the null case? Does it match the function signature?'). This leverages the model's reasoning ability to catch errors it might have made in initial generation. It is done in a single API call (as part of the prompt) or as a second turn, not through a separate API call, and does not require any special flags.\n\nHow to implement:\n```python\n# Self-check via single-prompt instruction\nself_check_prompt = \"\"\"\nGenerate a TypeScript function that parses a date string in ISO 8601 format.\n\nAfter writing the function, review your own code by checking:\n1. Does it handle null/undefined input?\n2. Does it return the correct TypeScript type?\n3. Does it handle invalid date strings without throwing?\n4. Are edge cases (empty string, partial dates) covered?\n\nIf you find issues during your review, fix them before finalizing.\n\"\"\"\n\n# Self-check as second turn (multi-turn approach)\nresponse1 = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=1024,\n    messages=[{\"role\": \"user\", \"content\": \"Write a TypeScript date parser function.\"}]\n)\n\ncode = response1.content[0].text\n\nresponse2 = client.messages.create(\n    model=\"claude-opus-5\",\n    max_tokens=512,\n    messages=[\n        {\"role\": \"user\", \"content\": \"Write a TypeScript date parser function.\"},\n        {\"role\": \"assistant\", \"content\": code},\n        {\"role\": \"user\", \"content\": \"\"\"\n            Review your code above. Check:\n            - Null safety\n            - Correct return type\n            - Invalid input handling\n            Output only the corrected final version.\n        \"\"\"}\n    ]\n)\n```",
-    keyConcept: "Self-check pattern: model reviews its own output against criteria before finalizing",
+      "A self-check in the same session inherits the reasoning that produced the migration, so the model is unlikely to question its own decision to drop the column. An independent instance without that context, given the migration, schema and checklist (and ideally tool access to search for column usages), reviews it fresh and is more effective than self-review or extended thinking. Option B is still self-review. Option C improves generation but adds no independent check. Option D grades the generator on its own explanation, which will naturally sound consistent.",
+    keyConcept: "Independent instance without generation context for review",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
   {
     id: "E4-010",
-    scenario: "Customer Support Resolution Agent",
+    scenario: "Claude Code for Continuous Integration",
     domain: 4,
     domainName: "Prompt Engineering & Structured Output",
-    taskStatement: "4.4",
+    taskStatement: "4.2",
     difficulty: "advanced",
     question:
-      "A team migrates their prompt from an older Claude version to Claude 5. A tool that was called ~60% of the time now fires on nearly every message, causing unexpected side effects. What is the most likely cause?",
+      "Your security review flags every use of dynamic code evaluation and every raw SQL string. Many are fine: a sandboxed expression evaluator with an allowlist, and SQL built only from constants. You tried listing the known-safe files by path in the prompt, but new safe code elsewhere keeps getting flagged. What approach generalizes best?",
     options: [
-      {
-        id: "A",
-        text: "Claude 5 has a bug in tool selection that forces all tools to fire",
-      },
-      {
-        id: "B",
-        text: "The prompt was over-engineered for an older, less capable model — explicit tool-use instructions that were needed to trigger the tool now cause it to overtrigger in Claude 5's more capable instruction-following",
-      },
-      {
-        id: "C",
-        text: "The `tool_choice: auto` setting changed behavior between versions; set `tool_choice: none` to fix it",
-      },
-      {
-        id: "D",
-        text: "The model's context window is larger in 4.6 and it processes the tool description differently",
-      },
+      { id: "A", text: "Keep extending the list of safe file paths and function names in the prompt every time a new false positive appears." },
+      { id: "B", text: "Lower the severity of all dynamic-code and raw-SQL findings to informational so they no longer block or alarm anyone." },
+      { id: "C", text: "Add few-shot examples contrasting safe patterns (allowlisted evaluator, constant SQL) with truly injectable ones." },
+      { id: "D", text: "Tell the model to report dynamic code and raw SQL only when it is very confident the usage is truly exploitable." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "C",
     explanation:
-      "A well-documented anti-pattern when upgrading to Claude 5 (or similar highly capable models) is over-prompting. Older, less capable models sometimes needed very explicit, detailed instructions to trigger tool calls reliably. When those same prompts are used with Claude 5's stronger instruction following, tools that previously undertriggered now overtrigger. The fix is to simplify the prompts — remove or soften the explicit trigger language that was compensating for the older model's limitations.\n\nHow to implement:\n```python\n# OLD prompt (tuned for Claude 3.5 — overtriggers in Claude 5)\nold_system_prompt = \"\"\"\nYou are a support assistant. You MUST ALWAYS use the lookup_order tool\nwhenever ANY message is received. Do not respond without first calling\nlookup_order. ALWAYS call lookup_order. It is REQUIRED on every message.\n\"\"\"\n\n# NEW prompt for Claude 5 — simplified, trusts instruction following\nnew_system_prompt = \"\"\"\nYou are a support assistant. Use the lookup_order tool when the user\nreferences a specific order, order number, or asks about an order status.\n\"\"\"\n\n# Testing tool trigger rate\ndef measure_trigger_rate(system_prompt: str, test_messages: list[str]) -> float:\n    triggered = 0\n    for msg in test_messages:\n        response = client.messages.create(\n            model=\"claude-opus-5\",\n            max_tokens=512,\n            system=system_prompt,\n            tools=[lookup_order_tool],\n            messages=[{\"role\": \"user\", \"content\": msg}]\n        )\n        if response.stop_reason == \"tool_use\":\n            triggered += 1\n    return triggered / len(test_messages)\n\n# Compare: old prompt likely shows ~95%+, new ~60% (expected)\nprint(\"Old:\", measure_trigger_rate(old_system_prompt, test_msgs))\nprint(\"New:\", measure_trigger_rate(new_system_prompt, test_msgs))\n```",
-    keyConcept: "Anti-pattern: over-prompting for Claude 5 causes tools that undertriggered before to overtrigger",
+      "A list of paths only matches pre-specified cases. Few-shot examples that contrast acceptable patterns with genuine issues, and explain the difference, let the model generalize the judgment to new code, cutting false positives without hiding real injections. Option A is the approach that is already failing. Option B also downgrades the real vulnerabilities. Option D is a confidence instruction, which does not improve precision the way concrete contrasting examples do.",
+    keyConcept: "Few-shot examples contrasting acceptable patterns with real issues",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
+    ],
   },
   {
     id: "E4-011",
     scenario: "Structured Data Extraction",
     domain: 4,
     domainName: "Prompt Engineering & Structured Output",
-    taskStatement: "4.2",
+    taskStatement: "4.3",
     difficulty: "intermediate",
     question:
-      "You are designing a JSON schema for structured extraction with `strict: true`. The schema needs an optional field `notes` that may or may not be present in the output. In standard JSON Schema, you would omit `notes` from `required`. What must you do differently in strict mode?",
+      "Your strict tool schema for purchase orders lists `discount_code` in `required`, because a teammate believes Claude's strict mode needs every property to be required. Most orders have no discount code, and the model fills in invented codes such as \"SAVE10\". What is the correct fix?",
     options: [
-      {
-        id: "A",
-        text: "In strict mode, all properties defined in the schema MUST be in the `required` array — make `notes` required but allow `null` as its value using `type: [\"string\", \"null\"]`",
-      },
-      {
-        id: "B",
-        text: "Optional fields are expressed by setting `required: false` as a property-level flag",
-      },
-      {
-        id: "C",
-        text: "Optional fields are not supported in strict mode; remove `notes` from the schema entirely",
-      },
-      {
-        id: "D",
-        text: "Use `anyOf: [{\"type\": \"string\"}, {\"type\": \"null\"}]` for optional fields — anyOf is allowed for null handling",
-      },
+      { id: "A", text: "Keep `discount_code` required, as strict mode demands, and add a post-filter that deletes codes absent from the promotions table." },
+      { id: "B", text: "Turn off `strict: true` for this tool so that the schema rules relax and the model no longer feels forced to fill the field." },
+      { id: "C", text: "Let the field be absent or null: Claude's strict mode accepts properties left out of `required` and `[\"string\", \"null\"]`." },
+      { id: "D", text: "Keep the field required and add to the tool description that fabricated discount codes will be rejected by billing." },
     ],
-    correctAnswer: "A",
+    correctAnswer: "C",
     explanation:
-      "In strict mode, all properties defined in the `properties` object MUST appear in the `required` array — there are no optional fields in the standard sense. To represent 'optionality' (the value may or may not be meaningful), the canonical approach is to require the field but allow `null` as its type using `type: [\"string\", \"null\"]`. When no notes exist, the model outputs `null`. There is no `required: false` property-level flag, and `anyOf` is not supported in strict mode.\n\nHow to implement:\n```python\n# Strict mode: all properties required, use null for \"optional\" fields\nstrict_schema = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"ticket_id\": {\"type\": \"string\"},\n        \"summary\": {\"type\": \"string\"},\n        # \"Optional\" notes field — required but nullable\n        \"notes\": {\"type\": [\"string\", \"null\"]},\n        # Optional array — required but can be empty or null\n        \"tags\": {\n            \"type\": [\"array\", \"null\"],\n            \"items\": {\"type\": \"string\"}\n        }\n    },\n    # ALL properties must appear in required\n    \"required\": [\"ticket_id\", \"summary\", \"notes\", \"tags\"],\n    \"additionalProperties\": False\n}\n\n# Result when notes are absent:\n# { \"ticket_id\": \"T123\", \"summary\": \"Login issue\", \"notes\": null, \"tags\": null }\n\n# Result when notes are present:\n# { \"ticket_id\": \"T124\", \"summary\": \"Billing\", \"notes\": \"Escalate to finance\", \"tags\": [\"billing\"] }\n\n# Consuming the output safely\nimport json\ndata = json.loads(response.content[0].text)\nif data[\"notes\"] is not None:\n    print(f\"Notes: {data['notes']}\")\n```",
-    keyConcept: "Strict mode: all properties must be required; use type: [\"string\", \"null\"] for nullable optional fields",
+      "The teammate is applying another vendor's rule. Claude's strict mode accepts properties that are not in `required` (they count toward a limit of 24 optional parameters) and nullable type arrays or `anyOf`. Making the field optional or nullable removes the pressure that causes fabrication, as guide 4.3 recommends. Option A keeps the pressure and lets an invented code that happens to exist (\"SAVE10\") pass the filter. Option B keeps `required` in the schema, so the pressure stays while you lose the schema guarantee. Option D relies on an instruction that competes with the schema.",
+    keyConcept: "Claude strict mode supports optional and nullable fields; use them to avoid fabrication",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Structured outputs", url: "https://platform.claude.com/docs/en/build-with-claude/structured-outputs" },
+      { title: "Strict tool use", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use" },
+    ],
   },
   {
     id: "E4-012",
-    scenario: "Structured Data Extraction",
+    scenario: "Claude Code for Continuous Integration",
     domain: 4,
     domainName: "Prompt Engineering & Structured Output",
-    taskStatement: "4.3",
+    taskStatement: "4.4",
     difficulty: "advanced",
     question:
-      "A Batch API job returns results with some requests showing `\"error_max_structured_output_retries\"` as the stop reason. What does this indicate, and what is the recommended fix?",
+      "Developers dismiss about 30% of your CI reviewer's findings, but you cannot tell why: the findings are free text and cover many different code constructs. You want to learn which kinds of findings drive dismissals so you can fix the prompt systematically. What should you add?",
     options: [
-      {
-        id: "A",
-        text: "The structured output schema was too large — reduce the number of fields",
-      },
-      {
-        id: "B",
-        text: "Claude attempted to generate valid structured output multiple times but failed to conform to the schema after the maximum allowed retry attempts — the schema may be too constraining or ambiguous for the given input",
-      },
-      {
-        id: "C",
-        text: "The batch exceeded the retry quota — wait 24 hours before resubmitting",
-      },
-      {
-        id: "D",
-        text: "The model was interrupted mid-generation; resubmit those specific requests individually",
-      },
+      { id: "A", text: "Ask developers to write a short free-text reason whenever they dismiss a finding, and read a sample of them periodically." },
+      { id: "B", text: "Have the model self-report a confidence score for each finding and drop all findings below a fixed confidence threshold." },
+      { id: "C", text: "Rerun the dismissed findings through a second Claude pass that decides whether the developer was right to dismiss them." },
+      { id: "D", text: "Add a `detected_pattern` field to each structured finding naming the construct that triggered it; group dismissals by it." },
     ],
-    correctAnswer: "B",
+    correctAnswer: "D",
     explanation:
-      "`error_max_structured_output_retries` is a ResultMessage subtype indicating that Claude attempted to generate output conforming to the specified JSON schema multiple times but failed to produce a valid result within the allowed retry budget. This typically occurs when the schema is highly constraining relative to the input content — for example, requiring enum values that don't match the actual data, or requiring fields that cannot be extracted from the source. The fix is to review the schema for overly restrictive constraints, simplify the schema, or improve the prompt to guide the model toward valid outputs.\n\nHow to implement:\n```python\nimport anthropic\n\nclient = anthropic.Anthropic()\n\n# Process batch results and handle schema retry failures\nbatch = client.messages.batches.retrieve(batch_id)\n\nfailed_schema = []\nsucceeded = []\n\nfor result in client.messages.batches.results(batch_id):\n    if result.result.type == \"errored\":\n        stop_reason = getattr(result.result, \"stop_reason\", None)\n        if stop_reason == \"error_max_structured_output_retries\":\n            failed_schema.append(result.custom_id)\n        else:\n            # Other error type\n            pass\n    else:\n        succeeded.append(result.custom_id)\n\nprint(f\"Schema retry failures: {len(failed_schema)}\")\nprint(f\"Failed IDs sample: {failed_schema[:5]}\")\n\n# Fix: review and loosen the schema for problematic inputs\n# Common fixes:\n# 1. Add more enum values or remove enum constraints\n# 2. Make required fields nullable: {\"type\": [\"string\", \"null\"]}\n# 3. Simplify nested schema structures\n# 4. Add guidance in the prompt: \"If X cannot be determined, output null\"\n\nLOOSER_SCHEMA = {\n    \"type\": \"object\",\n    \"properties\": {\n        \"category\": {\n            \"type\": [\"string\", \"null\"],  # Allow null if extraction fails\n            \"enum\": [\"billing\", \"technical\", \"shipping\", \"other\", None]  # Added null\n        },\n        \"priority\": {\"type\": [\"string\", \"null\"]}\n    },\n    \"required\": [\"category\", \"priority\"],\n    \"additionalProperties\": False\n}\n```",
-    keyConcept: "error_max_structured_output_retries: schema conformance repeatedly failed; review schema constraints",
+      "A `detected_pattern` field makes every finding countable by the code construct that triggered it, so dismissal rates can be grouped by pattern and the worst offenders fixed in the prompt. That is the feedback-loop design the guide describes. Option A collects unstructured text that is hard to aggregate and depends on developer effort. Option B filters findings without explaining which patterns are wrong. Option C second-guesses developers instead of measuring where the reviewer goes wrong.",
+    keyConcept: "detected_pattern field enables systematic analysis of dismissals",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 4.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+    ],
   },
 ];
 
@@ -1687,351 +1300,268 @@ const examDomain5Questions: Question[] = [
     domain: 5,
     domainName: "Context Management & Reliability",
     taskStatement: "5.1",
-    difficulty: "basic",
+    difficulty: "advanced",
     question:
-      "A team is choosing a model for a long-document analysis task. The documents are 800,000 tokens each. Which models can handle a document that size natively, without chunking or special configuration?",
+      "For each paper, the document-analysis subagent returns a 3,000-word narrative of its reasoning with long quotations. The synthesis agent receives 25 of these and works under a tight context budget; its reports omit key numbers and mix up which paper said what. What should you change first?",
     options: [
-      {
-        id: "A",
-        text: "Only Claude Opus 5 — every other current model caps out at 200K tokens",
-      },
-      {
-        id: "B",
-        text: "Claude Opus 5 and Claude Sonnet 5 both have 1M token context windows and take the document as is; Claude Haiku 4.5 caps at 200K and would need chunking",
-      },
-      {
-        id: "C",
-        text: "No current model can handle 800K tokens; the documents must be chunked to under 200K regardless of which one you pick",
-      },
-      {
-        id: "D",
-        text: "Every current Claude model has a 2M token context window, so any of them works",
-      },
+      { id: "A", text: "Have the analysis subagent return structured key facts, citations and relevance scores, not reasoning prose" },
+      { id: "B", text: "Give the synthesis agent a larger max_tokens value so it has more room to work through all 25 of the narratives" },
+      { id: "C", text: "Add a second synthesis pass that re-reads all 25 narratives and corrects any numbers the first pass got wrong" },
+      { id: "D", text: "Have the coordinator cut each narrative down to its first 500 words before forwarding it to the synthesis agent" },
     ],
-    correctAnswer: "B",
+    correctAnswer: "A",
     explanation:
-      "Context windows differ by model, and the difference is what drives the choice here. Claude Opus 5 and Claude Sonnet 5 both have a 1M token context window — on Opus 5 that is both the default and the maximum, so an 800K document needs no configuration at all. Claude Haiku 4.5 has a 200K window, so the same document would have to be chunked and stitched back together. Option A is wrong because Sonnet 5 also reaches 1M. Option C is wrong because 800K fits comfortably inside 1M. Option D overstates every model: 2M is not a context window Claude offers.\n\nThe architectural point: pick the model by the size of the input as well as the difficulty of the task. Reaching for a cheaper model with a smaller window buys you a chunking pipeline you then have to maintain.\n\nHow to implement:\n```python\nimport anthropic\n\nclient = anthropic.Anthropic()\n\n# 1M context is native — the 800K document goes in whole.\nresponse = client.messages.create(\n    model=\"claude-sonnet-5\",\n    max_tokens=4096,\n    messages=[{\"role\": \"user\", \"content\": large_800k_document}],\n)\n\nprint(\"Input tokens used:\", response.usage.input_tokens)\n```\n\n```python\n# Do not guess a window — ask the Models API before you commit to a model.\nm = client.models.retrieve(\"claude-sonnet-5\")\nprint(m.max_input_tokens)   # context window\nprint(m.max_tokens)         # output cap, a different limit\n```",
-    keyConcept: "Context windows: Opus 5 and Sonnet 5 = 1M native; Haiku 4.5 = 200K",
+      "A is correct. When a downstream agent has a limited context budget, the upstream agent should return structured data (key facts, citations, relevance scores) rather than verbose content and reasoning chains. The synthesis agent then receives the facts it needs, each tied to its paper, in a fraction of the tokens.\n\nB confuses limits: max_tokens caps the length of the model's output, not how much input it can use well. C doubles the cost and feeds the second pass the same overloaded input that caused the errors. D truncates by position, so any key number that appears after word 500 is lost.\n\nHow to implement:\n```typescript\ninterface PaperAnalysis {\n  paperId: string;\n  citation: string;            // \"Lee et al., 2025, J. Energy Policy\"\n  keyFacts: { fact: string; value?: string; page?: number }[];\n  relevance: number;           // 0-1, against the research question\n  method: string;              // \"RCT, n=1,200\"\n}\n// The subagent's final message must be a JSON array of PaperAnalysis, nothing else\n```",
+    keyConcept: "Upstream agents return structured facts, citations and relevance, not reasoning prose",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
+      { title: "Effective context engineering for AI agents", url: "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents" },
+    ],
   },
   {
     id: "E5-002",
-    scenario: "Developer Productivity with Claude",
+    scenario: "Customer Support Resolution Agent",
     domain: 5,
     domainName: "Context Management & Reliability",
     taskStatement: "5.2",
     difficulty: "intermediate",
     question:
-      "Claude Code is processing a large codebase analysis task and starts receiving `<token_budget>` XML messages injected into its context. What does this mechanism do and why is it important?",
+      "A customer writes: \"This is the THIRD time my package arrived damaged. Ridiculous.\" They attach photos. Policy covers a standard replacement, which the agent is allowed to issue, and the customer has not asked for a person. Which response pattern is best?",
     options: [
-      {
-        id: "A",
-        text: "It is a billing notification telling the model to reduce output verbosity to stay under budget",
-      },
-      {
-        id: "B",
-        text: "Claude receives `<token_budget>` XML with remaining budget information and usage updates after each tool call — this context awareness allows Claude to adjust its behavior (e.g., be more concise, stop spawning new subagents) as context fills",
-      },
-      {
-        id: "C",
-        text: "It is a user-configurable prompt element that restricts total output length",
-      },
-      {
-        id: "D",
-        text: "It triggers automatic compaction every time it appears in the context",
-      },
+      { id: "A", text: "Escalate to a human right away, since strong negative sentiment signals the case is too sensitive for the agent" },
+      { id: "B", text: "Acknowledge the frustration, offer the replacement now, and escalate only if the customer insists on a human" },
+      { id: "C", text: "Open a full investigation into the carrier's damage history first, so that the reply can address the root cause" },
+      { id: "D", text: "Issue the replacement with a brief policy-only reply and close the case, since no human was requested" },
     ],
     correctAnswer: "B",
     explanation:
-      "Claude Code's context management system injects `<token_budget>` XML into the context, providing Claude with information about the remaining token budget and usage updates after each tool call. This context awareness is by design: Claude can use this information to make informed decisions, such as writing shorter responses, avoiding spawning new subagents that would consume additional context, or prioritizing its remaining steps. It is not a billing notification, not user-configurable directly, and does not trigger compaction.\n\nHow to implement:\n```typescript\n// Parse token_budget events from stream-json output\nconst output = execSync(\n  'claude --output-format stream-json \"Analyze 500 files\"',\n  { encoding: 'utf8' }\n);\n\nfor (const line of output.split('\\n').filter(Boolean)) {\n  const event = JSON.parse(line);\n  if (event.type === 'system' && event.content?.includes('token_budget')) {\n    // Extract remaining budget\n    const match = event.content.match(/remaining=\"(\\d+)\"/);\n    if (match) {\n      const remaining = parseInt(match[1]);\n      console.log(`Token budget remaining: ${remaining}`);\n      if (remaining < 50000) {\n        console.warn('Low context budget — agent should wrap up');\n      }\n    }\n  }\n}\n```\n\n```markdown\n<!-- System prompt guidance for context-aware behavior -->\n## Context Budget Awareness\nWhen you receive a <token_budget> message:\n- If remaining > 200,000: proceed normally\n- If remaining < 100,000: write shorter responses, avoid spawning new subagents\n- If remaining < 50,000: save state to disk and plan for graceful continuation\n- If remaining < 20,000: immediately write final summary and stop\n```",
-    keyConcept: "Context awareness: Claude receives token_budget XML and usage updates after each tool call",
+      "B is correct. When the issue is within the agent's capability and the customer has not asked for a human, the agent should acknowledge the frustration and offer the resolution, escalating only if the customer reiterates that they want a person.\n\nA uses sentiment as an escalation trigger; frustration is not a measure of case complexity, and this case is a standard covered replacement. C delays a resolution the customer can have now; a carrier investigation is a separate follow-up. D resolves the case but ignores the frustration and gives the customer no clear path to a human if they want one, which tends to produce a repeat contact.\n\nHow to implement (few-shot example in the system prompt):\n```markdown\n<example>\nCustomer: \"Third damaged package. Ridiculous.\" (photos attached)\nAgent: \"I'm sorry, three damaged deliveries is frustrating. I can send a\nreplacement today at no cost. Would you like me to do that, or would you\nprefer to speak with a member of our team?\"\n</example>\n```",
+    keyConcept: "Acknowledge frustration and offer resolution; escalate only if the customer reiterates",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Customer support agent guide", url: "https://platform.claude.com/docs/en/about-claude/use-case-guides/customer-support-chat" },
+    ],
   },
   {
     id: "E5-003",
-    scenario: "Developer Productivity with Claude",
+    scenario: "Multi-Agent Research System",
     domain: 5,
     domainName: "Context Management & Reliability",
-    taskStatement: "5.2",
-    difficulty: "advanced",
+    taskStatement: "5.3",
+    difficulty: "intermediate",
     question:
-      "A team wants to implement custom compaction behavior — specifically, saving a structured summary to a file before compaction occurs, instead of relying on the default lossy summarization. Which hook enables this?",
+      "The patent-search subagent returns an empty list in two situations: when the patent API times out, and when a query legitimately has no matching patents. The coordinator treats both as \"no prior art found\" and has published reports claiming novelty for topics that were never actually searched. What fix addresses the root cause?",
     options: [
-      {
-        id: "A",
-        text: "`PostToolUse` on any tool call — run the summary logic whenever any tool executes",
-      },
-      {
-        id: "B",
-        text: "`SessionStart` — run the summary logic at the beginning of each new session after compaction",
-      },
-      {
-        id: "C",
-        text: "`PreCompact` — fires before compaction occurs, allowing custom state preservation logic to run first",
-      },
-      {
-        id: "D",
-        text: "`compact_boundary` SystemMessage handler — intercept the system message and redirect compaction",
-      },
+      { id: "A", text: "Return a distinct error for access failures (type, query, retries) and keep [] for successful empty searches" },
+      { id: "B", text: "Have the coordinator re-run every search that comes back empty, in case the empty list came from a timeout" },
+      { id: "C", text: "Make the subagent raise an exception on any empty result so that the coordinator halts the workflow for review" },
+      { id: "D", text: "Raise the patent API timeout from 10 to 60 seconds so that timeouts become rare enough to be safely ignored" },
     ],
-    correctAnswer: "C",
+    correctAnswer: "A",
     explanation:
-      "The `PreCompact` hook fires specifically before Claude Code's context compaction process begins. This is the correct hook for implementing custom compaction behavior: the hook can write a structured summary, save key state to files, or perform any preservation logic before the conversation history is summarized. `PostToolUse` is too frequent and not triggered by compaction. `SessionStart` fires after compaction and a new session begins, which is too late. The `compact_boundary` SystemMessage is observable but not interceptable as a hook.\n\nHow to implement:\n```bash\n#!/bin/bash\n# .claude/hooks/pre-compact.sh\n# Runs before context compaction — save structured state\n\nTIMESTAMP=$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")\nSTATE_FILE=\".claude/state/pre-compact-$(date +%s).json\"\nmkdir -p .claude/state\n\n# Save current progress snapshot\ncat > \"$STATE_FILE\" << EOF\n{\n  \"timestamp\": \"$TIMESTAMP\",\n  \"git_branch\": \"$(git branch --show-current)\",\n  \"files_modified\": $(git diff --name-only | jq -R . | jq -s .),\n  \"last_commit\": \"$(git log --oneline -1)\",\n  \"progress_note\": \"Compaction checkpoint\"\n}\nEOF\n\necho \"Pre-compact state saved to $STATE_FILE\" >&2\nexit 0\n```\n\n```json\n// .claude/settings.json\n{\n  \"hooks\": {\n    \"PreCompact\": [\n      {\n        \"type\": \"command\",\n        \"command\": \".claude/hooks/pre-compact.sh\"\n      }\n    ]\n  }\n}\n```\n\n```bash\n# After compaction, the SessionStart hook can read the saved state\n# .claude/hooks/session-start.sh\nLATEST_STATE=$(ls -t .claude/state/pre-compact-*.json 2>/dev/null | head -1)\nif [ -n \"$LATEST_STATE\" ]; then\n  echo \"Resuming from pre-compaction state: $LATEST_STATE\" >&2\n  cat \"$LATEST_STATE\" >&2\nfi\n```",
-    keyConcept: "PreCompact hook enables custom state preservation before context compaction",
+      "A is correct. An access failure (the search never ran) and a valid empty result (the search ran and found nothing) mean different things and need different decisions. Reporting the failure as a structured error, with its type, the attempted query and retry information, lets the coordinator retry, try another source or flag the gap, while [] keeps meaning \"searched, nothing found\".\n\nB spends calls re-running valid empty searches and still cannot tell the two cases apart. C turns legitimate \"no matches\" results into failures and stops the whole workflow, which is the opposite anti-pattern. D makes timeouts less frequent but still reports the ones that happen as \"no prior art\".\n\nHow to implement:\n```typescript\ntype SearchResult =\n  | { ok: true; query: string; results: Patent[] }            // [] = truly none\n  | { ok: false; failureType: \"timeout\" | \"auth\" | \"unavailable\";\n      query: string; attempts: number; partialResults: Patent[];\n      alternatives: string[] };                                 // e.g. [\"EPO mirror\"]\n```",
+    keyConcept: "Distinguish access failures from valid empty results",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "MCP specification: Tools (error handling)", url: "https://modelcontextprotocol.io/specification/2025-06-18/server/tools" },
+      { title: "Writing effective tools for agents", url: "https://www.anthropic.com/research/writing-tools-for-agents" },
+    ],
   },
   {
     id: "E5-004",
-    scenario: "Multi-Agent Research System",
-    domain: 5,
-    domainName: "Context Management & Reliability",
-    taskStatement: "5.3",
-    difficulty: "advanced",
-    question:
-      "A complex research workflow processes 500 documents across multiple sessions. The team is debating between: (A) using a single long-running session with compaction, or (B) spawning subagents for each batch, which return results to a coordinator. Which approach is more context-efficient and why?",
-    options: [
-      {
-        id: "A",
-        text: "Single session with compaction — it avoids overhead of spawning multiple agents and compaction preserves all relevant information",
-      },
-      {
-        id: "B",
-        text: "Subagents in fresh context windows — each subagent processes its batch in an isolated context, returns only the final result to the coordinator, preventing the coordinator's context from accumulating the full processing history",
-      },
-      {
-        id: "C",
-        text: "Both approaches are equivalent in context efficiency; choose based on code complexity",
-      },
-      {
-        id: "D",
-        text: "Single session is more efficient because context reuse across documents reduces per-document token cost",
-      },
-    ],
-    correctAnswer: "B",
-    explanation:
-      "Subagents in fresh context windows are significantly more context-efficient for large-scale processing. Each subagent starts with a clean context, processes its batch, and returns only the final result to the coordinator. The intermediate processing steps (100s of tool calls, partial results) never accumulate in the coordinator's context. With compaction, even though the history is summarized, information loss occurs and the coordinator's context still grows over time. The multi-context-window pattern is the recommended approach for workflows that exceed a single context window's capacity.\n\nHow to implement:\n```typescript\n// Coordinator: spawn subagents in fresh contexts for each batch\nimport { query } from \"@anthropic-ai/claude-code\";\n\nasync function processDocumentBatches(allDocs: string[]) {\n  const BATCH_SIZE = 25;\n  const results: string[] = [];\n\n  for (let i = 0; i < allDocs.length; i += BATCH_SIZE) {\n    const batch = allDocs.slice(i, i + BATCH_SIZE);\n    console.log(`Processing batch ${i / BATCH_SIZE + 1}/${Math.ceil(allDocs.length / BATCH_SIZE)}`);\n\n    // Each Agent call spawns a fresh context window\n    // Only the final summary returns to coordinator\n    const batchResult = await query({\n      prompt: `\n        Use the Agent tool to analyze documents ${i + 1}-${i + batch.length}.\n        The documents are: ${batch.join(', ')}\n        Return only: 3-sentence summary + key findings list.\n      `,\n    });\n\n    results.push(batchResult.result);\n    // Coordinator's context grows by ~200 tokens (summary) not ~50,000 (full transcript)\n  }\n\n  // Final synthesis — coordinator only has compact summaries\n  return results;\n}\n```",
-    keyConcept: "Multi-context window workflows: subagents with fresh context preferred over compaction for scale",
-  },
-  {
-    id: "E5-005",
-    scenario: "Claude Code for Continuous Integration",
-    domain: 5,
-    domainName: "Context Management & Reliability",
-    taskStatement: "5.3",
-    difficulty: "intermediate",
-    question:
-      "A CI pipeline runs multiple Claude Code sessions across different runs, and the team needs each session to know what tests were passing or failing in the previous run. The pipeline does not use session resumption. What is the most reliable state-passing mechanism across context windows?",
-    options: [
-      {
-        id: "A",
-        text: "Include the previous run's full conversation history in the new session's system prompt",
-      },
-      {
-        id: "B",
-        text: "Write a structured `tests.json` or `progress.txt` state file at the end of each run; the next session reads this file at startup to understand the previous state",
-      },
-      {
-        id: "C",
-        text: "Use the `--continue` flag to automatically inherit state from the previous session",
-      },
-      {
-        id: "D",
-        text: "Store state in environment variables that persist across CI runs",
-      },
-    ],
-    correctAnswer: "B",
-    explanation:
-      "State files (e.g., `tests.json`, `progress.txt`) written to the filesystem are the recommended pattern for passing structured state across context window boundaries in multi-session workflows. Each session reads the state file at startup (via a SessionStart hook or initial tool call), processes its work, and writes an updated state file. This is explicit, inspectable, and does not depend on session continuity. Including full conversation history in system prompts is token-wasteful. `--continue` only resumes the immediately previous session. Environment variables are ephemeral in most CI systems.\n\nHow to implement:\n```json\n// .claude/state/tests.json — written at end of each run\n{\n  \"lastRun\": \"2025-01-15T09:00:00Z\",\n  \"passing\": [\"auth.test.ts\", \"user.test.ts\", \"billing.test.ts\"],\n  \"failing\": [\"payment.test.ts\", \"webhook.test.ts\"],\n  \"skipped\": [\"e2e/checkout.test.ts\"],\n  \"coverage\": 74.3\n}\n```\n\n```bash\n#!/bin/bash\n# .claude/hooks/session-start.sh — read state file at session start\nSTATE_FILE=\".claude/state/tests.json\"\nif [ -f \"$STATE_FILE\" ]; then\n  echo \"=== Previous Test State ===\"  >&2\n  echo \"Failing tests from last run:\" >&2\n  jq -r '.failing[]' \"$STATE_FILE\" >&2\n  echo \"Coverage: $(jq -r '.coverage' $STATE_FILE)%\" >&2\nfi\n```\n\n```typescript\n// CI pipeline: write state at end of each run\nasync function runCISession(sessionNum: number) {\n  const prevState = JSON.parse(fs.readFileSync('.claude/state/tests.json', 'utf8'));\n\n  const result = await query({\n    prompt: `\n      Previous test run state: ${JSON.stringify(prevState)}\n      Fix the failing tests and write updated state to .claude/state/tests.json\n    `,\n  });\n  // State file is written by Claude during the session\n}\n```",
-    keyConcept: "State files (tests.json, progress.txt) for reliable state tracking across context windows",
-  },
-  {
-    id: "E5-006",
-    scenario: "Code Generation with Claude Code",
-    domain: 5,
-    domainName: "Context Management & Reliability",
-    taskStatement: "5.3",
-    difficulty: "intermediate",
-    question:
-      "A multi-session code refactoring workflow needs to track which files have been refactored across multiple Claude Code runs. The team considers using git as the state mechanism. Why is git particularly well-suited for this?",
-    options: [
-      {
-        id: "A",
-        text: "Git provides atomic file system operations that prevent context window overflow",
-      },
-      {
-        id: "B",
-        text: "Git commits create a persistent, queryable record of which files were changed in each session — the next session can run `git diff` or `git log` to discover exactly what was done and what remains",
-      },
-      {
-        id: "C",
-        text: "Git automatically injects commit history into Claude's context window via the CLAUDE.md system",
-      },
-      {
-        id: "D",
-        text: "Git's staging area serves as a cross-session memory store that Claude Code reads natively",
-      },
-    ],
-    correctAnswer: "B",
-    explanation:
-      "Git is an excellent cross-session state mechanism because commits create a persistent, content-addressable record of exactly what changed and when. The next Claude Code session can use `git status` to see uncommitted changes, `git log` to see what was completed in previous sessions, and `git diff` to understand the current state relative to any baseline. This gives Claude precise, queryable state information without consuming context window with raw conversation history. Git does not automatically inject into CLAUDE.md and its staging area is not a native Claude memory mechanism.\n\nHow to implement:\n```bash\n# Session prompt that leverages git as state\n# Pass this at the start of each session:\nclaude \"\nRun these commands to understand current refactoring state:\n  git log --oneline --since='1 week ago' -- 'src/**/*.ts'\n  git diff main --name-only --diff-filter=M\n  git status --short\n\nThen continue refactoring the remaining class components to functional.\nCommit each file you refactor with: 'refactor: convert X to functional component'\n\"\n```\n\n```typescript\n// CI: each Claude session commits progress, next session reads git log\nasync function refactorPipeline() {\n  for (let batch = 0; batch < totalBatches; batch++) {\n    await query({\n      prompt: `\n        Check git log to see which files have already been refactored:\n        Run: git log --oneline --grep=\"refactor:\" -- src/\n\n        Pick the next 5 unrefactored .tsx files and convert them.\n        After each file, commit: git commit -m \"refactor: convert {filename}\"\n      `,\n    });\n  }\n}\n```\n\n```bash\n# After pipeline, verify progress via git\ngit log --oneline --grep=\"refactor:\" | wc -l  # Count refactored files\ngit diff main --name-only | grep -v refactor    # Find remaining files\n```",
-    keyConcept: "Git as cross-session state tracking: git log/diff/status provides precise queryable history",
-  },
-  {
-    id: "E5-007",
-    scenario: "Multi-Agent Research System",
-    domain: 5,
-    domainName: "Context Management & Reliability",
-    taskStatement: "5.1",
-    difficulty: "advanced",
-    question:
-      "A research coordinator orchestrates 20 subagents. At the start of the session, before any documents are processed, the coordinator already has 15% context utilization. The coordinator has 12 MCP servers connected. What is the most likely primary contributor to the high baseline context usage?",
-    options: [
-      {
-        id: "A",
-        text: "The coordinator's system prompt is too long and must be shortened",
-      },
-      {
-        id: "B",
-        text: "The 20 subagent definitions are pre-loaded into the context window at session start",
-      },
-      {
-        id: "C",
-        text: "The 12 MCP servers each inject all of their tool schemas into every request, creating a high baseline of tool definition tokens before any task content is added",
-      },
-      {
-        id: "D",
-        text: "The CLAUDE.md file for the project is too large and consuming excessive context",
-      },
-    ],
-    correctAnswer: "C",
-    explanation:
-      "Each MCP server injects all of its tool schemas (names, descriptions, parameter types, documentation) into every API request. With 12 servers, each potentially having 5–20 tools with detailed schemas, the combined tool definition context can easily reach thousands of tokens. This overhead is present on every request before any task content is processed, explaining the high baseline. Subagent definitions are not pre-loaded. System prompts and CLAUDE.md can contribute but are typically smaller than 12 servers' worth of tool schemas.\n\nHow to implement:\n```bash\n# Audit tool schema token footprint\n# Count tools per server\nclaude mcp list --verbose  # Shows tool count per server\n\n# Disable servers not needed for current task\nclaude mcp disable reporting-server\nclaude mcp disable legacy-crm\nclaude mcp disable analytics-v1\n\n# Or use a minimal .mcp.json for specific tasks\ncat > .mcp.research.json << 'EOF'\n{\n  \"mcpServers\": {\n    \"file-search\": { \"command\": \"node\", \"args\": [\"./mcp/search.js\"] },\n    \"web-fetch\": { \"command\": \"node\", \"args\": [\"./mcp/fetch.js\"] }\n  }\n}\nEOF\nclaude --mcp-config .mcp.research.json \"Research the topic\"\n```\n\n```python\n# Programmatically estimate schema token overhead\ndef estimate_schema_tokens(tools: list[dict]) -> int:\n    import json\n    # Rough estimate: 1 token ≈ 4 chars\n    total_chars = sum(len(json.dumps(t)) for t in tools)\n    return total_chars // 4\n\n# With 12 servers × 15 tools × avg 500 tokens/tool schema = ~90,000 tokens baseline\nprint(f\"Estimated baseline tokens: {12 * 15 * 500:,}\")\n# → 90,000 tokens before any user content!\n```",
-    keyConcept: "Each MCP server adds ALL tool schemas to EVERY request — primary source of baseline context overhead",
-  },
-  {
-    id: "E5-008",
-    scenario: "Multi-Agent Research System",
-    domain: 5,
-    domainName: "Context Management & Reliability",
-    taskStatement: "5.2",
-    difficulty: "intermediate",
-    question:
-      "During a long research session, a `SystemMessage` with `subtype: \"compact_boundary\"` appears. The session had important findings shared in conversation messages (not in CLAUDE.md) and also had project-level CLAUDE.md instructions. After compaction, which elements survive intact and which are at risk?",
-    options: [
-      {
-        id: "A",
-        text: "Both conversation findings and CLAUDE.md survive — compaction only removes tool call details",
-      },
-      {
-        id: "B",
-        text: "CLAUDE.md survives intact (re-injected from disk after compaction); conversation messages including important findings are summarized lossy — some detail may be lost",
-      },
-      {
-        id: "C",
-        text: "Neither survives — compaction starts a completely fresh context with only the system prompt",
-      },
-      {
-        id: "D",
-        text: "CLAUDE.md is summarized like conversation messages; only the most recent 20 messages survive verbatim",
-      },
-    ],
-    correctAnswer: "B",
-    explanation:
-      "Compaction works as follows: CLAUDE.md is re-read from disk and injected fresh — it always survives verbatim. The conversation history (including important findings, intermediate results, and any instructions given conversationally) is summarized using a lossy compression. The summary preserves the overall narrative but may lose specific details, numbers, or conclusions. This is why critical information should be written to CLAUDE.md or state files rather than left in conversational messages if it needs to survive compaction.\n\nHow to implement:\n```bash\n# Strategy: use PreCompact hook to persist findings before compaction\n# .claude/hooks/pre-compact.sh\n#!/bin/bash\n\n# Ask Claude to summarize key findings to a persistent file\n# (This runs before compaction wipes the conversation)\nFINDINGS_FILE=\".claude/research-findings.md\"\n\n# Alternatively, append to CLAUDE.md so it survives verbatim\necho \"\\n## Research Findings (auto-saved $(date))\" >> .claude/CLAUDE.md\necho \"See .claude/research-findings.md for details\" >> .claude/CLAUDE.md\nexit 0\n```\n\n```markdown\n<!-- In CLAUDE.md — findings survive compaction since CLAUDE.md is re-injected -->\n## Key Research Findings (Persistent)\n<!-- Claude should append findings here when instructed -->\n- Document batch 1-50: 3 anomalies found in Q3 data (see findings-batch1.json)\n- Document batch 51-100: Market trends confirm hypothesis H2\n```\n\n```typescript\n// Guide Claude to write findings to CLAUDE.md during session\nconst sessionPrompt = `\nAs you analyze each batch of documents:\n1. Process the documents\n2. Append key findings to .claude/CLAUDE.md under \"## Research Findings\"\n3. These findings will survive context compaction\n\nDo not rely on conversational memory for important numbers or conclusions.\n`;\n```",
-    keyConcept: "Compaction: CLAUDE.md survives verbatim; conversation history is lossy-summarized",
-  },
-  {
-    id: "E5-009",
     scenario: "Developer Productivity with Claude",
     domain: 5,
     domainName: "Context Management & Reliability",
-    taskStatement: "5.3",
+    taskStatement: "5.4",
+    difficulty: "intermediate",
+    question:
+      "Your agent must answer \"How does a refund flow from the API to the ledger?\" in a 400,000-line monorepo. In the current design the main agent runs every grep and file read itself; after 30 minutes its context is mostly raw search output and it loses track of the original question. What design keeps the main agent effective?",
+    options: [
+      { id: "A", text: "Spawn subagents for focused questions, such as tracing refund dependencies, that return only summaries" },
+      { id: "B", text: "Load as much of the monorepo as fits into context at the start so the agent rarely has to search afterwards" },
+      { id: "C", text: "Have the main agent cap every grep at 20 results while it keeps running all of the searches in its own context" },
+      { id: "D", text: "Run the same question in five parallel sessions and keep the answer that most of the sessions agree on" },
+    ],
+    correctAnswer: "A",
+    explanation:
+      "A is correct. Delegating focused investigations (\"find all refund entry points\", \"trace refund dependencies into the ledger\") to subagents keeps the verbose exploration output in their own context windows; the main agent receives only the summaries and preserves the high-level coordination of the question.\n\nB fills the context with mostly irrelevant code before any work starts, which accelerates the degradation. C still accumulates every search in the main context, and capping results can hide the one match that matters. D multiplies the same flawed design five times and adds cost without fixing context accumulation. (The guide calls the spawning tool \"Task\"; current Agent SDK docs name it \"Agent\" in allowedTools.)\n\nHow to implement (Agent SDK, TypeScript):\n```typescript\nconst options = {\n  model: \"claude-sonnet-5-5\",\n  allowedTools: [\"Read\", \"Grep\", \"Glob\", \"Agent\"],\n  agents: {\n    \"code-tracer\": {\n      description: \"Traces one call path and returns a short summary with file:line refs\",\n      prompt: \"Investigate only the question given. Return <=20 lines: path, key functions, file:line.\",\n      tools: [\"Read\", \"Grep\", \"Glob\"],\n    },\n  },\n};\n```",
+    keyConcept: "Subagent delegation isolates verbose exploration output from the coordinating agent",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Claude Code: Create custom subagents", url: "https://code.claude.com/docs/en/sub-agents" },
+      { title: "Agent SDK: Subagents", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
+    ],
+  },
+  {
+    id: "E5-005",
+    scenario: "Multi-Agent Research System",
+    domain: 5,
+    domainName: "Context Management & Reliability",
+    taskStatement: "5.4",
     difficulty: "advanced",
     question:
-      "A complex analysis task is designed as a single long session but the team finds that after 60% of the task is done, the agent's quality degrades. The engineer proposes switching to a multi-context window workflow. What does this approach look like in practice?",
+      "A six-hour research run with a coordinator and eight subagents crashed at hour four when the host restarted. All progress lived in memory, so the run started over from zero. How should you design the system so the next crash costs minutes instead of hours?",
     options: [
-      {
-        id: "A",
-        text: "Run the same prompt multiple times in separate sessions and merge the outputs by majority vote",
-      },
-      {
-        id: "B",
-        text: "Split the task into batches; each batch runs in a fresh session that starts by reading a state file (filesystem discovery), processes its work, and writes results back — no session history is carried across batches",
-      },
-      {
-        id: "C",
-        text: "Use the `--context-budget` flag to split the session budget across multiple API calls",
-      },
-      {
-        id: "D",
-        text: "Enable compaction on each API call individually rather than letting it accumulate",
-      },
+      { id: "A", text: "Have each agent export state to a known location; on resume, the coordinator loads a manifest into prompts" },
+      { id: "B", text: "Rely on resuming the coordinator's session after a crash, since its transcript holds every result returned so far" },
+      { id: "C", text: "Save the draft of the final report every hour and, on resume, let all subagents restart their research from scratch" },
+      { id: "D", text: "Run two identical copies of the whole system on separate hosts so one of them survives if the other one crashes" },
+    ],
+    correctAnswer: "A",
+    explanation:
+      "A is correct. Structured state persistence makes recovery explicit: each agent writes its progress (completed subtasks, findings, pending work) to a known location, and on resume the coordinator loads a manifest of those exports and injects the relevant state into each agent's prompt, so work continues from the last checkpoint.\n\nB recovers only results that subagents had already returned; work in progress inside each subagent is lost, and reloading a four-hour transcript brings back its context problems. C protects the report text but throws away per-agent progress, so most of the research is repeated. D doubles cost and does not help when both copies fail for the same reason.\n\nHow to implement:\n```json\n// state/manifest.json, rewritten by the coordinator after each checkpoint\n{\n  \"runId\": \"batt-2026-11-20\",\n  \"agents\": {\n    \"web-search\": { \"state\": \"state/web-search.json\", \"status\": \"done\" },\n    \"doc-analysis\": { \"state\": \"state/doc-analysis.json\", \"status\": \"in_progress\",\n                      \"completed\": 14, \"remaining\": [\"paper-15\", \"paper-16\"] }\n  }\n}\n```",
+    keyConcept: "Crash recovery: agents export state; the coordinator loads a manifest on resume",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
+      { title: "Effective harnesses for long-running agents", url: "https://www.anthropic.com/research/effective-harnesses-for-long-running-agents" },
+    ],
+  },
+  {
+    id: "E5-006",
+    scenario: "Structured Data Extraction",
+    domain: 5,
+    domainName: "Context Management & Reliability",
+    taskStatement: "5.5",
+    difficulty: "intermediate",
+    question:
+      "Your extraction system reports 97% field accuracy across 50,000 documents, and leadership wants to remove human review for all high-confidence outputs. Typed invoices make up 85% of the volume; handwritten receipts and multi-page contracts make up the rest. What should you do before reducing review?",
+    options: [
+      { id: "A", text: "Approve the change, since 97% beats the 95% target and high-confidence outputs are the most accurate of all" },
+      { id: "B", text: "Measure accuracy by document type and by field, and reduce review only for segments that meet the target" },
+      { id: "C", text: "Remove review for typed invoices only, since they are the majority, and keep everything else under review" },
+      { id: "D", text: "Reduce review everywhere for a two-week trial, then roll it back if downstream teams report more errors" },
     ],
     correctAnswer: "B",
     explanation:
-      "The multi-context window workflow pattern works as follows: divide the overall task into batches; each batch starts a fresh Claude Code session that begins by reading the current state from the filesystem (a state file, git status, or a structured output from the previous batch) rather than from conversation history; the session processes its batch and writes results back to the filesystem; the next session repeats this. This keeps each context window small and clean. There is no `--context-budget` flag and per-call compaction is not a configurable option.\n\nHow to implement:\n```bash\n#!/bin/bash\n# pipeline.sh — multi-context window workflow\n\nTOTAL_ITEMS=500\nBATCH_SIZE=50\n\nfor start in $(seq 0 $BATCH_SIZE $((TOTAL_ITEMS - 1))); do\n  end=$((start + BATCH_SIZE - 1))\n  echo \"Processing items $start-$end...\"\n\n  # Each run is a fresh session — reads state file, writes results\n  claude \\\n    --output-format stream-json \\\n    --permission-mode bypassPermissions \\\n    --max-turns 30 \\\n    \"\n      Read .claude/state/progress.json to understand what's been done.\n      Process analysis items ${start} through ${end} from /data/items/.\n      Write results to /data/results/batch-${start}.json.\n      Update .claude/state/progress.json with completed range ${start}-${end}.\n    \"\n\n  echo \"Batch $start-$end complete\"\ndone\n\necho \"All batches done. Merging results...\"\ncat /data/results/batch-*.json | jq -s '.' > /data/results/final.json\n```\n\n```json\n// .claude/state/progress.json — shared state across sessions\n{\n  \"totalItems\": 500,\n  \"completedRanges\": [{\"start\": 0, \"end\": 49}, {\"start\": 50, \"end\": 99}],\n  \"lastUpdated\": \"2025-01-15T10:30:00Z\",\n  \"status\": \"in_progress\"\n}\n```",
-    keyConcept: "Multi-context window: fresh sessions + filesystem discovery preferred over long compacting sessions",
+      "B is correct. An aggregate figure weighted toward typed invoices can hide poor accuracy on handwritten receipts or on specific fields in contracts. Validating accuracy by document type and by field segment shows where automation is safe, and review is reduced only where each segment meets the target.\n\nA trusts the aggregate, which is exactly the number that can mask a failing segment. C is a guess without segment data; even typed invoices may have a weak field, such as tax IDs. D uses downstream complaints as the metric, but many extraction errors pass silently and are never reported.\n\nHow to implement:\n```python\nimport pandas as pd\ndf = pd.DataFrame(validation_rows)  # doc_type, field, correct (bool)\nseg = df.groupby([\"doc_type\", \"field\"])[\"correct\"].agg([\"mean\", \"count\"])\nsafe = seg[(seg[\"mean\"] >= 0.97) & (seg[\"count\"] >= 200)]\n# only (doc_type, field) pairs in `safe` may skip human review\n```",
+    keyConcept: "Aggregate accuracy can mask weak segments; validate by document type and field first",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Define success criteria and build evaluations", url: "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests" },
+    ],
   },
   {
-    id: "E5-010",
+    id: "E5-007",
     scenario: "Customer Support Resolution Agent",
     domain: 5,
     domainName: "Context Management & Reliability",
     taskStatement: "5.1",
     difficulty: "intermediate",
     question:
-      "A support team processes tickets with Claude Haiku 4.5 and hits a 180,000-token ticket thread that exceeds the model's 200K context window once the system prompt and tool definitions are added. They need the whole thread in context. What is the correct technical approach?",
+      "Each lookup_order call returns 45 fields (warehouse codes, carrier scan events, marketing flags and more). In return conversations the agent calls it six to eight times, and by mid-session these results dominate the context, although only order_id, items, purchase_date, status and return_eligible matter. What is the best fix?",
     options: [
-      {
-        id: "A",
-        text: "Move this workload to Claude Sonnet 5 or Claude Opus 5, which have 1M token context windows natively",
-      },
-      {
-        id: "B",
-        text: "Add an extended-context beta request header to unlock 1M tokens on Claude Haiku 4.5",
-      },
-      {
-        id: "C",
-        text: "Set `extended_context: true` in the `.mcp.json` MCP server configuration",
-      },
-      {
-        id: "D",
-        text: "Raise `max_tokens` to 1000000 so the request accepts the larger input",
-      },
+      { id: "A", text: "Move the agent to a model with a larger context window so all the lookup results fit for the whole session" },
+      { id: "B", text: "Trim each lookup_order result to the return-relevant fields before it is added to the conversation context" },
+      { id: "C", text: "Tell the agent in the system prompt to ignore the irrelevant fields when it reads lookup_order results later" },
+      { id: "D", text: "Keep lookup results out of the conversation entirely and have the agent call the tool again whenever needed" },
     ],
-    correctAnswer: "A",
+    correctAnswer: "B",
     explanation:
-      "Only option A describes a mechanism that exists. Claude Sonnet 5 and Claude Opus 5 have 1M token context windows natively, so the thread fits with no header, no flag, and no chunking — you change the model and the problem disappears.\n\nThe other three are the failure modes worth recognizing. B invents a header: Haiku 4.5's window is 200K and there is no beta that stretches it. C confuses layers — `.mcp.json` configures which MCP servers the agent connects to; it has nothing to say about context windows, and `extended_context` is not one of its settings. D confuses the two token limits: `max_tokens` caps what the model *generates*, while the context window caps *input plus output*. Raising `max_tokens` past the window does not enlarge the window; it just makes the request invalid.\n\nWhen the input genuinely cannot be made to fit, the real levers are context editing (clearing stale tool results) and compaction (summarizing earlier turns) — not an imaginary header.\n\nHow to implement:\n```python\nimport anthropic\n\nclient = anthropic.Anthropic()\n\n# The fix: a model whose window is bigger than the problem.\nresponse = client.messages.create(\n    model=\"claude-sonnet-5\",   # 1M context, native\n    max_tokens=4096,           # output cap — unrelated to the window\n    messages=[{\"role\": \"user\", \"content\": long_ticket_thread}],\n)\n```\n\n```python\n# If you must stay on a 200K model, prune the context instead of inventing a header.\nresponse = client.beta.messages.create(\n    model=\"claude-haiku-4-5\",\n    max_tokens=4096,\n    betas=[\"context-management-2025-06-27\"],\n    context_management={\"edits\": [{\"type\": \"clear_tool_uses_20250919\"}]},\n    messages=[{\"role\": \"user\", \"content\": long_ticket_thread}],\n)\n```",
-    keyConcept: "A 1M-context model beats an invented header; max_tokens is the output cap, not the window",
+      "B is correct. Tool results accumulate in context and consume tokens out of proportion to their relevance. Trimming each result to the fields the task needs, before it is appended, keeps the important facts and removes the noise, for example with a PostToolUse hook or a wrapper around the tool.\n\nA leaves 40 irrelevant fields per call in context; it raises cost without making the important fields easier to find. C still sends every field on every turn, so the tokens and the distraction remain. D forces repeated calls and drops the facts the agent needs between turns. (Tool definitions are a separate cost: Claude Code already defers MCP tool schemas through tool search, which is on by default; the problem here is the tool results.)\n\nHow to implement:\n```typescript\nconst RETURN_FIELDS = [\"order_id\", \"items\", \"purchase_date\", \"status\", \"return_eligible\"] as const;\n\nfunction trimOrder(raw: Record<string, unknown>) {\n  return Object.fromEntries(RETURN_FIELDS.map(k => [k, raw[k]]));\n}\n// tool handler: return { content: [{ type: \"text\", text: JSON.stringify(trimOrder(raw)) }] };\n```",
+    keyConcept: "Trim verbose tool outputs to relevant fields before they accumulate in context",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Writing effective tools for agents", url: "https://www.anthropic.com/research/writing-tools-for-agents" },
+      { title: "Claude Code: Connect to tools via MCP (tool search)", url: "https://code.claude.com/docs/en/mcp" },
+    ],
+  },
+  {
+    id: "E5-008",
+    scenario: "Multi-Agent Research System",
+    domain: 5,
+    domainName: "Context Management & Reliability",
+    taskStatement: "5.6",
+    difficulty: "intermediate",
+    question:
+      "Two credible sources disagree: an industry association reports 2024 battery-recycling capacity in the region at 1.2 million tonnes, while a government agency reports 0.8 million tonnes for the same year and region. The document-analysis subagent currently keeps whichever value has more citations and discards the other. What should it do instead?",
+    options: [
+      { id: "A", text: "Keep the government figure, because public agencies are more neutral and so are the more authoritative source" },
+      { id: "B", text: "Report the average of the two values, 1.0 million tonnes, labeled as an estimate that reconciles both sources" },
+      { id: "C", text: "Drop both figures from the analysis and note that reliable 2024 capacity data could not be found for the region" },
+      { id: "D", text: "Include both values with source attribution and flag the conflict so the coordinator can reconcile it" },
+    ],
+    correctAnswer: "D",
+    explanation:
+      "D is correct. When credible sources report conflicting statistics, the analysis should complete with both values included and the conflict annotated with source attribution, leaving reconciliation to the coordinator, which can check definitions, scope or methodology before synthesis.\n\nA and B both reconcile arbitrarily: A picks a winner by assumption, and B invents a figure that neither source reported. C discards two credible data points and reports a gap that does not exist. Like the current design, all three hide from the reader that the sources disagree.\n\nHow to implement:\n```json\n{\n  \"metric\": \"battery recycling capacity, 2024, region X\",\n  \"values\": [\n    { \"value\": 1.2, \"unit\": \"Mt\", \"source\": \"Industry association report\", \"url\": \"https://...\", \"method\": \"member survey\" },\n    { \"value\": 0.8, \"unit\": \"Mt\", \"source\": \"Government agency statistics\", \"url\": \"https://...\", \"method\": \"permitted capacity\" }\n  ],\n  \"conflict\": true,\n  \"note\": \"Possible definitional difference: surveyed vs permitted capacity\"\n}\n```",
+    keyConcept: "Annotate conflicting statistics with source attribution instead of picking one",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
+    ],
+  },
+  {
+    id: "E5-009",
+    scenario: "Structured Data Extraction",
+    domain: 5,
+    domainName: "Context Management & Reliability",
+    taskStatement: "5.5",
+    difficulty: "advanced",
+    question:
+      "Reviewers can check 300 of the 5,000 contracts extracted each day. Some contracts contain two different termination dates in different clauses, and the model extracts one of them with high confidence. Which routing rule makes the best use of the limited reviewer capacity?",
+    options: [
+      { id: "A", text: "Randomly pick 300 contracts each day so that every document has an equal chance of reaching a human reviewer" },
+      { id: "B", text: "Send the 300 longest contracts to review, because longer documents contain more clauses and so more errors" },
+      { id: "C", text: "Prioritize low-confidence fields and contracts with contradictory source text, like two termination dates" },
+      { id: "D", text: "Route by confidence score alone, since high confidence means the source document itself was unambiguous" },
+    ],
+    correctAnswer: "C",
+    explanation:
+      "C is correct. With limited capacity, review should go first to extractions with low model confidence and to documents whose source is ambiguous or contradictory. Detecting conflicting values in the source (two termination dates) catches cases the confidence score misses.\n\nA is a good way to measure error rates, which is a separate need, but as the only routing rule it spends most of the reviewers' time on easy, correct documents. B uses length as a proxy for risk without evidence that it predicts errors. D is contradicted by the scenario itself: the model gave high confidence to one of two conflicting dates.\n\nHow to implement:\n```python\ndef review_priority(doc):\n    score = 0\n    score += sum(1 for f in doc.fields if f.confidence < f.calibrated_threshold) * 2\n    score += 5 if doc.source_conflicts else 0   # e.g. two distinct termination dates found\n    return score\n\nqueue = sorted(today_docs, key=review_priority, reverse=True)[:300]\n```",
+    keyConcept: "Route low-confidence and contradictory-source extractions to limited reviewer capacity first",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Reduce hallucinations", url: "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations" },
+    ],
+  },
+  {
+    id: "E5-010",
+    scenario: "Customer Support Resolution Agent",
+    domain: 5,
+    domainName: "Context Management & Reliability",
+    taskStatement: "5.2",
+    difficulty: "intermediate",
+    question:
+      "A customer asks the agent to match a competitor's lower price on a TV they bought last week. Your policy describes price adjustments when your own site drops its price within 14 days of purchase, and says nothing about competitor prices. What should the agent do?",
+    options: [
+      { id: "A", text: "Apply the 14-day own-site adjustment rule to the competitor's price, since the intent of the policy is similar" },
+      { id: "B", text: "Decline politely, explaining that competitor price matching is not offered because the policy does not list it" },
+      { id: "C", text: "Ask for a screenshot of the competitor's price and approve the match if the purchase was within the 14 days" },
+      { id: "D", text: "Escalate to a human, because the policy is silent on competitor matching and the case needs a policy decision" },
+    ],
+    correctAnswer: "D",
+    explanation:
+      "D is correct. A policy gap is an escalation trigger even when the case looks simple: the policy covers own-site adjustments but is silent on competitor matching, so granting or refusing the request would be a policy decision the agent is not authorized to make.\n\nA and C extend the policy by analogy and commit the company to a rule nobody approved. B treats silence as a prohibition; refusing is also a policy decision, and it may contradict what the business would choose.\n\nHow to implement (system prompt excerpt):\n```markdown\n## Escalate when policy is ambiguous or silent\nIf a request is not explicitly covered by the policy documents\n(e.g. competitor price matching when policy only covers our own\nprice drops), do not approve or deny it. Call escalate_to_human\nwith: the request, the closest policy section, and why it does not apply.\n```",
+    keyConcept: "Escalate when policy is ambiguous or silent on the customer's specific request",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "Customer support agent guide", url: "https://platform.claude.com/docs/en/about-claude/use-case-guides/customer-support-chat" },
+    ],
   },
   {
     id: "E5-011",
     scenario: "Multi-Agent Research System",
     domain: 5,
     domainName: "Context Management & Reliability",
-    taskStatement: "5.2",
-    difficulty: "advanced",
+    taskStatement: "5.6",
+    difficulty: "intermediate",
     question:
-      "An orchestrator receives `<token_budget remaining=\"45000\">` in its context while mid-way through spawning 8 more subagents (each estimated at ~10,000 tokens of result overhead). What should a well-designed orchestrator do with this information?",
+      "The synthesis agent flags a \"contradiction\": one source says 34% of retailers use AI demand forecasting, another says 61%. On inspection, the first figure comes from a 2021 survey and the second from a 2025 survey, but neither subagent output included a date. How should you prevent this class of error?",
     options: [
-      {
-        id: "A",
-        text: "Ignore the budget information and continue spawning all 8 subagents as planned",
-      },
-      {
-        id: "B",
-        text: "Immediately trigger manual compaction before spawning any more subagents",
-      },
-      {
-        id: "C",
-        text: "Use the budget information to adapt: spawn only 4 of the 8 subagents (prioritizing the most critical ones), write intermediate results to a state file, and plan for continuation in a new context window for the remaining 4",
-      },
-      {
-        id: "D",
-        text: "Switch to using a model with a larger context window mid-session",
-      },
+      { id: "A", text: "Instruct the synthesis agent to prefer the higher figure whenever two sources report the same statistic" },
+      { id: "B", text: "Have the synthesis agent search the web again for each conflict to work out which figure is more recent" },
+      { id: "C", text: "Let the synthesis agent drop any statistic that conflicts, keeping only figures that all the sources agree on" },
+      { id: "D", text: "Require subagents to include publication and data-collection dates in the structured output for each claim" },
     ],
-    correctAnswer: "C",
+    correctAnswer: "D",
     explanation:
-      "Claude's context awareness (via `<token_budget>` XML) is designed to enable adaptive behavior. With 45,000 tokens remaining and 8 subagents each consuming ~10,000 tokens, spawning all 8 would exceed the budget (80,000 > 45,000). The well-designed response is to prioritize the most critical subagents, spawn only as many as the budget allows, persist intermediate results to a state file for durability, and gracefully plan for continuation in a new context window. You cannot switch models mid-session, and triggering compaction mid-task risks losing critical state.\n\nHow to implement:\n```markdown\n<!-- System prompt for context-budget-aware orchestrator -->\n## Context Budget Management\n\nYou will receive `<token_budget remaining=\"N\">` updates.\n\nWhen remaining > 100,000: spawn subagents normally.\nWhen remaining < 50,000:\n1. Write all completed results to .claude/state/results.json\n2. Write remaining work to .claude/state/pending.json\n3. Spawn only the highest-priority remaining subagents\n4. End the session gracefully with a continuation summary\n\nWhen remaining < 20,000:\n1. Stop spawning subagents immediately\n2. Write final state to .claude/state/checkpoint.json\n3. Output: \"CONTINUATION NEEDED: see .claude/state/checkpoint.json\"\n```\n\n```typescript\n// Orchestrator that reads token_budget events and adapts\nasync function adaptiveOrchestrator(tasks: Task[]) {\n  const BUDGET_PER_SUBAGENT = 10000;\n  let remainingBudget = 1000000; // Start estimate\n\n  for (const task of tasks) {\n    if (remainingBudget < BUDGET_PER_SUBAGENT * 2) {\n      // Save remaining tasks for next session\n      fs.writeFileSync('.claude/state/pending.json',\n        JSON.stringify({ pendingTasks: tasks.slice(tasks.indexOf(task)) })\n      );\n      console.log('Budget low — saved pending tasks, graceful stop');\n      break;\n    }\n    // Spawn subagent for this task\n    remainingBudget -= BUDGET_PER_SUBAGENT;\n  }\n}\n```",
-    keyConcept: "token_budget context awareness: adapt subagent spawning and plan graceful continuation",
+      "D is correct. Without publication or data-collection dates, a change over time looks like a contradiction. Requiring subagents to include those dates in their structured output lets the synthesis agent read 34% (2021) and 61% (2025) as a trend instead of a conflict.\n\nA picks a value by rule and hides the time dimension. B patches the symptom with extra round trips for information the subagents already had when they read the sources. C throws away valid data, and here it would erase the very trend the report should show.\n\nHow to implement:\n```typescript\ninterface DatedClaim {\n  claim: string;            // \"34% of retailers use AI demand forecasting\"\n  sourceUrl: string;\n  publishedAt: string;      // \"2021-06-01\"\n  dataCollectedAt?: string; // \"2021-Q1\"\n}\n// Synthesis rule: compare values only within the same collection period;\n// otherwise report them as a time series.\n```",
+    keyConcept: "Require publication and collection dates so temporal differences are not read as contradictions",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
+    ],
   },
   {
     id: "E5-012",
@@ -2039,31 +1569,23 @@ const examDomain5Questions: Question[] = [
     domain: 5,
     domainName: "Context Management & Reliability",
     taskStatement: "5.3",
-    difficulty: "basic",
+    difficulty: "advanced",
     question:
-      "A data processing workflow needs to track which of 1,000 items have been processed across multiple Claude Code sessions. The team considers three options: (A) rely on Claude's memory within a single long session, (B) write a `progress.txt` file updated after each item, (C) use git commits after each batch. Which options are reliable across session restarts?",
+      "Your web-search subagent often hits brief network timeouts that succeed on a second attempt. Today it forwards every timeout to the coordinator, which spends a turn deciding to retry each one. Occasionally a source returns 403 Forbidden, which no retry fixes. How should the subagent handle failures?",
     options: [
-      {
-        id: "A",
-        text: "Only option A — Claude's in-context memory is the most accurate tracking mechanism",
-      },
-      {
-        id: "B",
-        text: "Only option B — text files are the only format Claude Code can read at session start",
-      },
-      {
-        id: "C",
-        text: "Options B and C — both filesystem-based approaches persist across sessions; option A is lost when the session ends or compacts",
-      },
-      {
-        id: "D",
-        text: "All three options are equally reliable across session restarts",
-      },
+      { id: "A", text: "Forward every failure, including each timeout, so the coordinator keeps full visibility of all that happens" },
+      { id: "B", text: "Retry transient timeouts locally; propagate only unresolved errors like the 403, with attempts and partials" },
+      { id: "C", text: "Retry every failure locally until it succeeds, including the 403s, so the coordinator never handles errors" },
+      { id: "D", text: "Treat a 403 as an empty result so the run continues, and retry timeouts once before giving up silently" },
     ],
-    correctAnswer: "C",
+    correctAnswer: "B",
     explanation:
-      "In-session memory (option A) is lost when a Claude Code session ends and is degraded by compaction. It cannot reliably track state across multiple sessions. Filesystem-based approaches (B and C) persist independently of any Claude Code session: `progress.txt` is explicitly designed for this pattern, and git commits provide a queryable, version-controlled record of progress that any new session can inspect via `git log`. Both B and C are recommended patterns for cross-session state management.\n\nHow to implement:\n```bash\n# Option B: progress.txt — simple, explicit, readable\n# Written by Claude during session:\necho \"Processed: item-001, item-002, item-003\" >> progress.txt\necho \"Failed: item-004 (timeout)\" >> progress.txt\necho \"Last updated: $(date)\" >> progress.txt\n\n# Read at next session start:\ncat progress.txt\n# → New Claude session knows exactly where to resume\n```\n\n```bash\n# Option C: git commits — structured, queryable, version-controlled\n# After each batch, Claude commits:\ngit add data/processed/\ngit commit -m \"progress: processed items 001-050 [50/1000]\"\n\ngit add data/processed/\ngit commit -m \"progress: processed items 051-100 [100/1000]\"\n\n# New session queries git to find progress:\ngit log --oneline --grep=\"progress:\" | head -5\n# → progress: processed items 051-100 [100/1000]\n# → progress: processed items 001-050 [50/1000]\n\n# Find next item to process:\nls data/items/ | wc -l    # total\nls data/processed/ | wc -l  # done\n# → Resume from item 101\n```\n\n```typescript\n// Option A (UNRELIABLE): in-session memory\n// Never rely on this across sessions:\n// \"We processed items 1-50\" ← lost when session ends\n```",
-    keyConcept: "Filesystem-based state (progress.txt, git) survives session restarts; in-context memory does not",
+      "B is correct. Subagents should recover locally from transient failures and propagate only the errors they cannot resolve, together with what was attempted and any partial results. The coordinator stops spending turns on routine retries and still gets the context it needs for the 403 (try another source, or flag a coverage gap).\n\nA floods the coordinator with decisions the subagent can make on its own. C retries a permanent error that will never succeed, wasting time, and hides it from the coordinator. D silently suppresses errors: a 403 reported as \"no results\" looks like a successful empty search.\n\nHow to implement:\n```typescript\nasync function fetchWithRecovery(url: string) {\n  for (let attempt = 1; attempt <= 3; attempt++) {\n    const r = await fetchSource(url);\n    if (r.ok) return { ok: true, data: r.data };\n    if (r.kind !== \"timeout\") {\n      return { ok: false, failureType: r.kind, url, attempts: attempt,\n               partialResults: r.partial ?? [], alternatives: [\"search cached copy\"] };\n    }\n    await sleep(500 * attempt); // transient: handle locally\n  }\n  return { ok: false, failureType: \"timeout\", url, attempts: 3, partialResults: [] };\n}\n```",
+    keyConcept: "Recover transient failures locally; propagate only unresolved errors with context",
+    sources: [
+      { title: "CCAR-F Exam Guide v1.0 — Task 5.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
+    ],
   },
 ];
 

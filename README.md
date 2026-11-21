@@ -26,10 +26,11 @@ publica una revisión, `npm run verificar` es lo que avisa de que este repositor
 ### Modo estudio
 - 60 preguntas basadas en escenarios reales, con explicación después de cada respuesta
 - Filtrado por dominio o todos a la vez
-- Un concepto clave identificado por pregunta
+- Un concepto clave y sus fuentes oficiales de Anthropic (documentación, guía del examen, Anthropic Academy) por pregunta
 
 ### Modo examen
-- 60 preguntas exclusivas, distintas a las del modo estudio
+- 60 preguntas sacadas de un banco de 64, distintas a las del modo estudio
+- Solo ítems de una respuesta, y mezcla los 6 escenarios (el examen real usa 4); el puntaje escalado es una estimación lineal
 - Muestreo **ponderado por el peso oficial de cada dominio**, no a partes iguales
 - Temporizador de 120 minutos y navegador visual de preguntas
 - Puntuación escalada 100–1000, sin explicaciones hasta terminar
@@ -73,6 +74,9 @@ npm run verificar -- --sin-red   # sin red (es lo que corre en CI)
 Comprueba lo que se degrada solo con el tiempo:
 
 - que el formato del examen siga coincidiendo con la guía oficial;
+- que el puntaje mida conocimiento y no un patrón: claves repartidas entre A–D, la correcta ni siempre la
+  más larga ni siempre la más corta, una sola respuesta por ítem, las 30 tareas de la guía cubiertas en
+  cada banco y fuentes oficiales en cada pregunta;
 - que el muestreo ponderado pueda entregar los 60 ítems que anuncia la ficha;
 - que el contenido no enseñe API retirada ni modelos que ya no existen — una mención marcada
   como obsoleta sí se permite, porque enseñar qué dejó de funcionar es parte del temario;

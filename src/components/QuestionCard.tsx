@@ -177,17 +177,38 @@ export default function QuestionCard({
               </span>
             </div>
             <Separator className="mb-3" />
-            <p className="text-sm leading-relaxed text-muted-foreground">
+            <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line break-words">
               {explanationText}
             </p>
             <div className="mt-3 flex items-center gap-2">
               <span className="text-xs font-medium text-muted-foreground">
                 {t("question.keyConcept", locale)}
               </span>
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs h-auto shrink min-w-0 whitespace-normal text-left">
                 {keyConceptText}
               </Badge>
             </div>
+            {question.sources && question.sources.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {t("question.sources", locale)}
+                </p>
+                <ul className="mt-1 space-y-0.5">
+                  {question.sources.map((s) => (
+                    <li key={s.url}>
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline break-words"
+                      >
+                        → {s.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
