@@ -98,8 +98,8 @@ const translations = {
 
   // Footer
   "footer.disclaimer": {
-    es: "Simulador no oficial — solo para estudio personal. Basado en la guía pública del examen Claude Certified Architect – Foundations (CCAR-F, versión 1.0, vigente desde julio de 2026).",
-    en: "Unofficial simulator — for personal study only. Based on the public Claude Certified Architect – Foundations exam guide (CCAR-F, version 1.0, effective July 2026).",
+    es: "Simulador no oficial — solo para estudio personal. Basado en la guía pública del examen Claude Certified Architect – Foundations (CCAR-F, versión 1.1, vigente desde noviembre de 2026).",
+    en: "Unofficial simulator — for personal study only. Based on the public Claude Certified Architect – Foundations exam guide (CCAR-F, version 1.1, effective November 2026).",
   },
 } as const;
 

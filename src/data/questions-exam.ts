@@ -32,7 +32,7 @@ const examDomain1Questions: Question[] = [
     sources: [
       { title: "Handling stop reasons", url: "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons" },
       { title: "Handle tool calls", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -56,7 +56,7 @@ const examDomain1Questions: Question[] = [
     keyConcept: "Prompt guidance for preferences, programmatic enforcement only where compliance must be deterministic",
     sources: [
       { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -81,7 +81,7 @@ const examDomain1Questions: Question[] = [
     sources: [
       { title: "Work with sessions", url: "https://code.claude.com/docs/en/agent-sdk/sessions" },
       { title: "CLI reference", url: "https://code.claude.com/docs/en/cli-reference" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.7", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.7", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -105,7 +105,7 @@ const examDomain1Questions: Question[] = [
     keyConcept: "Use dynamic decomposition for open-ended investigation; chaining for predictable work",
     sources: [
       { title: "Building effective agents", url: "https://www.anthropic.com/research/building-effective-agents" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -130,7 +130,7 @@ const examDomain1Questions: Question[] = [
     sources: [
       { title: "Subagents in the SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
       { title: "Create custom subagents", url: "https://code.claude.com/docs/en/sub-agents" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -155,7 +155,7 @@ const examDomain1Questions: Question[] = [
     sources: [
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
       { title: "Subagents in the SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -180,7 +180,7 @@ const examDomain1Questions: Question[] = [
     sources: [
       { title: "Subagents in the SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
       { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -204,7 +204,7 @@ const examDomain1Questions: Question[] = [
     keyConcept: "Subagents do not inherit the parent's system prompt or history; pass context explicitly",
     sources: [
       { title: "Subagents in the SDK", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -227,7 +227,7 @@ const examDomain1Questions: Question[] = [
       "Multi-concern requests should be decomposed into explicit items first, so none is dropped. Each item is then investigated with the tools it needs (order lookup, billing records, address update), in parallel where possible and sharing the customer context already gathered, and the results are combined into one coherent resolution.\n\nOption A pushes work back onto the customer and lowers first-contact resolution. Option B escalates cases the agent can solve, which wastes human capacity and misses the 80% target. Option D avoids dropping items but turns one conversation into several round trips for no benefit, since the three concerns are independent.",
     keyConcept: "Decompose multi-concern requests, investigate each item, then synthesize one resolution",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -252,7 +252,7 @@ const examDomain1Questions: Question[] = [
     sources: [
       { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
       { title: "Hooks reference", url: "https://code.claude.com/docs/en/hooks" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -277,7 +277,7 @@ const examDomain1Questions: Question[] = [
     sources: [
       { title: "Handling stop reasons", url: "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons" },
       { title: "How the agent loop works", url: "https://code.claude.com/docs/en/agent-sdk/agent-loop" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -301,7 +301,7 @@ const examDomain1Questions: Question[] = [
     keyConcept: "Decompose open-ended work by mapping, prioritizing and adapting the plan as you learn",
     sources: [
       { title: "Building effective agents", url: "https://www.anthropic.com/research/building-effective-agents" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -325,7 +325,7 @@ const examDomain1Questions: Question[] = [
     keyConcept: "Prompt for preferences, hooks for guarantees: a prerequisite gate belongs in code",
     sources: [
       { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -349,7 +349,7 @@ const examDomain1Questions: Question[] = [
     keyConcept: "PostToolUse hooks normalize heterogeneous formats before the model sees them",
     sources: [
       { title: "Intercept and control agent behavior with hooks", url: "https://code.claude.com/docs/en/agent-sdk/hooks" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -373,7 +373,7 @@ const examDomain1Questions: Question[] = [
     keyConcept: "With most prior tool results stale, start fresh with a structured summary instead of resuming",
     sources: [
       { title: "Work with sessions", url: "https://code.claude.com/docs/en/agent-sdk/sessions" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.7", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.7", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -397,7 +397,7 @@ const examDomain1Questions: Question[] = [
     keyConcept: "The coordinator dynamically selects subagents instead of always running the full pipeline",
     sources: [
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 1.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 1.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -474,7 +474,7 @@ const examDomain2Questions: Question[] = [
       "C is correct. This is a business rule violation: no retry will succeed, and the agent needs to know why so it can explain the rule and escalate (for example with `escalate_to_human`). A non-retryable business error with a customer-friendly explanation gives it exactly that. The opaque \"Error 4012\" is why the agent probed with $719.\n\nA mislabels a permanent policy limit as a temporary outage and invites more wasted retries. B uses the wrong channel: protocol errors are for malformed requests, and the agent loses the information it needs to talk to the customer. D silently changes a financial action without the customer's agreement.\n\nHow to implement:\n```typescript\nif (amount > 500 && !managerApproved) {\n  return { isError: true, content: [{ type: \"text\", text: JSON.stringify({\n    errorCategory: \"business\", isRetryable: false,\n    customerMessage: \"Refunds over $500 need a manager's approval. I can request it for you now.\",\n    suggestedAction: \"escalate_to_human\",\n  }) }] };\n}\n```",
     keyConcept: "Non-retryable business errors with customer-friendly explanations",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "MCP specification — Tools (error handling)", url: "https://modelcontextprotocol.io/specification/2026-07-28/server/tools" },
     ],
   },
@@ -499,7 +499,7 @@ const examDomain2Questions: Question[] = [
     keyConcept: "Read + Write as the fallback when Edit has no unique anchor",
     sources: [
       { title: "Claude Code tools reference", url: "https://code.claude.com/docs/en/tools-reference" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -524,7 +524,7 @@ const examDomain2Questions: Question[] = [
     sources: [
       { title: "MCP specification — Resources", url: "https://modelcontextprotocol.io/specification/2026-07-28/server/resources" },
       { title: "Connect Claude Code to tools via MCP", url: "https://code.claude.com/docs/en/mcp" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -548,7 +548,7 @@ const examDomain2Questions: Question[] = [
     keyConcept: "Tool descriptions should state outputs and limits, and point to the alternative tool",
     sources: [
       { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -572,7 +572,7 @@ const examDomain2Questions: Question[] = [
     keyConcept: "tool_choice \"any\" guarantees a tool call while the model chooses which tool",
     sources: [
       { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -595,7 +595,7 @@ const examDomain2Questions: Question[] = [
       "D is correct. The tool description already states when to fetch; the new system prompt line is a keyword-sensitive instruction (\"check the source\") that overrides it. Rewriting the instruction around the actual requirement, that every statistic keeps its citation, removes the unintended association with the fetch tool.\n\nA treats a matching word as the cause and hides it, leaving a vague instruction that can attach to some other tool. B removes a tool the agent legitimately needs for findings without citations and adds coordinator round trips. C blocks the legitimate fetches as well.\n\nHow to implement:\n```text\n# BEFORE\nAlways check the source for every statistic.\n\n# AFTER\nEvery statistic in the report must keep the citation and quote from its finding.\nCall fetch_source_document only if a finding has no citation or its quote\nlooks inconsistent with the claim.\n```",
     keyConcept: "Reviewing system prompts for keyword-sensitive instructions that override tool descriptions",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Define tools (Claude API docs)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
     ],
   },
@@ -619,7 +619,7 @@ const examDomain2Questions: Question[] = [
       "B is correct. With a two-word description, the agent has no reason to think the MCP tool can do more than Grep. Describing its capabilities and outputs in detail (cross-repository resolution, injected calls, what each result contains) lets the agent see when it is the better tool.\n\nA removes the right tool for plain text searches, such as error messages or config keys. C is a blanket rule that will pick MCP tools even where a built-in is better. D gives the tool a misleading name: it doesn't do text matching, so the agent would use it for the wrong jobs.\n\nHow to implement:\n```typescript\n{\n  name: \"find_references\",\n  description: \"Finds every caller of a function, class or method across all 40 company \" +\n    \"repositories using a prebuilt call graph, including calls through dependency \" +\n    \"injection and re-exports that text search misses. Input: a fully qualified symbol. \" +\n    \"Returns repo, file, line and the calling symbol for each reference. Use Grep instead \" +\n    \"for plain text such as log messages or config keys.\",\n}\n```",
     keyConcept: "Detailed MCP tool descriptions keep the agent from defaulting to built-in tools",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Connect Claude Code to tools via MCP", url: "https://code.claude.com/docs/en/mcp" },
     ],
   },
@@ -643,7 +643,7 @@ const examDomain2Questions: Question[] = [
       "C is correct. Replacing a generic tool with a constrained one that validates its input enforces the subagent's role in code: it can load the documents it is meant to analyze and nothing else, which also blocks the internal URL.\n\nA depends on prompt compliance, and the content being read (URLs inside papers) is exactly what pulls the model off course. B overloads the coordinator and the subagent's context with full texts, and loses on-demand loading. D detects misuse a week after it has already happened.\n\nHow to implement:\n```typescript\nconst APPROVED = [/^https:\\/\\/arxiv\\.org\\//, /^https:\\/\\/doi\\.org\\//, /^archive:\\/\\//];\n\nasync function loadDocument({ ref }: { ref: string }) {\n  if (!APPROVED.some(rx => rx.test(ref))) {\n    return { isError: true, content: [{ type: \"text\", text: JSON.stringify({\n      errorCategory: \"validation\", isRetryable: false,\n      message: \"Only approved document sources can be loaded.\" }) }] };\n  }\n  return { content: [{ type: \"text\", text: await fetchDocument(ref) }] };\n}\n```",
     keyConcept: "Replacing generic tools with constrained alternatives",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Writing effective tools for agents (Anthropic Engineering)", url: "https://www.anthropic.com/research/writing-tools-for-agents" },
     ],
   },
@@ -668,7 +668,7 @@ const examDomain2Questions: Question[] = [
     keyConcept: "Restricting a subagent's tool set to its role",
     sources: [
       { title: "Create custom subagents (Claude Code)", url: "https://code.claude.com/docs/en/sub-agents" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -716,7 +716,7 @@ const examDomain2Questions: Question[] = [
       "D is correct. A missing permission won't fix itself, so retrying wastes time. Structured metadata that labels it a non-retryable permission error, with a human-readable description of what access is missing, lets the agent stop at once and report or escalate.\n\nA hides the same uninformative error behind slower server-side retries. B disguises a failure as a valid empty result, so the task silently skips the repository. C mislabels the error as transient, and the agent keeps retrying, just more slowly.\n\nHow to implement:\n```typescript\nif (res.status === 403) {\n  return { isError: true, content: [{ type: \"text\", text: JSON.stringify({\n    errorCategory: \"permission\", isRetryable: false,\n    message: `Service account lacks deploy access to ${repo}. A repo admin must grant the 'preview-deployer' role.`,\n  }) }] };\n}\n```",
     keyConcept: "Retryable vs non-retryable errors: structured metadata prevents wasted retries",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "MCP specification — Tools (error handling)", url: "https://modelcontextprotocol.io/specification/2026-07-28/server/tools" },
     ],
   },
@@ -740,7 +740,7 @@ const examDomain2Questions: Question[] = [
       "D is correct. To trace a function through wrapper modules, first identify every exported name it travels under, then search the codebase for each of those names. That catches the callers that a search for the original name can't see.\n\nA reads whole directories upfront, spends context, and still misses callers outside those two folders. B finds files by name, which says nothing about whether they call the function. C still searches for the original name, which the aliased callers never use.\n\nHow to implement:\n```text\n1. Grep  \"formatCurrency\"  output_mode=content   -> find re-exports and aliases\n2. Read  utils/money.ts, ui/index.ts            -> confirm fmtMoney, Money.format\n3. Grep  \"formatCurrency\\(|fmtMoney\\(|Money\\.format\\(\"  output_mode=files_with_matches\n```",
     keyConcept: "Tracing usage across wrapper modules: collect exported names, then Grep each",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 2.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 2.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Claude Code tools reference", url: "https://code.claude.com/docs/en/tools-reference" },
     ],
   },
@@ -795,7 +795,7 @@ const examDomain3Questions: Question[] = [
     keyConcept: "Diagnose hierarchy issues with /memory: user-level instructions are not shared with teammates",
     sources: [
       { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -819,7 +819,7 @@ const examDomain3Questions: Question[] = [
     keyConcept: "Split a large CLAUDE.md into topic files in .claude/rules/",
     sources: [
       { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -843,7 +843,7 @@ const examDomain3Questions: Question[] = [
     keyConcept: "argument-hint frontmatter shows developers the parameters a skill needs",
     sources: [
       { title: "Claude Code docs — Skills", url: "https://code.claude.com/docs/en/skills" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -868,7 +868,7 @@ const examDomain3Questions: Question[] = [
     sources: [
       { title: "Claude Code docs — Permission modes (plan mode)", url: "https://code.claude.com/docs/en/permission-modes" },
       { title: "Claude Code docs — Common workflows (plan mode, subagents)", url: "https://code.claude.com/docs/en/common-workflows" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -892,7 +892,7 @@ const examDomain3Questions: Question[] = [
     keyConcept: "Interview pattern: have Claude ask design questions before implementing in an unfamiliar domain",
     sources: [
       { title: "Claude Code docs — Best practices", url: "https://code.claude.com/docs/en/best-practices" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -916,7 +916,7 @@ const examDomain3Questions: Question[] = [
     keyConcept: "--output-format json with --json-schema yields machine-parseable findings in structured_output",
     sources: [
       { title: "Claude Code docs — Run Claude Code programmatically (-p)", url: "https://code.claude.com/docs/en/headless" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -940,7 +940,7 @@ const examDomain3Questions: Question[] = [
     keyConcept: "Send interacting issues in one detailed message; iterate sequentially only for independent issues",
     sources: [
       { title: "Claude Code docs — Best practices", url: "https://code.claude.com/docs/en/best-practices" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -965,7 +965,7 @@ const examDomain3Questions: Question[] = [
     sources: [
       { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
       { title: "Claude Code docs — Run Claude Code programmatically (-p)", url: "https://code.claude.com/docs/en/headless" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -990,7 +990,7 @@ const examDomain3Questions: Question[] = [
     sources: [
       { title: "Claude Code docs — Subagents (Explore, Plan)", url: "https://code.claude.com/docs/en/sub-agents" },
       { title: "Claude Code docs — Common workflows (plan mode, subagents)", url: "https://code.claude.com/docs/en/common-workflows" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1014,7 +1014,7 @@ const examDomain3Questions: Question[] = [
     keyConcept: "Glob patterns in paths: * stays in one directory, ** spans subdirectories",
     sources: [
       { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1038,7 +1038,7 @@ const examDomain3Questions: Question[] = [
     keyConcept: "context: fork runs verbose skills in an isolated subagent so only the result reaches the main session",
     sources: [
       { title: "Claude Code docs — Skills", url: "https://code.claude.com/docs/en/skills" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1062,7 +1062,7 @@ const examDomain3Questions: Question[] = [
     keyConcept: "Rules in .claude/rules/ are Markdown files with YAML frontmatter; paths globs scope them",
     sources: [
       { title: "Claude Code docs — How Claude remembers your project (CLAUDE.md, imports, rules)", url: "https://code.claude.com/docs/en/memory" },
-      { title: "CCAR-F Exam Guide v1.0 — Task 3.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 3.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1163,7 +1163,7 @@ const examDomain4Questions: Question[] = [
       "\"Based on impact\" leaves every PR to a fresh judgment call. Explicit criteria for each level, each anchored by a concrete code example, give the model a fixed reference, which is how the guide says to achieve consistent classification. Option A confuses confidence (how sure the model is) with severity (how bad the issue is). Option B adds more boundaries to place inconsistently. Option D asks for consistency without defining what consistent means.",
     keyConcept: "Severity criteria with concrete code examples for consistent classification",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
     ],
   },
@@ -1187,7 +1187,7 @@ const examDomain4Questions: Question[] = [
       "With `auto` the model may answer in text. `any` guarantees a tool call while letting the model pick the schema that matches the document, which is exactly the case of multiple schemas and an unknown document type. Option A guarantees a call but forces the invoice schema onto contracts and POs. Option C keeps the same optional behavior and only makes a text reply less likely. Option D gives up tool use, which the guide calls the most reliable route to schema-compliant output, and brings back JSON parsing errors. (The current API also offers `strict: true` on tools and `output_config.format`; they constrain the schema but do not replace choosing the right `tool_choice`.) Product note: Claude Opus 5.5 and Sonnet 5.5 reject forced `tool_choice` (`any` or `tool`) with a 400; the exam guide still tests forced selection, so the example uses `claude-haiku-5-5`, which accepts it. On the newer models, use `auto` with `strict: true` tools or structured outputs.\n\nHow to implement:\n```typescript\nconst res = await client.messages.create({\n  model: \"claude-haiku-5-5\",\n  max_tokens: 2048,\n  tools: [extractInvoice, extractPo, extractContract],\n  tool_choice: { type: \"any\" },\n  messages: [{ role: \"user\", content: fileText }],\n});\nconst call = res.content.find((b) => b.type === \"tool_use\");\n```",
     keyConcept: "tool_choice \"any\" guarantees a tool call when the document type is unknown",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Define tools (tool_choice)", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" },
     ],
   },
@@ -1211,7 +1211,7 @@ const examDomain4Questions: Question[] = [
       "A verification pass in which the model self-reports confidence alongside each finding enables calibrated review routing: confident findings go straight to the PR and borderline ones go to the limited human time. Calibrate the threshold against past dismissal data; the confidence is used for routing, not as a substitute for explicit review criteria. Option A is same-session self-review, which tends to keep the model's own decisions and silently drops findings. Option C discards valid findings by category. Option D assumes extended thinking makes review unnecessary; the guide says it does not catch subtle issues as well as a separate review step.",
     keyConcept: "Verification pass with per-finding confidence for calibrated routing",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1234,7 +1234,7 @@ const examDomain4Questions: Question[] = [
       "Capturing both totals and a conflict flag turns a silent inconsistency into data: code can retry with specific feedback when a misread is likely, and route true supplier errors to accounting with the evidence intact. Option A retries every mismatch, but a receipt that is wrong at the source will never reconcile, so it loops or ends in a fabricated fix. Option B throws away the printed total, so supplier errors disappear. Option C asks the model to overwrite source data, hiding the conflict accounting needs to see.",
     keyConcept: "calculated_total vs stated_total with conflict_detected for self-correction",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1257,7 +1257,7 @@ const examDomain4Questions: Question[] = [
       "Batch processing fits non-blocking, latency-tolerant work and does not fit blocking flows. The live-chat draft blocks a waiting customer, so it needs the synchronous API. Nightly tagging read a week later and the quarterly job tolerate up to 24 hours easily. Option B ignores that batches have no latency SLA; \"usually within an hour\" is not acceptable for a waiting customer. Option C treats a 24-hour window as a problem for a report read a week later. Option D puts the only latency-critical workload on batch.",
     keyConcept: "Batch for latency-tolerant work, synchronous for blocking workflows",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Batch processing", url: "https://platform.claude.com/docs/en/build-with-claude/batch-processing" },
     ],
   },
@@ -1281,7 +1281,7 @@ const examDomain4Questions: Question[] = [
       "Batch results can come back in any order, so `custom_id` is the only reliable way to correlate a result with its request and to identify which documents failed. A context-window overflow is deterministic, so the failed documents must be modified (chunked) before resubmission, and only those should be resent. Option A pays again for 19,640 successes and still doesn't guarantee order. Option B resends requests that will fail the same way. Option D keeps relying on order, which the API does not guarantee. Testing the prompt on a sample before large batches reduces these resubmissions.\n\nHow to implement:\n```typescript\nconst failed: string[] = [];\nfor await (const r of await client.messages.batches.results(batchId)) {\n  if (r.result.type === \"succeeded\") save(r.custom_id, r.result.message);\n  else failed.push(r.custom_id);\n}\nconst retry = failed.flatMap((id) => chunk(docs[id]).map((part, i) => ({\n  custom_id: `${id}-part${i}`,\n  params: { model: \"claude-sonnet-5-5\", max_tokens: 2048, messages: [{ role: \"user\", content: part }] },\n})));\nawait client.messages.batches.create({ requests: retry });\n```",
     keyConcept: "Use custom_id to resubmit only failed requests, modified as needed",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Batch processing", url: "https://platform.claude.com/docs/en/build-with-claude/batch-processing" },
     ],
   },
@@ -1305,7 +1305,7 @@ const examDomain4Questions: Question[] = [
       "When instructions alone don't change behavior, few-shot examples show the judgment you want. Examples that walk from a function to the specific uncovered branch, explain why it matters and show the resulting test teach the model to find branch-level gaps in code it has not seen. Option A gives feedback too vague to act on: a percentage does not say which branch is missing. Option B is more of the instruction that already failed. Option C adds reporting but does not change which branches get tested.",
     keyConcept: "Few-shot examples demonstrating branch-level coverage gaps",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
     ],
   },
@@ -1329,7 +1329,7 @@ const examDomain4Questions: Question[] = [
       "The vague goal \"accurate\" lets the model include style issues. An explicit criterion (claimed behavior contradicts actual behavior) plus an explicit skip list defines exactly what to report, which is what improves precision. Option A is a confidence instruction, which does not improve precision compared with categorical criteria. Option B is confidence-style filtering on a score that still has no definition. Option C pushes the model toward style, the very noise developers are dismissing.",
     keyConcept: "Explicit report/skip criteria instead of vague goals",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
     ],
   },
@@ -1353,7 +1353,7 @@ const examDomain4Questions: Question[] = [
       "A self-check in the same session inherits the reasoning that produced the migration, so the model is unlikely to question its own decision to drop the column. An independent instance without that context, given the migration, schema and checklist (and ideally tool access to search for column usages), reviews it fresh and is more effective than self-review or extended thinking. Option B is still self-review. Option C improves generation but adds no independent check. Option D grades the generator on its own explanation, which will naturally sound consistent.",
     keyConcept: "Independent instance without generation context for review",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1376,7 +1376,7 @@ const examDomain4Questions: Question[] = [
       "A list of paths only matches pre-specified cases. Few-shot examples that contrast acceptable patterns with genuine issues, and explain the difference, let the model generalize the judgment to new code, cutting false positives without hiding real injections. Option A is the approach that is already failing. Option B also downgrades the real vulnerabilities. Option D is a confidence instruction, which does not improve precision the way concrete contrasting examples do.",
     keyConcept: "Few-shot examples contrasting acceptable patterns with real issues",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" },
     ],
   },
@@ -1400,7 +1400,7 @@ const examDomain4Questions: Question[] = [
       "The teammate is applying another vendor's rule. Claude's strict mode accepts properties that are not in `required` (they count toward a limit of 24 optional parameters) and nullable type arrays or `anyOf`. Making the field optional or nullable removes the pressure that causes fabrication, as guide 4.3 recommends. Option A keeps the pressure and lets an invented code that happens to exist (\"SAVE10\") pass the filter. Option B keeps `required` in the schema, so the pressure stays while you lose the schema guarantee. Option D relies on an instruction that competes with the schema.",
     keyConcept: "Claude strict mode supports optional and nullable fields; use them to avoid fabrication",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Structured outputs", url: "https://platform.claude.com/docs/en/build-with-claude/structured-outputs" },
       { title: "Strict tool use", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use" },
     ],
@@ -1425,7 +1425,7 @@ const examDomain4Questions: Question[] = [
       "A `detected_pattern` field makes every finding countable by the code construct that triggered it, so dismissal rates can be grouped by pattern and the worst offenders fixed in the prompt. That is the feedback-loop design the guide describes. Option A collects unstructured text that is hard to aggregate and depends on developer effort. Option B filters findings without explaining which patterns are wrong. Option C second-guesses developers instead of measuring where the reviewer goes wrong.",
     keyConcept: "detected_pattern field enables systematic analysis of dismissals",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 4.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 4.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
     ],
   },
   {
@@ -1550,7 +1550,7 @@ const examDomain5Questions: Question[] = [
       "A is correct. When a downstream agent has a limited context budget, the upstream agent should return structured data (key facts, citations, relevance scores) rather than verbose content and reasoning chains. The synthesis agent then receives the facts it needs, each tied to its paper, in a fraction of the tokens.\n\nB confuses limits: max_tokens caps the length of the model's output, not how much input it can use well. C doubles the cost and feeds the second pass the same overloaded input that caused the errors. D truncates by position, so any key number that appears after word 500 is lost.\n\nHow to implement:\n```typescript\ninterface PaperAnalysis {\n  paperId: string;\n  citation: string;            // \"Lee et al., 2025, J. Energy Policy\"\n  keyFacts: { fact: string; value?: string; page?: number }[];\n  relevance: number;           // 0-1, against the research question\n  method: string;              // \"RCT, n=1,200\"\n}\n// The subagent's final message must be a JSON array of PaperAnalysis, nothing else\n```",
     keyConcept: "Upstream agents return structured facts, citations and relevance, not reasoning prose",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
       { title: "Effective context engineering for AI agents", url: "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents" },
     ],
@@ -1575,7 +1575,7 @@ const examDomain5Questions: Question[] = [
       "B is correct. When the issue is within the agent's capability and the customer has not asked for a human, the agent should acknowledge the frustration and offer the resolution, escalating only if the customer reiterates that they want a person.\n\nA uses sentiment as an escalation trigger; frustration is not a measure of case complexity, and this case is a standard covered replacement. C delays a resolution the customer can have now; a carrier investigation is a separate follow-up. D resolves the case but ignores the frustration and gives the customer no clear path to a human if they want one, which tends to produce a repeat contact.\n\nHow to implement (few-shot example in the system prompt):\n```markdown\n<example>\nCustomer: \"Third damaged package. Ridiculous.\" (photos attached)\nAgent: \"I'm sorry, three damaged deliveries is frustrating. I can send a\nreplacement today at no cost. Would you like me to do that, or would you\nprefer to speak with a member of our team?\"\n</example>\n```",
     keyConcept: "Acknowledge frustration and offer resolution; escalate only if the customer reiterates",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Customer support agent guide", url: "https://platform.claude.com/docs/en/about-claude/use-case-guides/customer-support-chat" },
     ],
   },
@@ -1599,7 +1599,7 @@ const examDomain5Questions: Question[] = [
       "A is correct. An access failure (the search never ran) and a valid empty result (the search ran and found nothing) mean different things and need different decisions. Reporting the failure as a structured error, with its type, the attempted query and retry information, lets the coordinator retry, try another source or flag the gap, while [] keeps meaning \"searched, nothing found\".\n\nB spends calls re-running valid empty searches and still cannot tell the two cases apart. C turns legitimate \"no matches\" results into failures and stops the whole workflow, which is the opposite anti-pattern. D makes timeouts less frequent but still reports the ones that happen as \"no prior art\".\n\nHow to implement:\n```typescript\ntype SearchResult =\n  | { ok: true; query: string; results: Patent[] }            // [] = truly none\n  | { ok: false; failureType: \"timeout\" | \"auth\" | \"unavailable\";\n      query: string; attempts: number; partialResults: Patent[];\n      alternatives: string[] };                                 // e.g. [\"EPO mirror\"]\n```",
     keyConcept: "Distinguish access failures from valid empty results",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "MCP specification: Tools (error handling)", url: "https://modelcontextprotocol.io/specification/2025-06-18/server/tools" },
       { title: "Writing effective tools for agents", url: "https://www.anthropic.com/research/writing-tools-for-agents" },
     ],
@@ -1624,7 +1624,7 @@ const examDomain5Questions: Question[] = [
       "A is correct. Delegating focused investigations (\"find all refund entry points\", \"trace refund dependencies into the ledger\") to subagents keeps the verbose exploration output in their own context windows; the main agent receives only the summaries and preserves the high-level coordination of the question.\n\nB fills the context with mostly irrelevant code before any work starts, which accelerates the degradation. C still accumulates every search in the main context, and capping results can hide the one match that matters. D multiplies the same flawed design five times and adds cost without fixing context accumulation. (The guide calls the spawning tool \"Task\"; current Agent SDK docs name it \"Agent\" in allowedTools.)\n\nHow to implement (Agent SDK, TypeScript):\n```typescript\nconst options = {\n  model: \"claude-sonnet-5-5\",\n  allowedTools: [\"Read\", \"Grep\", \"Glob\", \"Agent\"],\n  agents: {\n    \"code-tracer\": {\n      description: \"Traces one call path and returns a short summary with file:line refs\",\n      prompt: \"Investigate only the question given. Return <=20 lines: path, key functions, file:line.\",\n      tools: [\"Read\", \"Grep\", \"Glob\"],\n    },\n  },\n};\n```",
     keyConcept: "Subagent delegation isolates verbose exploration output from the coordinating agent",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Claude Code: Create custom subagents", url: "https://code.claude.com/docs/en/sub-agents" },
       { title: "Agent SDK: Subagents", url: "https://code.claude.com/docs/en/agent-sdk/subagents" },
     ],
@@ -1649,7 +1649,7 @@ const examDomain5Questions: Question[] = [
       "A is correct. Structured state persistence makes recovery explicit: each agent writes its progress (completed subtasks, findings, pending work) to a known location, and on resume the coordinator loads a manifest of those exports and injects the relevant state into each agent's prompt, so work continues from the last checkpoint.\n\nB recovers only results that subagents had already returned; work in progress inside each subagent is lost, and reloading a four-hour transcript brings back its context problems. C protects the report text but throws away per-agent progress, so most of the research is repeated. D doubles cost and does not help when both copies fail for the same reason.\n\nHow to implement:\n```json\n// state/manifest.json, rewritten by the coordinator after each checkpoint\n{\n  \"runId\": \"batt-2026-11-20\",\n  \"agents\": {\n    \"web-search\": { \"state\": \"state/web-search.json\", \"status\": \"done\" },\n    \"doc-analysis\": { \"state\": \"state/doc-analysis.json\", \"status\": \"in_progress\",\n                      \"completed\": 14, \"remaining\": [\"paper-15\", \"paper-16\"] }\n  }\n}\n```",
     keyConcept: "Crash recovery: agents export state; the coordinator loads a manifest on resume",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.4", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
       { title: "Effective harnesses for long-running agents", url: "https://www.anthropic.com/research/effective-harnesses-for-long-running-agents" },
     ],
@@ -1674,7 +1674,7 @@ const examDomain5Questions: Question[] = [
       "B is correct. An aggregate figure weighted toward typed invoices can hide poor accuracy on handwritten receipts or on specific fields in contracts. Validating accuracy by document type and by field segment shows where automation is safe, and review is reduced only where each segment meets the target.\n\nA trusts the aggregate, which is exactly the number that can mask a failing segment. C is a guess without segment data; even typed invoices may have a weak field, such as tax IDs. D uses downstream complaints as the metric, but many extraction errors pass silently and are never reported.\n\nHow to implement:\n```python\nimport pandas as pd\ndf = pd.DataFrame(validation_rows)  # doc_type, field, correct (bool)\nseg = df.groupby([\"doc_type\", \"field\"])[\"correct\"].agg([\"mean\", \"count\"])\nsafe = seg[(seg[\"mean\"] >= 0.97) & (seg[\"count\"] >= 200)]\n# only (doc_type, field) pairs in `safe` may skip human review\n```",
     keyConcept: "Aggregate accuracy can mask weak segments; validate by document type and field first",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Define success criteria and build evaluations", url: "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests" },
     ],
   },
@@ -1698,7 +1698,7 @@ const examDomain5Questions: Question[] = [
       "B is correct. Tool results accumulate in context and consume tokens out of proportion to their relevance. Trimming each result to the fields the task needs, before it is appended, keeps the important facts and removes the noise, for example with a PostToolUse hook or a wrapper around the tool.\n\nA leaves 40 irrelevant fields per call in context; it raises cost without making the important fields easier to find. C still sends every field on every turn, so the tokens and the distraction remain. D forces repeated calls and drops the facts the agent needs between turns. (Tool definitions are a separate cost: Claude Code already defers MCP tool schemas through tool search, which is on by default; the problem here is the tool results.)\n\nHow to implement:\n```typescript\nconst RETURN_FIELDS = [\"order_id\", \"items\", \"purchase_date\", \"status\", \"return_eligible\"] as const;\n\nfunction trimOrder(raw: Record<string, unknown>) {\n  return Object.fromEntries(RETURN_FIELDS.map(k => [k, raw[k]]));\n}\n// tool handler: return { content: [{ type: \"text\", text: JSON.stringify(trimOrder(raw)) }] };\n```",
     keyConcept: "Trim verbose tool outputs to relevant fields before they accumulate in context",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.1", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Writing effective tools for agents", url: "https://www.anthropic.com/research/writing-tools-for-agents" },
       { title: "Claude Code: Connect to tools via MCP (tool search)", url: "https://code.claude.com/docs/en/mcp" },
     ],
@@ -1723,7 +1723,7 @@ const examDomain5Questions: Question[] = [
       "D is correct. When credible sources report conflicting statistics, the analysis should complete with both values included and the conflict annotated with source attribution, leaving reconciliation to the coordinator, which can check definitions, scope or methodology before synthesis.\n\nA and B both reconcile arbitrarily: A picks a winner by assumption, and B invents a figure that neither source reported. C discards two credible data points and reports a gap that does not exist. Like the current design, all three hide from the reader that the sources disagree.\n\nHow to implement:\n```json\n{\n  \"metric\": \"battery recycling capacity, 2024, region X\",\n  \"values\": [\n    { \"value\": 1.2, \"unit\": \"Mt\", \"source\": \"Industry association report\", \"url\": \"https://...\", \"method\": \"member survey\" },\n    { \"value\": 0.8, \"unit\": \"Mt\", \"source\": \"Government agency statistics\", \"url\": \"https://...\", \"method\": \"permitted capacity\" }\n  ],\n  \"conflict\": true,\n  \"note\": \"Possible definitional difference: surveyed vs permitted capacity\"\n}\n```",
     keyConcept: "Annotate conflicting statistics with source attribution instead of picking one",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
     ],
   },
@@ -1747,7 +1747,7 @@ const examDomain5Questions: Question[] = [
       "C is correct. With limited capacity, review should go first to extractions with low model confidence and to documents whose source is ambiguous or contradictory. Detecting conflicting values in the source (two termination dates) catches cases the confidence score misses.\n\nA is a good way to measure error rates, which is a separate need, but as the only routing rule it spends most of the reviewers' time on easy, correct documents. B uses length as a proxy for risk without evidence that it predicts errors. D is contradicted by the scenario itself: the model gave high confidence to one of two conflicting dates.\n\nHow to implement:\n```python\ndef review_priority(doc):\n    score = 0\n    score += sum(1 for f in doc.fields if f.confidence < f.calibrated_threshold) * 2\n    score += 5 if doc.source_conflicts else 0   # e.g. two distinct termination dates found\n    return score\n\nqueue = sorted(today_docs, key=review_priority, reverse=True)[:300]\n```",
     keyConcept: "Route low-confidence and contradictory-source extractions to limited reviewer capacity first",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.5", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Reduce hallucinations", url: "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations" },
     ],
   },
@@ -1771,7 +1771,7 @@ const examDomain5Questions: Question[] = [
       "D is correct. A policy gap is an escalation trigger even when the case looks simple: the policy covers own-site adjustments but is silent on competitor matching, so granting or refusing the request would be a policy decision the agent is not authorized to make.\n\nA and C extend the policy by analogy and commit the company to a rule nobody approved. B treats silence as a prohibition; refusing is also a policy decision, and it may contradict what the business would choose.\n\nHow to implement (system prompt excerpt):\n```markdown\n## Escalate when policy is ambiguous or silent\nIf a request is not explicitly covered by the policy documents\n(e.g. competitor price matching when policy only covers our own\nprice drops), do not approve or deny it. Call escalate_to_human\nwith: the request, the closest policy section, and why it does not apply.\n```",
     keyConcept: "Escalate when policy is ambiguous or silent on the customer's specific request",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.2", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "Customer support agent guide", url: "https://platform.claude.com/docs/en/about-claude/use-case-guides/customer-support-chat" },
     ],
   },
@@ -1795,7 +1795,7 @@ const examDomain5Questions: Question[] = [
       "D is correct. Without publication or data-collection dates, a change over time looks like a contradiction. Requiring subagents to include those dates in their structured output lets the synthesis agent read 34% (2021) and 61% (2025) as a trend instead of a conflict.\n\nA picks a value by rule and hides the time dimension. B patches the symptom with extra round trips for information the subagents already had when they read the sources. C throws away valid data, and here it would erase the very trend the report should show.\n\nHow to implement:\n```typescript\ninterface DatedClaim {\n  claim: string;            // \"34% of retailers use AI demand forecasting\"\n  sourceUrl: string;\n  publishedAt: string;      // \"2021-06-01\"\n  dataCollectedAt?: string; // \"2021-Q1\"\n}\n// Synthesis rule: compare values only within the same collection period;\n// otherwise report them as a time series.\n```",
     keyConcept: "Require publication and collection dates so temporal differences are not read as contradictions",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.6", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
     ],
   },
@@ -1819,7 +1819,7 @@ const examDomain5Questions: Question[] = [
       "B is correct. Subagents should recover locally from transient failures and propagate only the errors they cannot resolve, together with what was attempted and any partial results. The coordinator stops spending turns on routine retries and still gets the context it needs for the 403 (try another source, or flag a coverage gap).\n\nA floods the coordinator with decisions the subagent can make on its own. C retries a permanent error that will never succeed, wasting time, and hides it from the coordinator. D silently suppresses errors: a 403 reported as \"no results\" looks like a successful empty search.\n\nHow to implement:\n```typescript\nasync function fetchWithRecovery(url: string) {\n  for (let attempt = 1; attempt <= 3; attempt++) {\n    const r = await fetchSource(url);\n    if (r.ok) return { ok: true, data: r.data };\n    if (r.kind !== \"timeout\") {\n      return { ok: false, failureType: r.kind, url, attempts: attempt,\n               partialResults: r.partial ?? [], alternatives: [\"search cached copy\"] };\n    }\n    await sleep(500 * attempt); // transient: handle locally\n  }\n  return { ok: false, failureType: \"timeout\", url, attempts: 3, partialResults: [] };\n}\n```",
     keyConcept: "Recover transient failures locally; propagate only unresolved errors with context",
     sources: [
-      { title: "CCAR-F Exam Guide v1.0 — Task 5.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
+      { title: "CCAR-F Exam Guide v1.1 — Task 5.3", url: "https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification" },
       { title: "How we built our multi-agent research system", url: "https://www.anthropic.com/research/multi-agent-research-system" },
     ],
   },
